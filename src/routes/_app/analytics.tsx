@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,9 +18,13 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-import { coverageByArea, trend, flakyTests } from "@/features/data/seed";
+import { getOrgAnalyticsFn } from "@/lib/analytics/functions";
 
 export const Route = createFileRoute("/_app/analytics")({
+  loader: async ({ context }) => {
+    if (!context.org) return null;
+    return getOrgAnalyticsFn({ data: { orgId: context.org.id } });
+  },
   component: AnalyticsPage,
 });
 
@@ -39,116 +44,154 @@ function riskTone(risk: number) {
 }
 
 function AnalyticsPage() {
+  const { org } = Route.useRouteContext();
+  const data = Route.useLoaderData();
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Coverage &amp; Analytics</h1>
         <p className="text-sm text-muted-foreground">
-          Coverage by area, pass/fail trends, and the flaky-test leaderboard across your org.
+          Coverage by scenario type, pass/fail trends, and the flaky-test leaderboard across
+          your org.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Coverage by area</CardTitle>
-            <CardDescription>Percentage of scenarios covered per feature area</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={coverageConfig} className="h-[260px] w-full">
-              <BarChart data={coverageByArea} margin={{ left: 12, right: 12 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="area" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} width={32} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="coverage" fill="var(--color-coverage)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
+      {!org || !data ? (
+        <Card className="flex flex-col items-center gap-3 border-dashed p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Finish setting up your workspace before viewing analytics.
+          </p>
+          <Button asChild>
+            <Link to="/onboarding">Complete onboarding</Link>
+          </Button>
         </Card>
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Coverage by scenario type</CardTitle>
+                <CardDescription>Share of scenarios accepted, per type, across all projects</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.coverageByType.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No scenarios yet.
+                  </p>
+                ) : (
+                  <ChartContainer config={coverageConfig} className="h-[260px] w-full">
+                    <BarChart data={data.coverageByType} margin={{ left: 12, right: 12 }}>
+                      <CartesianGrid vertical={false} />
+                      <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} />
+                      <YAxis tickLine={false} axisLine={false} width={32} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="coverage" fill="var(--color-coverage)" radius={4} />
+                    </BarChart>
+                  </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Pass / fail trend</CardTitle>
-            <CardDescription>Last 7 days across all projects</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={trendConfig} className="h-[260px] w-full">
-              <LineChart data={trend} margin={{ left: 12, right: 12 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line dataKey="passed" type="monotone" stroke="var(--color-passed)" strokeWidth={2} dot={false} />
-                <Line dataKey="failed" type="monotone" stroke="var(--color-failed)" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Pass / fail trend</CardTitle>
+                <CardDescription>Last 7 days across all projects</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={trendConfig} className="h-[260px] w-full">
+                  <LineChart data={data.trend} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line dataKey="passed" type="monotone" stroke="var(--color-passed)" strokeWidth={2} dot={false} />
+                    <Line dataKey="failed" type="monotone" stroke="var(--color-failed)" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Risk score by area</CardTitle>
-          <CardDescription>Higher risk = lower coverage combined with recent failures</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Area</TableHead>
-                <TableHead>Coverage</TableHead>
-                <TableHead>Risk score</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {coverageByArea.map((row) => (
-                <TableRow key={row.area}>
-                  <TableCell className="font-medium">{row.area}</TableCell>
-                  <TableCell>{row.coverage}%</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={riskTone(row.risk)}>
-                      {row.risk}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Risk score by scenario type</CardTitle>
+              <CardDescription>
+                Higher risk = lower acceptance coverage combined with a lower recent pass rate
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.coverageByType.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">No scenarios yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Coverage</TableHead>
+                      <TableHead>Risk score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.coverageByType.map((row) => (
+                      <TableRow key={row.type}>
+                        <TableCell className="font-medium">{row.type}</TableCell>
+                        <TableCell>{row.coverage}%</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={riskTone(row.risk)}>
+                            {row.risk}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Flaky-test leaderboard</CardTitle>
-          <CardDescription>Tests with inconsistent results across recent runs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Test</TableHead>
-                <TableHead>Project</TableHead>
-                <TableHead>Flips (last 14 runs)</TableHead>
-                <TableHead>Flake rate</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {flakyTests.map((test) => (
-                <TableRow key={test.name}>
-                  <TableCell className="font-medium">{test.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{test.project}</TableCell>
-                  <TableCell>{test.flips}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-warning/30 bg-warning/15 text-warning">
-                      {test.rate}%
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Flaky-test leaderboard</CardTitle>
+              <CardDescription>
+                Tests whose status flipped between passed/failed across their last 14 runs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.flakyTests.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No flaky tests detected yet — run a project's tests a few times to see any
+                  inconsistent results here.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Flips</TableHead>
+                      <TableHead>Flake rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.flakyTests.map((test) => (
+                      <TableRow key={`${test.projectName}-${test.scenarioTitle}`}>
+                        <TableCell className="font-medium">{test.scenarioTitle}</TableCell>
+                        <TableCell className="text-muted-foreground">{test.projectName}</TableCell>
+                        <TableCell>{test.flips}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="border-warning/30 bg-warning/15 text-warning">
+                            {test.rate}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
