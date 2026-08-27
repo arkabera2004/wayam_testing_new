@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { getDb } from "@/integrations/mongodb/client.server";
 import { collections } from "@/integrations/mongodb/collections.server";
-import type { ProjectDoc } from "@/integrations/mongodb/schema";
+import type { ProjectDoc, TestScenarioDoc } from "@/integrations/mongodb/schema";
 import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { requireOrgMember, requireOrgWrite } from "@/lib/data/org-access.server";
 
@@ -43,6 +43,68 @@ export const listProjectsFn = createServerFn({ method: "GET" })
     return docs.map(toPublicProject);
   });
 
+// INTEGRATION POINT: stand-in for a real crawl + LLM test-plan generation
+// pipeline. These generic starter scenarios exist so a freshly created
+// project has something real to review (accept/edit/reject) immediately —
+// swap this for the real pipeline without changing anything downstream,
+// since it still just inserts test_scenarios documents.
+function starterScenarios(orgId: ObjectId, testPlanId: ObjectId): TestScenarioDoc[] {
+  const now = new Date();
+  const templates: Array<
+    Pick<TestScenarioDoc, "type" | "title" | "description" | "priority" | "filePath">
+  > = [
+    {
+      type: "E2E",
+      title: "Primary user flow completes without errors",
+      description:
+        "A first-time visitor completes the app's main flow end to end and reaches a confirmation state.",
+      priority: "critical",
+      filePath: "tests/e2e/primary-flow.spec.ts",
+    },
+    {
+      type: "API",
+      title: "Core endpoint rejects invalid input",
+      description:
+        "The primary write endpoint returns a 4xx with a machine-readable error instead of creating a malformed record.",
+      priority: "high",
+      filePath: "tests/api/core-endpoint-validation.spec.ts",
+    },
+    {
+      type: "Regression",
+      title: "Previously reported issue does not reoccur",
+      description:
+        "A placeholder regression guard — replace with the specific bug this project has already fixed once.",
+      priority: "medium",
+      filePath: "tests/regression/placeholder.spec.ts",
+    },
+    {
+      type: "Accessibility",
+      title: "Primary flow is fully keyboard navigable",
+      description:
+        "Every control in the main flow is reachable by keyboard with visible focus, and errors are announced to screen readers.",
+      priority: "medium",
+      filePath: "tests/a11y/primary-flow-keyboard.spec.ts",
+    },
+    {
+      type: "Visual",
+      title: "Key layout holds at tablet width",
+      description: "Snapshot of the main page at 834px wide must not shift between runs.",
+      priority: "low",
+      filePath: "tests/visual/key-layout.spec.ts",
+    },
+  ];
+
+  return templates.map((template) => ({
+    _id: new ObjectId(),
+    orgId,
+    testPlanId,
+    status: "proposed",
+    createdAt: now,
+    updatedAt: now,
+    ...template,
+  }));
+}
+
 export const createProjectFn = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(
@@ -58,7 +120,7 @@ export const createProjectFn = createServerFn({ method: "POST" })
     const orgId = new ObjectId(data.orgId);
     await requireOrgWrite(db, orgId, context.user._id);
 
-    const { projects, testPlans } = collections(db);
+    const { projects, testPlans, testScenarios } = collections(db);
     const now = new Date();
     const project: ProjectDoc = {
       _id: new ObjectId(),
@@ -71,16 +133,15 @@ export const createProjectFn = createServerFn({ method: "POST" })
     };
     await projects.insertOne(project);
 
-    // INTEGRATION POINT: a real crawl + LLM test-plan generation pipeline
-    // would populate test_scenarios here. For now this just creates the
-    // empty test-plan shell the test-plan-view step reads from.
+    const testPlanId = new ObjectId();
     await testPlans.insertOne({
-      _id: new ObjectId(),
+      _id: testPlanId,
       orgId,
       projectId: project._id,
       createdAt: now,
       updatedAt: now,
     });
+    await testScenarios.insertMany(starterScenarios(orgId, testPlanId));
 
     return toPublicProject(project);
   });
