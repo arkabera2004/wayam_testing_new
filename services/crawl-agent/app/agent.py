@@ -38,13 +38,13 @@ site). Return your findings as the structured output schema provided.
 """
 
 
-def _build_llm() -> ChatGoogle:
+def _build_llm(model: str) -> ChatGoogle:
     if not settings.google_api_key:
         raise RuntimeError(
             "Missing GOOGLE_API_KEY. Set it in services/crawl-agent/.env "
             "(or the repo root .env, which this service also reads)."
         )
-    return ChatGoogle(model="gemini-2.5-flash", api_key=settings.google_api_key)
+    return ChatGoogle(model=model, api_key=settings.google_api_key)
 
 
 async def run_crawl(url: str) -> CrawlGraph:
@@ -56,8 +56,14 @@ async def run_crawl(url: str) -> CrawlGraph:
 
     agent = Agent(
         task=CRAWL_TASK_TEMPLATE.format(url=url),
-        llm=_build_llm(),
+        llm=_build_llm("gemini-flash-latest"),
         output_model_schema=CrawlGraph,
+        # Skip sending a screenshot with every step: this task only needs
+        # the DOM/accessibility tree (page structure, links, form fields),
+        # not visual layout, and dropping the image payload avoids the
+        # consistent per-step timeouts seen with vision enabled.
+        use_vision=False,
+        llm_timeout=120,
     )
     history = await agent.run()
 

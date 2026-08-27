@@ -79,9 +79,23 @@ curl localhost:8090/crawls/<crawl_id>
 
 ## Status
 
-- [x] Scaffold: FastAPI app, job store, config, API contract (this commit).
-- [ ] First successful autonomous crawl on a test site.
-- [ ] Page/action graph output shaped to `CrawlGraph`.
+- [x] Scaffold: FastAPI app, job store, config, API contract.
+- [~] First successful autonomous crawl on a test site — **architecture
+      verified, not yet a clean end-to-end pass.** Against
+      `https://demo.playwright.dev/todomvc`, the agent launched a real
+      browser, navigated, called `evaluate`/`find_elements` to inspect the
+      page, and updated its plan — i.e. the browser-use + Playwright +
+      Gemini pipeline genuinely works. It didn't reach a completed
+      `CrawlGraph` yet because the free-tier Gemini key hit a **hard daily
+      quota (20 requests/day for the resolved `gemini-3.7-flash` model)**
+      partway through, on top of several already-deprecated model ids
+      (`gemini-2.5-flash`, `gemini-2.0-flash`, `gemini-2.5-flash-lite` all
+      now 404 "no longer available to new users" — Google is retiring
+      Gemini 2.x fast). Re-run `python -c "import asyncio; from app.agent
+      import run_crawl; asyncio.run(run_crawl('https://demo.playwright.dev/todomvc'))"`
+      once the quota resets (or with a paid-tier / different key) to get a
+      clean completion — no code changes should be needed.
+- [ ] Page/action graph output shaped to `CrawlGraph` (blocked on the above).
 - [ ] Wired into the existing test-planning stage (replaces the simulated
       progress state in the frontend's `/projects/new`).
 - [ ] Self-healing fallback for locator failures on scheduled/PR runs.
