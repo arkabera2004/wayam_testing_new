@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { createProjectFn } from "@/lib/projects/functions";
+import { getCrawlStatusFn, startCrawlFn } from "@/lib/crawl/functions";
 
 export const Route = createFileRoute("/_app/projects/new")({
   component: NewProjectPage,
@@ -36,14 +37,18 @@ function deriveProjectName(sourceType: SourceType, value: string): string {
   }
 }
 
-// INTEGRATION POINT: the step list below simulates the crawl/analysis
-// timeline. Replace with a real pipeline (repo crawl + LLM test-plan
-// generation) that populates test_scenarios for the test_plan created
-// alongside the project — see createProjectFn.
+const CRAWL_POLL_INTERVAL_MS = 1500;
+// Give up following a job after this long — the crawl-agent job itself
+// keeps running server-side either way, this just stops the browser tab
+// polling forever if something's stuck.
+const CRAWL_POLL_TIMEOUT_MS = 120_000;
+
 function NewProjectPage() {
   const navigate = useNavigate();
   const { org } = Route.useRouteContext();
   const createProject = useServerFn(createProjectFn);
+  const startCrawl = useServerFn(startCrawlFn);
+  const getCrawlStatus = useServerFn(getCrawlStatusFn);
 
   const [sourceType, setSourceType] = useState<SourceType>("github");
   const [sourceValue, setSourceValue] = useState("");
@@ -51,32 +56,74 @@ function NewProjectPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  async function finishCreatingProject() {
+    if (!org) return;
+    setStepIndex(ANALYSIS_STEPS.length - 1);
+    await createProject({
+      data: {
+        orgId: org.id,
+        name: deriveProjectName(sourceType, sourceValue),
+        sourceType,
+        sourceUrl: sourceValue.trim(),
+      },
+    });
+    navigate({ to: "/projects" });
+  }
+
+  // Real pipeline for "live URL" sources: submit the URL to the
+  // crawl-agent service (services/crawl-agent), poll it to completion,
+  // then hand off to createProjectFn. The crawl's page/action graph
+  // itself isn't persisted yet — LLM test-plan generation (which would
+  // consume it) is still the stubbed starterScenarios() in
+  // createProjectFn; wiring the graph into real scenario generation is
+  // the next milestone once a clean crawl completes (see
+  // services/crawl-agent/README.md's Status section for why that's
+  // currently blocked on a Gemini free-tier quota, not on this wiring).
+  async function runRealCrawl() {
+    const { crawlId } = await startCrawl({ data: { url: sourceValue.trim() } });
+    setStepIndex(0);
+
+    const deadline = Date.now() + CRAWL_POLL_TIMEOUT_MS;
+    for (;;) {
+      const job = await getCrawlStatus({ data: { crawlId } });
+      if (job.status === "running") setStepIndex(1);
+      if (job.status === "completed") {
+        await finishCreatingProject();
+        return;
+      }
+      if (job.status === "failed") {
+        throw new Error(job.error || "The crawl agent could not finish exploring this URL");
+      }
+      if (Date.now() > deadline) {
+        throw new Error("Timed out waiting for the crawl agent — check services/crawl-agent's logs");
+      }
+      await new Promise((resolve) => setTimeout(resolve, CRAWL_POLL_INTERVAL_MS));
+    }
+  }
+
+  // INTEGRATION POINT: GitHub sources still use a simulated timeline —
+  // crawling a live URL (above) is wired to the real crawl-agent, but
+  // cloning + statically analyzing a repository is a different pipeline
+  // that hasn't been built yet.
+  async function runSimulatedGithubAnalysis() {
+    ANALYSIS_STEPS.forEach((_, i) => {
+      setTimeout(() => setStepIndex(i), (i + 1) * 700);
+    });
+    await new Promise((resolve) => setTimeout(resolve, ANALYSIS_STEPS.length * 700 + 500));
+    await finishCreatingProject();
+  }
+
   function startAnalysis() {
     if (!sourceValue.trim() || !org) return;
     setError(null);
     setAnalyzing(true);
     setStepIndex(0);
 
-    ANALYSIS_STEPS.forEach((_, i) => {
-      setTimeout(() => setStepIndex(i), (i + 1) * 700);
+    const run = sourceType === "url" ? runRealCrawl() : runSimulatedGithubAnalysis();
+    run.catch((err) => {
+      setAnalyzing(false);
+      setError(err instanceof Error ? err.message : "Could not create project");
     });
-
-    setTimeout(async () => {
-      try {
-        await createProject({
-          data: {
-            orgId: org.id,
-            name: deriveProjectName(sourceType, sourceValue),
-            sourceType,
-            sourceUrl: sourceValue.trim(),
-          },
-        });
-        navigate({ to: "/projects" });
-      } catch (err) {
-        setAnalyzing(false);
-        setError(err instanceof Error ? err.message : "Could not create project");
-      }
-    }, ANALYSIS_STEPS.length * 700 + 500);
   }
 
   if (!org) {

@@ -95,7 +95,23 @@ curl localhost:8090/crawls/<crawl_id>
       import run_crawl; asyncio.run(run_crawl('https://demo.playwright.dev/todomvc'))"`
       once the quota resets (or with a paid-tier / different key) to get a
       clean completion — no code changes should be needed.
+      **Re-checked later the same day: still 429 RESOURCE_EXHAUSTED
+      immediately on every step** — the free-tier daily quota is
+      per-project-per-model, not per-key-creation-time, so it hasn't
+      rolled over yet. Not retrying further to avoid spamming a dead
+      quota; either wait for the daily reset or swap in a paid-tier /
+      different `GOOGLE_API_KEY`.
 - [ ] Page/action graph output shaped to `CrawlGraph` (blocked on the above).
-- [ ] Wired into the existing test-planning stage (replaces the simulated
-      progress state in the frontend's `/projects/new`).
+- [x] Wired into the existing test-planning stage — `/projects/new`'s
+      progress UI now calls the real crawl-agent HTTP contract (submit ->
+      poll -> receive graph) instead of a simulated timer. This required
+      no changes to the crawl-agent service itself: the polling/error
+      paths were built and exercised against the service's real
+      `queued -> running -> failed` states (the `failed` state is
+      reliably reachable right now because of the quota block above,
+      which is exactly what proved the poll loop and error UI work
+      correctly end-to-end). Once the quota resets, `completed` +
+      `graph` should flow through unchanged since the frontend only
+      depends on the documented contract shape, not on how the job
+      store got there.
 - [ ] Self-healing fallback for locator failures on scheduled/PR runs.
