@@ -7,17 +7,12 @@ import { collections } from "@/integrations/mongodb/collections.server";
 import type { ScenarioType } from "@/integrations/mongodb/schema";
 import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { requireOrgMember } from "@/lib/data/org-access.server";
+import { computeWeeklyTrend } from "./trend.server";
 
 export interface CoverageByType {
   type: ScenarioType;
   coverage: number;
   risk: number;
-}
-
-export interface TrendPoint {
-  day: string;
-  passed: number;
-  failed: number;
 }
 
 export interface FlakyTest {
@@ -28,20 +23,7 @@ export interface FlakyTest {
 }
 
 const TYPE_ORDER: ScenarioType[] = ["E2E", "API", "Regression", "Accessibility", "Visual"];
-const TREND_DAYS = 7;
 const RECENT_RESULTS_PER_CASE = 14;
-
-function dayKey(date: Date): string {
-  return date.toISOString().slice(0, 10); // YYYY-MM-DD, UTC
-}
-
-function dayLabel(key: string): string {
-  const [, month, day] = key.split("-").map(Number);
-  return new Date(Date.UTC(2000, (month ?? 1) - 1, day ?? 1)).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export const getOrgAnalyticsFn = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -100,24 +82,7 @@ export const getOrgAnalyticsFn = createServerFn({ method: "GET" })
     }).filter((row) => scenarios.some((s) => s.type === row.type));
 
     // --- Pass/fail trend, last 7 days ---
-    const trendMap = new Map<string, { passed: number; failed: number }>();
-    const today = new Date();
-    for (let i = TREND_DAYS - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setUTCDate(d.getUTCDate() - i);
-      trendMap.set(dayKey(d), { passed: 0, failed: 0 });
-    }
-    for (const result of results) {
-      const key = dayKey(result.createdAt);
-      const bucket = trendMap.get(key);
-      if (!bucket) continue; // outside the 7-day window
-      if (result.status === "passed") bucket.passed += 1;
-      else if (result.status === "failed") bucket.failed += 1;
-    }
-    const trend: TrendPoint[] = Array.from(trendMap.entries()).map(([key, counts]) => ({
-      day: dayLabel(key),
-      ...counts,
-    }));
+    const trend = computeWeeklyTrend(results);
 
     // --- Flaky-test leaderboard ---
     const resultsByCase = new Map<string, typeof results>();

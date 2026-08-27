@@ -7,8 +7,9 @@ import { collections } from "@/integrations/mongodb/collections.server";
 import type { ProjectDoc, TestScenarioDoc } from "@/integrations/mongodb/schema";
 import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { requireOrgMember, requireOrgWrite } from "@/lib/data/org-access.server";
+import { getProjectStatuses, type ProjectStatus } from "@/lib/data/project-status.server";
 
-export interface PublicProject {
+export interface PublicProject extends ProjectStatus {
   id: string;
   name: string;
   sourceType: "github" | "url";
@@ -17,7 +18,7 @@ export interface PublicProject {
   updatedAt: string;
 }
 
-function toPublicProject(doc: ProjectDoc): PublicProject {
+function toPublicProject(doc: ProjectDoc, status: ProjectStatus): PublicProject {
   return {
     id: doc._id.toString(),
     name: doc.name,
@@ -25,6 +26,7 @@ function toPublicProject(doc: ProjectDoc): PublicProject {
     sourceUrl: doc.sourceUrl,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
+    ...status,
   };
 }
 
@@ -40,7 +42,10 @@ export const listProjectsFn = createServerFn({ method: "GET" })
       .projects.find({ orgId })
       .sort({ updatedAt: -1 })
       .toArray();
-    return docs.map(toPublicProject);
+    const statuses = await getProjectStatuses(db, orgId, docs.map((d) => d._id));
+    return docs.map((doc) =>
+      toPublicProject(doc, statuses.get(doc._id.toString()) ?? { coveragePct: 0, lastRunStatus: "not_run" }),
+    );
   });
 
 // INTEGRATION POINT: stand-in for a real crawl + LLM test-plan generation
@@ -143,5 +148,6 @@ export const createProjectFn = createServerFn({ method: "POST" })
     });
     await testScenarios.insertMany(starterScenarios(orgId, testPlanId));
 
-    return toPublicProject(project);
+    // A brand-new project has no scenarios or runs yet.
+    return toPublicProject(project, { coveragePct: 0, lastRunStatus: "not_run" });
   });

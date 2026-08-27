@@ -77,10 +77,8 @@ function ProjectsPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Source</TableHead>
-                {/* INTEGRATION POINT: last-run status and coverage % land
-                    once runs/analytics are wired (aggregated from
-                    test_runs / test_scenarios). */}
                 <TableHead>Status</TableHead>
+                <TableHead>Coverage</TableHead>
                 <TableHead>Updated</TableHead>
               </TableRow>
             </TableHeader>
@@ -107,8 +105,9 @@ function ProjectsPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status="not_run" />
+                    <StatusBadge status={project.lastRunStatus} />
                   </TableCell>
+                  <TableCell className="text-muted-foreground">{project.coveragePct}%</TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatDate(project.updatedAt)}
                   </TableCell>

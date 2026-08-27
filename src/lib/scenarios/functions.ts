@@ -7,7 +7,18 @@ import { collections } from "@/integrations/mongodb/collections.server";
 import type { ProjectDoc, TestScenarioDoc } from "@/integrations/mongodb/schema";
 import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { ForbiddenError, requireOrgMember, requireOrgWrite } from "@/lib/data/org-access.server";
-import type { PublicProject } from "@/lib/projects/functions";
+
+// Deliberately not the full PublicProject from lib/projects/functions —
+// the test-plan-view page only needs enough to render its header, not the
+// list page's coverage/last-run-status fields.
+export interface TestPlanProjectSummary {
+  id: string;
+  name: string;
+  sourceType: ProjectDoc["sourceType"];
+  sourceUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface PublicScenario {
   id: string;
@@ -20,7 +31,7 @@ export interface PublicScenario {
   filePath: string | null;
 }
 
-function toPublicProject(doc: ProjectDoc): PublicProject {
+function toPublicProject(doc: ProjectDoc): TestPlanProjectSummary {
   return {
     id: doc._id.toString(),
     name: doc.name,
