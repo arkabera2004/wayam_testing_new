@@ -1,4 +1,5 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -6,6 +7,7 @@ import {
   Plug,
   Settings as SettingsIcon,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -26,6 +28,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/sonner";
+import { logOut, type PublicUser } from "@/lib/auth/functions";
+
+function initials(user: PublicUser): string {
+  const source = user.fullName?.trim() || user.email;
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,8 +45,15 @@ const NAV_ITEMS = [
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
-export function AppShell() {
+export function AppShell({ user }: { user: PublicUser }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const logOutFn = useServerFn(logOut);
+
+  async function handleLogOut() {
+    await logOutFn();
+    navigate({ to: "/login" });
+  }
 
   return (
     <SidebarProvider>
@@ -82,13 +99,19 @@ export function AppShell() {
               <SidebarMenuButton size="lg" asChild>
                 <Link to="/settings">
                   <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-[10px]">AR</AvatarFallback>
+                    <AvatarFallback className="text-[10px]">{initials(user)}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="text-xs font-medium">Aditi Rao</span>
-                    <span className="text-[11px] text-sidebar-foreground/60">Northwind Labs</span>
+                    <span className="text-xs font-medium">{user.fullName || user.email}</span>
+                    <span className="text-[11px] text-sidebar-foreground/60">{user.email}</span>
                   </div>
                 </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogOut} tooltip="Log out">
+                <LogOut />
+                <span>Log out</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -98,7 +121,9 @@ export function AppShell() {
         <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
-          <span className="text-sm text-muted-foreground">Northwind Labs workspace</span>
+          {/* INTEGRATION POINT: swap for the active organization's name once
+              org switching is wired (task: onboarding / org membership). */}
+          <span className="text-sm text-muted-foreground">Workspace</span>
         </header>
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />

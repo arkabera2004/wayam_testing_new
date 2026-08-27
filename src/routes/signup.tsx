@@ -1,21 +1,46 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ShieldCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { signUp } from "@/lib/auth/functions";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-// INTEGRATION POINT: create the Supabase auth user + organization row here
-// once the backend schema is provisioned. For now this proceeds straight to
-// the onboarding flow on submit.
+// INTEGRATION POINT: no organization exists yet after signup — onboarding
+// (next step) creates it. The Google button below is still a visual stub.
 function SignupPage() {
   const navigate = useNavigate();
+  const signUpFn = useServerFn(signUp);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const form = new FormData(e.currentTarget);
+    try {
+      await signUpFn({
+        data: {
+          fullName: String(form.get("name")),
+          email: String(form.get("email")),
+          password: String(form.get("password")),
+        },
+      });
+      navigate({ to: "/onboarding" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -32,26 +57,37 @@ function SignupPage() {
             <CardDescription>No credit card required — 100 test executions included.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                navigate({ to: "/onboarding" });
-              }}
-            >
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" placeholder="Aditi Rao" required />
+                <Input id="name" name="name" placeholder="Aditi Rao" required disabled={submitting} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Work email</Label>
-                <Input id="email" type="email" placeholder="you@company.com" required />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  required
+                  disabled={submitting}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" required />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  disabled={submitting}
+                />
               </div>
-              <Button type="submit" className="w-full">
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Create account
               </Button>
             </form>
