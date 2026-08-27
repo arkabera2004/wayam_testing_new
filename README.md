@@ -1,29 +1,42 @@
-# Welcome to your Lovable project
+# Parikshan
 
-This project was built with [Lovable](https://lovable.dev).
+AI-powered software testing: connect a repo or a live URL, review an
+AI-drafted test plan, generate runnable test code, execute it, and track
+coverage — all from one dashboard.
 
-## Build with Lovable
+## Stack
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- [TanStack Start](https://tanstack.com/start) (React, file-based routing, SSR)
+- TypeScript
+- MongoDB (org-scoped data access — see `src/lib/data/org-access.server.ts`)
+- Tailwind CSS
+- `services/crawl-agent`: a standalone Python service using
+  [browser-use](https://browser-use.com) for autonomous app crawling and
+  self-healing test locators (see its own README for details)
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
 git clone <this-repository-url>
-cd <repository-name>
+cd wayam_testing
 npm i
+cp .env.example .env   # fill in MONGODB_URI, SESSION_SECRET, etc.
+npm run db:init         # create indexes/constraints
 npm run dev
 ```
 
-## Built with
+Run the crawl-agent service separately if you need real crawling/self-healing
+(see `services/crawl-agent/README.md`):
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+```sh
+cd services/crawl-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8090
+```
+
+## Tests
+
+```sh
+npm run test:org-isolation
+```

@@ -1,10 +1,13 @@
 /**
  * Seed data for Parikshan v1.
  *
- * INTEGRATION POINT: these shapes mirror the planned Lovable Cloud tables
- * (organizations, projects, test_plans, test_scenarios, test_cases,
- * test_runs, run_results, integrations). Swap these readers for typed
- * database queries without changing any component below.
+ * INTEGRATION POINT: these shapes mirror the MongoDB collections in
+ * src/integrations/mongodb/schema.ts (organizations, projects,
+ * test_plans, test_scenarios, test_cases, test_runs, run_results,
+ * integrations). Dashboard and Integrations are the only pages still
+ * reading from here — every other page has been wired to real queries;
+ * swap these readers for typed database queries the same way, without
+ * changing any component below.
  */
 
 export type ScenarioType = "E2E" | "API" | "Regression" | "Accessibility" | "Visual";
