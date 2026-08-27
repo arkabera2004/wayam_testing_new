@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck, ArrowRight, X, Plus, Loader2 } from "lucide-react";
+import { ArrowRight, X, Plus, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentUserOrNull } from "@/lib/auth/functions";
 import { createOrganizationFn, inviteMemberFn } from "@/lib/org/functions";
+import { WayamMark } from "@/components/brand/wayam-mark";
 
 export const Route = createFileRoute("/onboarding")({
   beforeLoad: async () => {
@@ -78,9 +79,7 @@ function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="h-4 w-4" />
-          </div>
+          <WayamMark className="h-7 w-7" />
           <span className="font-display text-sm tracking-tight">Parikshan</span>
         </Link>
 

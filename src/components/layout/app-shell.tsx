@@ -6,7 +6,6 @@ import {
   BarChart3,
   Plug,
   Settings as SettingsIcon,
-  ShieldCheck,
   LogOut,
 } from "lucide-react";
 
@@ -30,6 +29,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/sonner";
 import { logOut, type PublicUser } from "@/lib/auth/functions";
 import type { PublicOrganization } from "@/lib/org/functions";
+import { WayamMark } from "@/components/brand/wayam-mark";
 
 function initials(user: PublicUser): string {
   const source = user.fullName?.trim() || user.email;
@@ -67,9 +67,7 @@ export function AppShell({
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
+            <WayamMark className="h-7 w-7 shrink-0" />
             <span className="font-display text-sm tracking-tight group-data-[collapsible=icon]:hidden">
               Parikshan
             </span>

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ShieldCheck,
   GitBranch,
   Sparkles,
   PlayCircle,
@@ -14,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { WayamMark } from "@/components/brand/wayam-mark";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -107,9 +107,7 @@ function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
+            <WayamMark className="h-7 w-7" />
             <span className="font-display text-sm tracking-tight">Parikshan</span>
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
@@ -266,9 +264,7 @@ function LandingPage() {
       <footer className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col items-center justify-between gap-6 border-t border-border/60 pt-8 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="h-3.5 w-3.5" />
-            </div>
+            <WayamMark className="h-6 w-6" />
             <span className="font-display text-sm">Parikshan</span>
             <span className="text-sm text-muted-foreground">© {new Date().getFullYear()}</span>
           </div>
