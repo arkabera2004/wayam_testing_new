@@ -12,9 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
-import { projects } from "@/features/data/seed";
+import { listProjectsFn } from "@/lib/projects/functions";
 
 export const Route = createFileRoute("/_app/projects/")({
+  loader: async ({ context }) => {
+    if (!context.org) return { projects: [] };
+    const projects = await listProjectsFn({ data: { orgId: context.org.id } });
+    return { projects };
+  },
   component: ProjectsPage,
 });
 
@@ -23,6 +28,9 @@ function formatDate(iso: string) {
 }
 
 function ProjectsPage() {
+  const { org } = Route.useRouteContext();
+  const { projects } = Route.useLoaderData();
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
@@ -32,14 +40,25 @@ function ProjectsPage() {
             {projects.length} project{projects.length === 1 ? "" : "s"} connected to Parikshan.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/projects/new">
-            <Plus className="h-4 w-4" /> New project
-          </Link>
-        </Button>
+        {org && (
+          <Button asChild>
+            <Link to="/projects/new">
+              <Plus className="h-4 w-4" /> New project
+            </Link>
+          </Button>
+        )}
       </div>
 
-      {projects.length === 0 ? (
+      {!org ? (
+        <Card className="flex flex-col items-center gap-3 border-dashed p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Finish setting up your workspace before adding a project.
+          </p>
+          <Button asChild>
+            <Link to="/onboarding">Complete onboarding</Link>
+          </Button>
+        </Card>
+      ) : projects.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 border-dashed p-12 text-center">
           <p className="text-sm text-muted-foreground">No projects yet.</p>
           <Button asChild>
@@ -55,8 +74,10 @@ function ProjectsPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Source</TableHead>
-                <TableHead>Last run</TableHead>
-                <TableHead>Coverage</TableHead>
+                {/* INTEGRATION POINT: last-run status and coverage % land
+                    once runs/analytics are wired (aggregated from
+                    test_runs / test_scenarios). */}
+                <TableHead>Status</TableHead>
                 <TableHead>Updated</TableHead>
               </TableRow>
             </TableHeader>
@@ -83,9 +104,8 @@ function ProjectsPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={project.lastRunStatus} />
+                    <StatusBadge status="not_run" />
                   </TableCell>
-                  <TableCell>{project.coverage}%</TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatDate(project.updatedAt)}
                   </TableCell>

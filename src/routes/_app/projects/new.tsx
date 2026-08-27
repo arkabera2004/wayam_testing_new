@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Github, Link2, Loader2, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
+import { createProjectFn } from "@/lib/projects/functions";
 
 export const Route = createFileRoute("/_app/projects/new")({
   component: NewProjectPage,
@@ -21,27 +23,75 @@ const ANALYSIS_STEPS = [
   "Drafting test scenarios",
 ];
 
-// INTEGRATION POINT: this simulates the crawl/analysis step with a fixed
-// timeline. Replace with a Supabase edge function that kicks off the real
-// repo crawl / LLM test-plan generation pipeline and polls for completion.
+function deriveProjectName(sourceType: SourceType, value: string): string {
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (sourceType === "github") {
+    const segments = trimmed.split("/");
+    return segments[segments.length - 1] || trimmed;
+  }
+  try {
+    return new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`).hostname;
+  } catch {
+    return trimmed;
+  }
+}
+
+// INTEGRATION POINT: the step list below simulates the crawl/analysis
+// timeline. Replace with a real pipeline (repo crawl + LLM test-plan
+// generation) that populates test_scenarios for the test_plan created
+// alongside the project — see createProjectFn.
 function NewProjectPage() {
   const navigate = useNavigate();
+  const { org } = Route.useRouteContext();
+  const createProject = useServerFn(createProjectFn);
+
   const [sourceType, setSourceType] = useState<SourceType>("github");
   const [sourceValue, setSourceValue] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   function startAnalysis() {
-    if (!sourceValue.trim()) return;
+    if (!sourceValue.trim() || !org) return;
+    setError(null);
     setAnalyzing(true);
     setStepIndex(0);
 
     ANALYSIS_STEPS.forEach((_, i) => {
       setTimeout(() => setStepIndex(i), (i + 1) * 700);
     });
-    setTimeout(() => {
-      navigate({ to: "/projects/$projectId", params: { projectId: "atlas" } });
+
+    setTimeout(async () => {
+      try {
+        await createProject({
+          data: {
+            orgId: org.id,
+            name: deriveProjectName(sourceType, sourceValue),
+            sourceType,
+            sourceUrl: sourceValue.trim(),
+          },
+        });
+        navigate({ to: "/projects" });
+      } catch (err) {
+        setAnalyzing(false);
+        setError(err instanceof Error ? err.message : "Could not create project");
+      }
     }, ANALYSIS_STEPS.length * 700 + 500);
+  }
+
+  if (!org) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <Card className="flex flex-col items-center gap-3 border-dashed p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Finish setting up your workspace before adding a project.
+          </p>
+          <Button asChild>
+            <Link to="/onboarding">Complete onboarding</Link>
+          </Button>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -91,6 +141,8 @@ function NewProjectPage() {
               disabled={analyzing}
             />
           </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           {!analyzing ? (
             <Button className="w-full" disabled={!sourceValue.trim()} onClick={startAnalysis}>
