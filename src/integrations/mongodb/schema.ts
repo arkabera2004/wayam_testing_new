@@ -135,6 +135,14 @@ export interface RunResultDoc {
   durationMs: number;
   errorMessage: string | null;
   createdAt: Date;
+  // Self-healing fallback (see services/crawl-agent/app/heal.py):
+  // populated when a failing locator on a scheduled/PR run was handed to
+  // the browser-use agent to re-locate. healedSelector is the agent's
+  // proposed replacement (not yet applied to the test case's generated
+  // code — that's a human-in-the-loop review step, same as accepting a
+  // proposed scenario); healNote carries its confidence/reasoning.
+  healedSelector: string | null;
+  healNote: string | null;
 }
 
 export type IntegrationProvider = "github" | "slack" | "jira";

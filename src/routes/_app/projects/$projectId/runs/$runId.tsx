@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, RotateCcw, ImageOff, Loader2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, ImageOff, Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,6 +103,26 @@ function RunDetailPage() {
                       <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 font-mono text-xs text-destructive">
                         {result.errorMessage}
                       </div>
+                      {result.healedSelector && (
+                        <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-xs">
+                          <Wand2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                          <div className="space-y-1">
+                            <p className="font-medium text-foreground">
+                              Self-healing agent proposed a replacement selector
+                            </p>
+                            <code className="block font-mono text-muted-foreground">
+                              {result.healedSelector}
+                            </code>
+                            {result.healNote && (
+                              <p className="text-muted-foreground">{result.healNote}</p>
+                            )}
+                            <p className="text-muted-foreground">
+                              Not applied automatically — review the test case's generated code
+                              to accept this fix.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       <details className="rounded-md border border-border/60 bg-secondary/30 p-3">
                         <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
                           Stack trace

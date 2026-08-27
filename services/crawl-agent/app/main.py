@@ -15,6 +15,7 @@ from pydantic import BaseModel, HttpUrl
 from . import store
 from .agent import run_crawl
 from .graph import CrawlJob
+from .heal import HealResult, heal_locator
 
 logger = logging.getLogger("crawl_agent")
 
@@ -38,6 +39,27 @@ async def get_crawl(crawl_id: str) -> CrawlJob:
     if job is None:
         raise HTTPException(status_code=404, detail="Unknown crawl_id")
     return job
+
+
+class HealRequest(BaseModel):
+    url: HttpUrl
+    target_description: str
+    previous_selector: str | None = None
+
+
+@app.post("/heal")
+async def heal(payload: HealRequest) -> HealResult:
+    """Synchronous by design (unlike /crawls): a single-element lookup is
+    a fast, bounded operation, so there's no need for the queued/poll
+    dance a full crawl needs. Callers should still apply their own
+    timeout — see the main app's healLocatorFn."""
+    try:
+        return await heal_locator(
+            str(payload.url), payload.target_description, payload.previous_selector
+        )
+    except Exception as exc:  # noqa: BLE001 - surface any failure as a 502
+        logger.exception("Heal request failed for %s", payload.url)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 async def _run_job(crawl_id: str, url: str) -> None:

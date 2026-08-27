@@ -114,4 +114,19 @@ curl localhost:8090/crawls/<crawl_id>
       `graph` should flow through unchanged since the frontend only
       depends on the documented contract shape, not on how the job
       store got there.
-- [ ] Self-healing fallback for locator failures on scheduled/PR runs.
+- [x] Self-healing fallback for locator failures — `POST /heal` (see
+      `app/heal.py`) hands a single failing step's plain-English
+      description to a bounded (max 8 steps, no vision) browser-use
+      agent run, which proposes a replacement CSS selector without
+      re-crawling anything. Synchronous, not queued, since a single
+      element lookup is fast and bounded — unlike /crawls. Wired into
+      the main app's "re-run failed" action (`attemptSelfHeal` in
+      `src/lib/runs/functions.ts`): failed cases on a "url"-sourced
+      project get a heal attempt before re-running; the proposed
+      selector is surfaced in the run detail UI for human review, never
+      auto-applied to the test case's generated code. Verified against
+      the real endpoint via curl — it genuinely launches a browser,
+      calls Gemini, and returns a clean structured error when the same
+      quota block from above cuts it off (502 with the agent's own
+      message), which is exactly the failure path attemptSelfHeal is
+      built to swallow and continue past.

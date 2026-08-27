@@ -80,3 +80,40 @@ export const getCrawlStatusFn = createServerFn({ method: "GET" })
     };
     return { crawlId: data.crawlId, status: body.status, graph: body.graph, error: body.error };
   });
+
+export interface HealResult {
+  selector: string;
+  confidence: "high" | "medium" | "low";
+  notes: string;
+}
+
+/** Self-healing fallback (see services/crawl-agent/app/heal.py): hands a
+ * single broken locator to the browser-use agent to re-locate on the
+ * live app, rather than re-crawling everything. Synchronous — this is a
+ * bounded single-element lookup, not a multi-page job, so there's no
+ * queued/poll dance like startCrawlFn/getCrawlStatusFn need. */
+export const healLocatorFn = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    z.object({
+      url: z.string().min(1),
+      targetDescription: z.string().min(1),
+      previousSelector: z.string().nullable(),
+    }),
+  )
+  .handler(async ({ data }): Promise<HealResult> => {
+    const res = await fetch(`${crawlAgentUrl()}/heal`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        url: data.url,
+        target_description: data.targetDescription,
+        previous_selector: data.previousSelector,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.detail || `crawl-agent could not heal this locator (${res.status})`);
+    }
+    return (await res.json()) as HealResult;
+  });

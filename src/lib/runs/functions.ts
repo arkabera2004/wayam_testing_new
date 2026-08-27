@@ -7,6 +7,7 @@ import { collections } from "@/integrations/mongodb/collections.server";
 import type { RunResultDoc, TestRunDoc } from "@/integrations/mongodb/schema";
 import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { ForbiddenError, requireOrgMember, requireOrgWrite } from "@/lib/data/org-access.server";
+import { healLocatorFn, type HealResult } from "@/lib/crawl/functions";
 
 export interface PublicRun {
   id: string;
@@ -27,6 +28,8 @@ export interface PublicRunResult {
   status: RunResultDoc["status"];
   durationMs: number;
   errorMessage: string | null;
+  healedSelector: string | null;
+  healNote: string | null;
 }
 
 function toPublicRun(doc: TestRunDoc, passed: number, failed: number): PublicRun {
@@ -107,6 +110,8 @@ export const getRunDetailFn = createServerFn({ method: "GET" })
         status: result.status,
         durationMs: result.durationMs,
         errorMessage: result.errorMessage,
+        healedSelector: result.healedSelector,
+        healNote: result.healNote,
       };
     });
 
@@ -135,6 +140,14 @@ async function runTestCases(
   projectId: ObjectId,
   trigger: TestRunDoc["trigger"],
   testCaseIds: ObjectId[],
+  // Self-healing fallback outcomes (see attemptSelfHeal below), keyed by
+  // testCaseId string. Only rerunFailedFn populates this — a first-time
+  // run has nothing to heal yet. Recording the heal attempt on the new
+  // result row, independent of whether the (still-simulated) execution
+  // happens to pass or fail this time, keeps the two concerns separate:
+  // "did the agent propose a fix" vs. "did the test actually pass" —
+  // exactly like the real Playwright execution engine will need to.
+  healOutcomes: Map<string, HealResult> = new Map(),
 ): Promise<PublicRun> {
   const { testRuns, runResults, testCases } = collections(db);
   const startedAt = new Date();
@@ -152,6 +165,7 @@ async function runTestCases(
 
   const results = testCaseIds.map((testCaseId) => {
     const status = simulateResultStatus();
+    const heal = healOutcomes.get(testCaseId.toString());
     return {
       _id: new ObjectId(),
       orgId,
@@ -161,6 +175,8 @@ async function runTestCases(
       durationMs: 800 + Math.floor(Math.random() * 4000),
       errorMessage: status === "failed" ? SIMULATED_ERROR : null,
       createdAt: new Date(),
+      healedSelector: heal?.selector ?? null,
+      healNote: heal ? `[${heal.confidence} confidence] ${heal.notes}` : null,
     };
   });
   if (results.length > 0) await runResults.insertMany(results);
@@ -215,6 +231,56 @@ export const triggerRunFn = createServerFn({ method: "POST" })
     );
   });
 
+// Self-healing fallback (see services/crawl-agent/app/heal.py): for each
+// failed test case, hand its scenario description to the browser-use
+// agent to re-locate a working selector on the live app, before
+// re-running. Best-effort — a heal attempt that errors (agent unreachable,
+// quota exhausted, no plausible match found) just means that case retries
+// without a proposed fix, same as it always did. Only applies to "url"
+// sourced projects: there's no live app to point the agent at for a
+// GitHub-sourced project without also having run its dev server, which
+// is out of scope here.
+async function attemptSelfHeal(
+  db: Awaited<ReturnType<typeof getDb>>,
+  projectId: ObjectId,
+  testCaseIds: ObjectId[],
+): Promise<Map<string, HealResult>> {
+  const outcomes = new Map<string, HealResult>();
+  if (testCaseIds.length === 0) return outcomes;
+
+  const { projects, testCases, testScenarios } = collections(db);
+  const project = await projects.findOne({ _id: projectId });
+  if (!project || project.sourceType !== "url") return outcomes;
+
+  const cases = await testCases.find({ _id: { $in: testCaseIds } }).toArray();
+  const scenarios = await testScenarios
+    .find({ _id: { $in: cases.map((c) => c.scenarioId) } })
+    .toArray();
+  const scenariosById = new Map(scenarios.map((s) => [s._id.toString(), s]));
+
+  await Promise.all(
+    cases.map(async (testCase) => {
+      const scenario = scenariosById.get(testCase.scenarioId.toString());
+      if (!scenario) return;
+      try {
+        const result = await healLocatorFn({
+          data: {
+            url: project.sourceUrl,
+            targetDescription: `${scenario.title}: ${scenario.description}`,
+            previousSelector: null,
+          },
+        });
+        outcomes.set(testCase._id.toString(), result);
+      } catch {
+        // Best-effort — see comment above. Nothing to do here; the case
+        // just re-runs without a healedSelector/healNote attached.
+      }
+    }),
+  );
+
+  return outcomes;
+}
+
 export const rerunFailedFn = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(z.object({ runId: z.string() }))
@@ -229,12 +295,9 @@ export const rerunFailedFn = createServerFn({ method: "POST" })
     const failedResults = await runResults
       .find({ runId: run._id, status: "failed" })
       .toArray();
+    const testCaseIds = failedResults.map((r) => r.testCaseId);
 
-    return runTestCases(
-      db,
-      run.orgId,
-      run.projectId,
-      "manual",
-      failedResults.map((r) => r.testCaseId),
-    );
+    const healOutcomes = await attemptSelfHeal(db, run.projectId, testCaseIds);
+
+    return runTestCases(db, run.orgId, run.projectId, "manual", testCaseIds, healOutcomes);
   });
