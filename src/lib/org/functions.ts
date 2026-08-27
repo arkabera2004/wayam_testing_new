@@ -9,12 +9,22 @@ import {
   createOrganization,
   listMyOrganizations,
   requireOrgAdmin,
+  requireOrgMember,
 } from "@/lib/data/org-access.server";
 import { getCurrentOrgIdFromCookie, setCurrentOrgCookie } from "./current-org.server";
 
 export interface PublicOrganization {
   id: string;
   name: string;
+}
+
+export interface PublicMember {
+  id: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  role: "admin" | "editor" | "viewer";
+  pending: boolean;
 }
 
 function toPublicOrg(org: { _id: ObjectId; name: string }): PublicOrganization {
@@ -34,11 +44,12 @@ export const createOrganizationFn = createServerFn({ method: "POST" })
     return toPublicOrg(org);
   });
 
-/** Onboarding step 2 (optional): invite a teammate by email. If they
- * already have an account, org-access's signup trigger equivalent doesn't
- * exist for Mongo — instead getCurrentUser-adjacent signup flow checks
- * organization_invites for a match (see signUp in auth/functions.ts... not
- * yet — tracked as an INTEGRATION POINT below until that's wired). */
+/** Invite a teammate by email (used from onboarding and Settings >
+ * Members). If the invitee doesn't have an account yet, the invite is
+ * auto-accepted the moment they sign up with this email — see
+ * signUp in auth/functions.ts. If they already have an account, they
+ * still need to be added — see getOrgMembersFn, which surfaces pending
+ * invites separately from active members in the UI. */
 export const inviteMemberFn = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(
@@ -98,4 +109,84 @@ export const getCurrentOrganizationFn = createServerFn({ method: "GET" })
 
     setCurrentOrgCookie(org._id.toString());
     return toPublicOrg(org);
+  });
+
+export const updateOrganizationNameFn = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ orgId: z.string(), name: z.string().trim().min(1).max(200) }))
+  .handler(async ({ context, data }) => {
+    const db = await getDb();
+    const orgId = new ObjectId(data.orgId);
+    await requireOrgAdmin(db, orgId, context.user._id);
+
+    await collections(db).organizations.updateOne(
+      { _id: orgId },
+      { $set: { name: data.name, updatedAt: new Date() } },
+    );
+    return toPublicOrg({ _id: orgId, name: data.name });
+  });
+
+/** Active members (joined against the users collection for display name/
+ * email) plus anyone with a pending invite that hasn't been accepted yet
+ * — the UI shows both in one list, distinguished by `pending`. */
+export const getOrgMembersFn = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator(z.object({ orgId: z.string() }))
+  .handler(async ({ context, data }) => {
+    const db = await getDb();
+    const orgId = new ObjectId(data.orgId);
+    await requireOrgMember(db, orgId, context.user._id);
+
+    const { organizationMembers, organizationInvites, users } = collections(db);
+    const [memberships, invites] = await Promise.all([
+      organizationMembers.find({ orgId }).toArray(),
+      organizationInvites.find({ orgId, acceptedAt: null }).toArray(),
+    ]);
+    const userDocs = await users
+      .find({ _id: { $in: memberships.map((m) => m.userId) } })
+      .toArray();
+    const userById = new Map(userDocs.map((u) => [u._id.toString(), u]));
+
+    const activeMembers: PublicMember[] = memberships.map((m) => {
+      const user = userById.get(m.userId.toString());
+      return {
+        id: m._id.toString(),
+        userId: m.userId.toString(),
+        name: user?.fullName || user?.email || "Unknown",
+        email: user?.email ?? "unknown",
+        role: m.role,
+        pending: false,
+      };
+    });
+    const pendingInvites: PublicMember[] = invites.map((invite) => ({
+      id: invite._id.toString(),
+      userId: null,
+      name: invite.email,
+      email: invite.email,
+      role: invite.role,
+      pending: true,
+    }));
+
+    return [...activeMembers, ...pendingInvites];
+  });
+
+export const updateMemberRoleFn = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    z.object({
+      orgId: z.string(),
+      membershipId: z.string(),
+      role: z.enum(["admin", "editor", "viewer"]),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const db = await getDb();
+    const orgId = new ObjectId(data.orgId);
+    await requireOrgAdmin(db, orgId, context.user._id);
+
+    await collections(db).organizationMembers.updateOne(
+      { _id: new ObjectId(data.membershipId), orgId },
+      { $set: { role: data.role } },
+    );
+    return { ok: true };
   });

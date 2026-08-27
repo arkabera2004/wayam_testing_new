@@ -59,6 +59,29 @@ export const signUp = createServerFn({ method: "POST" })
     };
     await users.insertOne(user);
 
+    // Auto-accept any pending invite for this email, so someone who signs
+    // up after being invited lands directly in the org instead of needing
+    // a separate acceptance step.
+    const { organizationInvites, organizationMembers } = collections(db);
+    const pendingInvites = await organizationInvites
+      .find({ email, acceptedAt: null })
+      .toArray();
+    if (pendingInvites.length > 0) {
+      await organizationMembers.insertMany(
+        pendingInvites.map((invite) => ({
+          _id: new ObjectId(),
+          orgId: invite.orgId,
+          userId: user._id,
+          role: invite.role,
+          createdAt: new Date(),
+        })),
+      );
+      await organizationInvites.updateMany(
+        { _id: { $in: pendingInvites.map((i) => i._id) } },
+        { $set: { acceptedAt: new Date() } },
+      );
+    }
+
     const token = await createSession(user._id);
     setSessionCookie(token);
 
