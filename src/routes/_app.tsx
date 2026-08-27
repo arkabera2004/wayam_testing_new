@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { getCurrentUserOrNull } from "@/lib/auth/functions";
+import { getCurrentOrganizationFn } from "@/lib/org/functions";
 
 export const Route = createFileRoute("/_app")({
   // Route UX, not the data boundary: every server function that reads/writes
@@ -13,12 +14,15 @@ export const Route = createFileRoute("/_app")({
     if (!user) {
       throw redirect({ to: "/login" });
     }
-    return { user };
+    // null until the org-creation step (onboarding) has run; pages below
+    // this layout that need an org handle that empty state themselves.
+    const org = await getCurrentOrganizationFn();
+    return { user, org };
   },
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { user } = Route.useRouteContext();
-  return <AppShell user={user} />;
+  const { user, org } = Route.useRouteContext();
+  return <AppShell user={user} org={org} />;
 }

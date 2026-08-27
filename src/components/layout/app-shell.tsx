@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Toaster } from "@/components/ui/sonner";
 import { logOut, type PublicUser } from "@/lib/auth/functions";
+import type { PublicOrganization } from "@/lib/org/functions";
 
 function initials(user: PublicUser): string {
   const source = user.fullName?.trim() || user.email;
@@ -45,7 +46,13 @@ const NAV_ITEMS = [
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
-export function AppShell({ user }: { user: PublicUser }) {
+export function AppShell({
+  user,
+  org,
+}: {
+  user: PublicUser;
+  org: PublicOrganization | null;
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const logOutFn = useServerFn(logOut);
@@ -121,9 +128,12 @@ export function AppShell({ user }: { user: PublicUser }) {
         <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
-          {/* INTEGRATION POINT: swap for the active organization's name once
-              org switching is wired (task: onboarding / org membership). */}
-          <span className="text-sm text-muted-foreground">Workspace</span>
+          {/* INTEGRATION POINT: this shows the first/only org a user
+              belongs to. A real org switcher (for users in multiple orgs)
+              is still out of scope. */}
+          <span className="text-sm text-muted-foreground">
+            {org ? `${org.name} workspace` : "No workspace yet"}
+          </span>
         </header>
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />

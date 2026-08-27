@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ShieldCheck, ArrowRight, X, Plus } from "lucide-react";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { ShieldCheck, ArrowRight, X, Plus, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { getCurrentUserOrNull } from "@/lib/auth/functions";
+import { createOrganizationFn, inviteMemberFn } from "@/lib/org/functions";
 
 export const Route = createFileRoute("/onboarding")({
+  beforeLoad: async () => {
+    const user = await getCurrentUserOrNull();
+    if (!user) throw redirect({ to: "/login" });
+  },
   component: OnboardingPage,
 });
 
@@ -17,10 +24,16 @@ const STEPS = ["Workspace", "Invite your team", "First project"] as const;
 
 function OnboardingPage() {
   const navigate = useNavigate();
+  const createOrganization = useServerFn(createOrganizationFn);
+  const inviteMember = useServerFn(inviteMemberFn);
+
   const [step, setStep] = useState(0);
   const [orgName, setOrgName] = useState("");
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [invites, setInvites] = useState<string[]>([]);
   const [inviteDraft, setInviteDraft] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const progress = ((step + 1) / STEPS.length) * 100;
 
@@ -30,6 +43,35 @@ function OnboardingPage() {
       setInvites([...invites, email]);
       setInviteDraft("");
     }
+  }
+
+  async function handleCreateOrg() {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const org = await createOrganization({ data: { name: orgName.trim() } });
+      setOrgId(org.id);
+      setStep(1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create workspace");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleInvitesContinue() {
+    if (!orgId || invites.length === 0) {
+      setStep(2);
+      return;
+    }
+    setSubmitting(true);
+    // Best-effort: an invite failing shouldn't block onboarding — the org
+    // admin can retry from Settings > Members.
+    await Promise.allSettled(
+      invites.map((email) => inviteMember({ data: { orgId, email, role: "viewer" } })),
+    );
+    setSubmitting(false);
+    setStep(2);
   }
 
   return (
@@ -66,9 +108,16 @@ function OnboardingPage() {
                   placeholder="Northwind Labs"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
+                  disabled={submitting}
                 />
               </div>
-              <Button className="w-full" disabled={!orgName.trim()} onClick={() => setStep(1)}>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button
+                className="w-full"
+                disabled={!orgName.trim() || submitting}
+                onClick={handleCreateOrg}
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Continue <ArrowRight className="h-4 w-4" />
               </Button>
             </CardContent>
@@ -88,8 +137,15 @@ function OnboardingPage() {
                   value={inviteDraft}
                   onChange={(e) => setInviteDraft(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInvite())}
+                  disabled={submitting}
                 />
-                <Button type="button" variant="outline" size="icon" onClick={addInvite}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={addInvite}
+                  disabled={submitting}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -110,10 +166,16 @@ function OnboardingPage() {
                 </div>
               )}
               <div className="flex gap-2">
-                <Button variant="ghost" className="flex-1" onClick={() => setStep(2)}>
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => setStep(2)}
+                  disabled={submitting}
+                >
                   Skip
                 </Button>
-                <Button className="flex-1" onClick={() => setStep(2)}>
+                <Button className="flex-1" onClick={handleInvitesContinue} disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Continue <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
