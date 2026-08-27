@@ -24,7 +24,10 @@ export const Route = createFileRoute("/_app/projects/")({
 });
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  // Explicit locale: relying on the runtime default would render
+  // differently on the server (Node's default locale) vs. the browser,
+  // causing a hydration mismatch.
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function ProjectsPage() {

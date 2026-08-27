@@ -1,5 +1,7 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, RotateCcw, ImageOff } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, RotateCcw, ImageOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,24 +13,37 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { StatusBadge } from "@/components/status-badge";
-import { getProject, runs, scenariosFor } from "@/features/data/seed";
+import { getRunDetailFn, rerunFailedFn } from "@/lib/runs/functions";
 
 export const Route = createFileRoute("/_app/projects/$projectId/runs/$runId")({
-  loader: ({ params }) => {
-    const project = getProject(params.projectId);
-    const run = runs.find((r) => r.id === params.runId);
-    if (!project || !run) throw notFound();
-    return { project, run, scenarios: scenariosFor(params.projectId) };
-  },
+  loader: ({ params }) => getRunDetailFn({ data: { runId: params.runId } }),
   component: RunDetailPage,
 });
 
-const FAILING_STATUSES = new Set(["failing", "flaky"]);
-
 function RunDetailPage() {
-  const { project, run, scenarios } = Route.useLoaderData();
+  const initial = Route.useLoaderData();
   const { projectId } = Route.useParams();
-  const failedCount = scenarios.filter((s) => FAILING_STATUSES.has(s.caseStatus)).length;
+  const rerunFailed = useServerFn(rerunFailedFn);
+
+  const [run] = useState(initial.run);
+  const [results] = useState(initial.results);
+  const [rerunning, setRerunning] = useState(false);
+
+  const failedCount = results.filter((r) => r.status === "failed").length;
+
+  async function handleRerunFailed() {
+    setRerunning(true);
+    try {
+      const newRun = await rerunFailed({ data: { runId: run.id } });
+      toast.success(`Re-run complete: ${newRun.passed} passed, ${newRun.failed} failed`, {
+        description: "See it in the runs list.",
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not re-run failed tests");
+    } finally {
+      setRerunning(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -41,24 +56,23 @@ function RunDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-mono text-2xl font-semibold tracking-tight">{run.id}</h1>
+            <h1 className="font-mono text-2xl font-semibold tracking-tight">
+              {run.id.slice(-8)}
+            </h1>
             <StatusBadge status={run.status} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {project.name} · {run.passed} passed · {run.failed} failed ·{" "}
-            {Math.round(run.durationMs / 1000)}s
+            {run.passed} passed · {run.failed} failed · {Math.round(run.durationMs / 1000)}s
           </p>
         </div>
         {failedCount > 0 && (
-          <Button
-            variant="outline"
-            onClick={() =>
-              toast("Re-running failed tests", {
-                description: `${failedCount} test case${failedCount === 1 ? "" : "s"} queued.`,
-              })
-            }
-          >
-            <RotateCcw className="h-4 w-4" /> Re-run failed only
+          <Button variant="outline" onClick={handleRerunFailed} disabled={rerunning}>
+            {rerunning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
+            Re-run failed only
           </Button>
         )}
       </div>
@@ -68,33 +82,33 @@ function RunDetailPage() {
           <CardTitle className="text-base">Step-by-step results</CardTitle>
         </CardHeader>
         <CardContent>
-          <Accordion type="multiple" className="space-y-2">
-            {scenarios.map((scenario) => {
-              const isFailing = FAILING_STATUSES.has(scenario.caseStatus);
-              return (
+          {results.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No test cases were included in this run.</p>
+          ) : (
+            <Accordion type="multiple" className="space-y-2">
+              {results.map((result) => (
                 <AccordionItem
-                  key={scenario.id}
-                  value={scenario.id}
+                  key={result.id}
+                  value={result.id}
                   className="rounded-lg border border-border/60 px-4"
                 >
                   <AccordionTrigger className="py-3 hover:no-underline">
                     <div className="flex flex-1 items-center justify-between pr-4">
-                      <span className="text-sm font-medium">{scenario.title}</span>
-                      <StatusBadge status={scenario.caseStatus} />
+                      <span className="text-sm font-medium">{result.scenarioTitle}</span>
+                      <StatusBadge status={result.status} />
                     </div>
                   </AccordionTrigger>
-                  {isFailing && (
+                  {result.status === "failed" && (
                     <AccordionContent className="space-y-3 text-sm">
                       <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 font-mono text-xs text-destructive">
-                        Error: expected element to be visible within 5000ms — locator resolved
-                        to 0 elements.
+                        {result.errorMessage}
                       </div>
                       <details className="rounded-md border border-border/60 bg-secondary/30 p-3">
                         <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
                           Stack trace
                         </summary>
                         <pre className="mt-2 overflow-x-auto font-mono text-xs text-muted-foreground">
-{`at ${scenario.filePath}:24:18
+{`at ${result.filePath ?? "unknown"}:24:18
 at TestCase.run (internal/test-runner.ts:112:5)
 at process.processTicksAndRejections (node:internal/process/task_queues:95:5)`}
                         </pre>
@@ -105,9 +119,9 @@ at process.processTicksAndRejections (node:internal/process/task_queues:95:5)`}
                     </AccordionContent>
                   )}
                 </AccordionItem>
-              );
-            })}
-          </Accordion>
+              ))}
+            </Accordion>
+          )}
         </CardContent>
       </Card>
     </div>

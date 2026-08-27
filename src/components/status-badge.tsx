@@ -12,7 +12,8 @@ export type Status =
   | "not_run"
   | "proposed"
   | "accepted"
-  | "rejected";
+  | "rejected"
+  | "skipped";
 
 const STATUS_CONFIG: Record<
   Status,
@@ -28,6 +29,7 @@ const STATUS_CONFIG: Record<
   running: { label: "Running", className: "bg-primary/15 text-primary border-primary/30", Icon: Loader2 },
   not_run: { label: "Not run", className: "bg-muted text-muted-foreground border-border", Icon: Circle },
   proposed: { label: "Proposed", className: "bg-muted text-muted-foreground border-border", Icon: Circle },
+  skipped: { label: "Skipped", className: "bg-muted text-muted-foreground border-border", Icon: Circle },
 };
 
 export function StatusBadge({ status, className }: { status: Status; className?: string }) {
