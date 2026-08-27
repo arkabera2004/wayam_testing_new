@@ -81,7 +81,7 @@ function OnboardingPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ShieldCheck className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Parikshan</span>
+          <span className="font-display text-sm tracking-tight">Parikshan</span>
         </Link>
 
         <div className="mb-6">

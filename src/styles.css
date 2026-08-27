@@ -2,6 +2,19 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Geist: every in-app UI surface (body copy, nav, buttons, tables, forms,
+   settings). Only the weights actually used are imported. */
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-sans/700.css";
+/* Geist Mono: the test case code viewer. */
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+/* Michroma: display font, used sparingly — logo/wordmark, marketing H1/H2,
+   and dashboard stat numbers only. Never for paragraphs or dense UI. */
+@import "@fontsource/michroma/400.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -46,8 +59,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", monospace;
+  /* Tailwind v4 auto-generates a `font-<key>` utility for every --font-*
+     theme variable, so `font-display` becomes available alongside the
+     standard `font-sans`/`font-mono`. */
+  --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-display: "Michroma", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Parikshan — dark-first B2B testing platform.

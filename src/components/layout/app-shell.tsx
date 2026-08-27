@@ -70,7 +70,7 @@ export function AppShell({
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <ShieldCheck className="h-4 w-4" />
             </div>
-            <span className="text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+            <span className="font-display text-sm tracking-tight group-data-[collapsible=icon]:hidden">
               Parikshan
             </span>
           </div>

@@ -110,7 +110,7 @@ function LandingPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <ShieldCheck className="h-4 w-4" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">Parikshan</span>
+            <span className="font-display text-sm tracking-tight">Parikshan</span>
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
             <a href="#how-it-works" className="hover:text-foreground">How it works</a>
@@ -133,7 +133,7 @@ function LandingPage() {
           <Badge variant="outline" className="mb-6 border-primary/30 bg-primary/10 text-primary">
             AI-powered software testing
           </Badge>
-          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+          <h1 className="font-display text-4xl tracking-tight text-balance sm:text-6xl">
             Ship weekly without a manual QA team
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
@@ -155,7 +155,7 @@ function LandingPage() {
 
       <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-14 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">How it works</h2>
+          <h2 className="font-display text-3xl tracking-tight">How it works</h2>
           <p className="mt-3 text-muted-foreground">From URL to coverage report in four steps.</p>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -179,7 +179,7 @@ function LandingPage() {
       <section id="features" className="border-y border-border/60 bg-secondary/20">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mb-14 text-center">
-            <h2 className="text-3xl font-semibold tracking-tight">Built for engineering-led QA</h2>
+            <h2 className="font-display text-3xl tracking-tight">Built for engineering-led QA</h2>
             <p className="mt-3 text-muted-foreground">
               Every screen is designed for a team that ships fast and can't scale manual testing.
             </p>
@@ -199,7 +199,7 @@ function LandingPage() {
 
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-14 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Usage-based pricing</h2>
+          <h2 className="font-display text-3xl tracking-tight">Usage-based pricing</h2>
           <p className="mt-3 text-muted-foreground">
             Pay for what you run, not how many seats you have.
           </p>
@@ -269,7 +269,7 @@ function LandingPage() {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <ShieldCheck className="h-3.5 w-3.5" />
             </div>
-            <span className="text-sm font-semibold">Parikshan</span>
+            <span className="font-display text-sm">Parikshan</span>
             <span className="text-sm text-muted-foreground">© {new Date().getFullYear()}</span>
           </div>
           <div className="flex items-center gap-5 text-muted-foreground">

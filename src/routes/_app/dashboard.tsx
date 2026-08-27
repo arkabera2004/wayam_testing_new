@@ -43,7 +43,7 @@ function DashboardPage() {
             <CardDescription className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4" /> Total projects
             </CardDescription>
-            <CardTitle className="text-3xl">{projects.length}</CardTitle>
+            <CardTitle className="font-display text-3xl">{projects.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -51,7 +51,7 @@ function DashboardPage() {
             <CardDescription className="flex items-center gap-2">
               <FlaskConical className="h-4 w-4" /> Tests generated
             </CardDescription>
-            <CardTitle className="text-3xl">{totalTests}</CardTitle>
+            <CardTitle className="font-display text-3xl">{totalTests}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -59,13 +59,13 @@ function DashboardPage() {
             <CardDescription className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" /> Flaky tests
             </CardDescription>
-            <CardTitle className="text-3xl">{flakyTests.length}</CardTitle>
+            <CardTitle className="font-display text-3xl">{flakyTests.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Avg. coverage</CardDescription>
-            <CardTitle className="text-3xl">
+            <CardTitle className="font-display text-3xl">
               {Math.round(projects.reduce((sum, p) => sum + p.coverage, 0) / projects.length)}%
             </CardTitle>
           </CardHeader>
