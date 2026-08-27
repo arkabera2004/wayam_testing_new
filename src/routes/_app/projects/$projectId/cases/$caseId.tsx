@@ -1,18 +1,18 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileCode2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/status-badge";
-import { scenarios } from "@/features/data/seed";
+import { getOrCreateTestCaseFn } from "@/lib/cases/functions";
 
+// The route param is historically named "caseId" but is really the
+// scenario's id — "Generate code" links here directly from the test plan
+// view, and the test_case is created (or found) on first visit. See
+// getOrCreateTestCaseFn.
 export const Route = createFileRoute("/_app/projects/$projectId/cases/$caseId")({
-  loader: ({ params }) => {
-    const scenario = scenarios.find((s) => s.id === params.caseId);
-    if (!scenario) throw notFound();
-    return { scenario };
-  },
+  loader: ({ params }) => getOrCreateTestCaseFn({ data: { scenarioId: params.caseId } }),
   component: TestCaseDetailPage,
 });
 
@@ -25,9 +25,9 @@ const LANGUAGE_LABEL: Record<string, string> = {
 };
 
 function TestCaseDetailPage() {
-  const { scenario } = Route.useLoaderData();
+  const { scenario, testCase } = Route.useLoaderData();
   const { projectId } = Route.useParams();
-  const lines = scenario.code.split("\n");
+  const lines = testCase.generatedCode.split("\n");
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -42,7 +42,9 @@ function TestCaseDetailPage() {
           <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border/60 bg-secondary/30 py-3">
             <div className="flex items-center gap-2 text-sm">
               <FileCode2 className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono text-muted-foreground">{scenario.filePath}</span>
+              <span className="font-mono text-muted-foreground">
+                {scenario.filePath ?? `${testCase.framework}/${testCase.id}.spec.ts`}
+              </span>
             </div>
             <span className="text-xs text-muted-foreground">
               {LANGUAGE_LABEL[scenario.type]}
@@ -76,7 +78,9 @@ function TestCaseDetailPage() {
             <Separator />
             <div>
               <p className="text-muted-foreground">File path</p>
-              <p className="font-mono text-xs">{scenario.filePath}</p>
+              <p className="font-mono text-xs">
+                {scenario.filePath ?? `${testCase.framework}/${testCase.id}.spec.ts`}
+              </p>
             </div>
             <Separator />
             <div>
@@ -86,7 +90,7 @@ function TestCaseDetailPage() {
             <Separator />
             <div>
               <p className="mb-1 text-muted-foreground">Status</p>
-              <StatusBadge status={scenario.caseStatus} />
+              <StatusBadge status={testCase.status} />
             </div>
           </CardContent>
         </Card>
