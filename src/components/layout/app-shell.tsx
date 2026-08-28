@@ -10,6 +10,7 @@ import {
   ListFilter,
   Activity,
   GitBranch,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -47,6 +48,7 @@ const NAV_ITEMS = [
   { to: "/test-selection", label: "Test Selection", icon: ListFilter },
   { to: "/code-impact", label: "Code Impact", icon: GitBranch },
   { to: "/ci-intelligence", label: "CI Intelligence", icon: Activity },
+  { to: "/release-gate", label: "Release Gate", icon: ShieldCheck },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },

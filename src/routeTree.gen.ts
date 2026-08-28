@@ -19,6 +19,7 @@ import { Route as AppCiIntelligenceRouteImport } from './routes/_app/ci-intellig
 import { Route as AppCodeImpactRouteImport } from './routes/_app/code-impact'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
+import { Route as AppReleaseGateRouteImport } from './routes/_app/release-gate'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppTestSelectionRouteImport } from './routes/_app/test-selection'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
@@ -77,6 +78,11 @@ const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReleaseGateRoute = AppReleaseGateRouteImport.update({
+  id: '/release-gate',
+  path: '/release-gate',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/release-gate': typeof AppReleaseGateRoute
   '/settings': typeof AppSettingsRoute
   '/test-selection': typeof AppTestSelectionRoute
   '/projects/new': typeof AppProjectsNewRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/release-gate': typeof AppReleaseGateRoute
   '/settings': typeof AppSettingsRoute
   '/test-selection': typeof AppTestSelectionRoute
   '/projects/new': typeof AppProjectsNewRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_app/code-impact': typeof AppCodeImpactRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/integrations': typeof AppIntegrationsRoute
+  '/_app/release-gate': typeof AppReleaseGateRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/test-selection': typeof AppTestSelectionRoute
   '/_app/projects/new': typeof AppProjectsNewRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/code-impact'
     | '/dashboard'
     | '/integrations'
+    | '/release-gate'
     | '/settings'
     | '/test-selection'
     | '/projects/new'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/code-impact'
     | '/dashboard'
     | '/integrations'
+    | '/release-gate'
     | '/settings'
     | '/test-selection'
     | '/projects/new'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_app/code-impact'
     | '/_app/dashboard'
     | '/_app/integrations'
+    | '/_app/release-gate'
     | '/_app/settings'
     | '/_app/test-selection'
     | '/_app/projects/new'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIntegrationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/release-gate': {
+      id: '/_app/release-gate'
+      path: '/release-gate'
+      fullPath: '/release-gate'
+      preLoaderRoute: typeof AppReleaseGateRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -387,6 +406,7 @@ interface AppRouteChildren {
   AppCodeImpactRoute: typeof AppCodeImpactRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
+  AppReleaseGateRoute: typeof AppReleaseGateRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTestSelectionRoute: typeof AppTestSelectionRoute
   AppProjectsNewRoute: typeof AppProjectsNewRoute
@@ -403,6 +423,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCodeImpactRoute: AppCodeImpactRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
+  AppReleaseGateRoute: AppReleaseGateRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTestSelectionRoute: AppTestSelectionRoute,
   AppProjectsNewRoute: AppProjectsNewRoute,
