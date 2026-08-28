@@ -1,19 +1,30 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { logIn } from "@/lib/auth/functions";
+import { logIn, signUp } from "@/lib/auth/functions";
 import { WayamMark } from "@/components/brand/wayam-mark";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
+
+/** Demo-only: generates a fresh random email + password so a visitor can
+ * see the product without typing anything. Not a real credential — it
+ * exists purely to spin up a throwaway account for the session. */
+function randomDemoCredentials() {
+  const suffix = crypto.randomUUID().slice(0, 8);
+  return {
+    email: `demo-${suffix}@parikshan.demo`,
+    password: crypto.randomUUID(),
+  };
+}
 
 // INTEGRATION POINT: the Google button below is still a visual stub — no
 // OAuth flow wired. Email/password below is real (bcrypt + Mongo-backed
@@ -21,8 +32,10 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const logInFn = useServerFn(logIn);
+  const signUpFn = useServerFn(signUp);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,11 +56,24 @@ function LoginPage() {
     }
   }
 
+  async function handleDemoLogin() {
+    setError(null);
+    setDemoLoading(true);
+    try {
+      const { email, password } = randomDemoCredentials();
+      await signUpFn({ data: { fullName: "Demo User", email, password } });
+      navigate({ to: "/onboarding" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start the demo");
+      setDemoLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <WayamMark className="h-7 w-7" />
+          <WayamMark className="h-12 w-12" />
           <span className="font-display text-sm tracking-tight">Parikshan</span>
         </Link>
         <Card className="border-border/60">
@@ -56,6 +82,28 @@ function LoginPage() {
             <CardDescription>Welcome back — pick up where you left off.</CardDescription>
           </CardHeader>
           <CardContent>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mb-4 w-full gap-2"
+              onClick={handleDemoLogin}
+              disabled={submitting || demoLoading}
+            >
+              {demoLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Try the live demo
+            </Button>
+            <p className="mb-4 text-center text-xs text-muted-foreground">
+              Spins up a fresh account with a random email &amp; password — no signup needed.
+            </p>
+            <div className="mb-4 flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">or log in</span>
+              <Separator className="flex-1" />
+            </div>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
