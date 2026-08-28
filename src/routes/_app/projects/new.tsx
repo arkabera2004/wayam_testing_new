@@ -19,9 +19,9 @@ export const Route = createFileRoute("/_app/projects/new")({
 type SourceType = "github" | "url";
 
 const ANALYSIS_STEPS = [
-  "Cloning source",
-  "Mapping routes & components",
-  "Drafting test scenarios",
+  "Reading repository",
+  "Fetching file tree & README",
+  "Drafting test scenarios with Gemini",
 ];
 
 function deriveProjectName(sourceType: SourceType, value: string): string {
@@ -95,21 +95,23 @@ function NewProjectPage() {
         throw new Error(job.error || "The crawl agent could not finish exploring this URL");
       }
       if (Date.now() > deadline) {
-        throw new Error("Timed out waiting for the crawl agent — check services/crawl-agent's logs");
+        throw new Error(
+          "Timed out waiting for the crawl agent — check services/crawl-agent's logs",
+        );
       }
       await new Promise((resolve) => setTimeout(resolve, CRAWL_POLL_INTERVAL_MS));
     }
   }
 
-  // INTEGRATION POINT: GitHub sources still use a simulated timeline —
-  // crawling a live URL (above) is wired to the real crawl-agent, but
-  // cloning + statically analyzing a repository is a different pipeline
-  // that hasn't been built yet.
-  async function runSimulatedGithubAnalysis() {
-    ANALYSIS_STEPS.forEach((_, i) => {
-      setTimeout(() => setStepIndex(i), (i + 1) * 700);
-    });
-    await new Promise((resolve) => setTimeout(resolve, ANALYSIS_STEPS.length * 700 + 500));
+  // GitHub sources: createProjectFn now does the real work server-side —
+  // fetching the repo's file tree/README from the GitHub API and asking
+  // Gemini to draft scenarios grounded in it (see
+  // src/lib/projects/scenario-generation.server.ts). That happens in one
+  // request, so there's no job to poll like the crawl-agent path below;
+  // step through the same progress labels as a simple in-flight indicator
+  // while it runs.
+  async function runGithubAnalysis() {
+    setStepIndex(1);
     await finishCreatingProject();
   }
 
@@ -119,7 +121,7 @@ function NewProjectPage() {
     setAnalyzing(true);
     setStepIndex(0);
 
-    const run = sourceType === "url" ? runRealCrawl() : runSimulatedGithubAnalysis();
+    const run = sourceType === "url" ? runRealCrawl() : runGithubAnalysis();
     run.catch((err) => {
       setAnalyzing(false);
       setError(err instanceof Error ? err.message : "Could not create project");
@@ -207,10 +209,7 @@ function NewProjectPage() {
                     <div className="h-4 w-4 rounded-full border border-border" />
                   )}
                   <span
-                    className={cn(
-                      "text-muted-foreground",
-                      i <= stepIndex && "text-foreground",
-                    )}
+                    className={cn("text-muted-foreground", i <= stepIndex && "text-foreground")}
                   >
                     {label}
                   </span>
