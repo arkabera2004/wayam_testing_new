@@ -203,3 +203,24 @@ export interface TestSelectionRunDoc {
   candidates: TestSelectionCandidate[];
   createdAt: Date;
 }
+
+// Doc Tests (ported from aidlc_azure's DocTests page): scenarios drafted
+// from pasted documentation text rather than a repo's file tree.
+export interface DocTestScenario {
+  title: string;
+  description: string;
+  type: ScenarioType;
+  priority: ScenarioPriority;
+  filePath: string | null;
+}
+
+export interface DocTestRunDoc {
+  _id: ObjectId;
+  orgId: ObjectId;
+  projectId: ObjectId;
+  docTitle: string;
+  docExcerpt: string;
+  scenarios: DocTestScenario[];
+  source: "gemini" | "heuristic";
+  createdAt: Date;
+}

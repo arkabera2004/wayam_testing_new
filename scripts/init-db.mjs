@@ -57,6 +57,9 @@ async function main() {
   await db.collection("test_selection_runs").createIndex({ orgId: 1 });
   await db.collection("test_selection_runs").createIndex({ projectId: 1, createdAt: -1 });
 
+  await db.collection("doc_test_runs").createIndex({ orgId: 1 });
+  await db.collection("doc_test_runs").createIndex({ projectId: 1, createdAt: -1 });
+
   console.log(`Indexes created on database "${dbName}".`);
 }
 

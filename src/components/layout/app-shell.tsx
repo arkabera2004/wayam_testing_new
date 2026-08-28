@@ -11,6 +11,7 @@ import {
   Activity,
   GitBranch,
   ShieldCheck,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -49,6 +50,7 @@ const NAV_ITEMS = [
   { to: "/code-impact", label: "Code Impact", icon: GitBranch },
   { to: "/ci-intelligence", label: "CI Intelligence", icon: Activity },
   { to: "/release-gate", label: "Release Gate", icon: ShieldCheck },
+  { to: "/doc-tests", label: "Doc Tests", icon: BookOpen },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },

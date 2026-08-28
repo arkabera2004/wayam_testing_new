@@ -2,6 +2,7 @@ import type { Db } from "mongodb";
 
 import type {
   ApiKeyDoc,
+  DocTestRunDoc,
   IntegrationDoc,
   OrganizationDoc,
   OrganizationInviteDoc,
@@ -36,5 +37,6 @@ export function collections(db: Db) {
     integrations: db.collection<IntegrationDoc>("integrations"),
     apiKeys: db.collection<ApiKeyDoc>("api_keys"),
     testSelectionRuns: db.collection<TestSelectionRunDoc>("test_selection_runs"),
+    docTestRuns: db.collection<DocTestRunDoc>("doc_test_runs"),
   };
 }

@@ -18,6 +18,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppCiIntelligenceRouteImport } from './routes/_app/ci-intelligence'
 import { Route as AppCodeImpactRouteImport } from './routes/_app/code-impact'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppDocTestsRouteImport } from './routes/_app/doc-tests'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppReleaseGateRouteImport } from './routes/_app/release-gate'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -71,6 +72,11 @@ const AppCodeImpactRoute = AppCodeImpactRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocTestsRoute = AppDocTestsRouteImport.update({
+  id: '/doc-tests',
+  path: '/doc-tests',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
+  '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
   '/settings': typeof AppSettingsRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
+  '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
   '/settings': typeof AppSettingsRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/_app/ci-intelligence': typeof AppCiIntelligenceRoute
   '/_app/code-impact': typeof AppCodeImpactRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/doc-tests': typeof AppDocTestsRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/release-gate': typeof AppReleaseGateRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/ci-intelligence'
     | '/code-impact'
     | '/dashboard'
+    | '/doc-tests'
     | '/integrations'
     | '/release-gate'
     | '/settings'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/ci-intelligence'
     | '/code-impact'
     | '/dashboard'
+    | '/doc-tests'
     | '/integrations'
     | '/release-gate'
     | '/settings'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/_app/ci-intelligence'
     | '/_app/code-impact'
     | '/_app/dashboard'
+    | '/_app/doc-tests'
     | '/_app/integrations'
     | '/_app/release-gate'
     | '/_app/settings'
@@ -327,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/doc-tests': {
+      id: '/_app/doc-tests'
+      path: '/doc-tests'
+      fullPath: '/doc-tests'
+      preLoaderRoute: typeof AppDocTestsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/integrations': {
       id: '/_app/integrations'
       path: '/integrations'
@@ -405,6 +424,7 @@ interface AppRouteChildren {
   AppCiIntelligenceRoute: typeof AppCiIntelligenceRoute
   AppCodeImpactRoute: typeof AppCodeImpactRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDocTestsRoute: typeof AppDocTestsRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppReleaseGateRoute: typeof AppReleaseGateRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -422,6 +442,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCiIntelligenceRoute: AppCiIntelligenceRoute,
   AppCodeImpactRoute: AppCodeImpactRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDocTestsRoute: AppDocTestsRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppReleaseGateRoute: AppReleaseGateRoute,
   AppSettingsRoute: AppSettingsRoute,
