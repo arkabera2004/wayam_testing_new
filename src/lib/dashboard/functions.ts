@@ -46,13 +46,17 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Same "status flipped across its last 14 results" rule as the analytics
  * page's flaky-test leaderboard — this just needs the count, not the
- * per-test detail. */
+ * per-test detail. Quarantined cases are excluded: they're already being
+ * handled (see /quarantine), so they shouldn't keep inflating the
+ * headline "needs attention" number. */
 function countFlakyTestCases(
   results: Array<Pick<RunResultDoc, "testCaseId" | "status" | "createdAt">>,
+  quarantinedCaseIds: Set<string>,
 ): number {
   const resultsByCase = new Map<string, typeof results>();
   for (const result of results) {
     const key = result.testCaseId.toString();
+    if (quarantinedCaseIds.has(key)) continue;
     resultsByCase.set(key, [...(resultsByCase.get(key) ?? []), result]);
   }
 
@@ -131,7 +135,10 @@ export const getDashboardFn = createServerFn({ method: "GET" })
       totals: {
         projects: orgProjects.length,
         testsGenerated: cases.length,
-        flakyTests: countFlakyTestCases(results),
+        flakyTests: countFlakyTestCases(
+          results,
+          new Set(cases.filter((c) => c.quarantined).map((c) => c._id.toString())),
+        ),
         runsLast7Days,
         integrationsConnected: orgIntegrations.filter((i) => i.status === "connected").length,
       },

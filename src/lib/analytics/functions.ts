@@ -16,10 +16,12 @@ export interface CoverageByType {
 }
 
 export interface FlakyTest {
+  testCaseId: string;
   scenarioTitle: string;
   projectName: string;
   flips: number;
   rate: number;
+  quarantined: boolean;
 }
 
 const TYPE_ORDER: ScenarioType[] = ["E2E", "API", "Regression", "Accessibility", "Visual"];
@@ -33,8 +35,7 @@ export const getOrgAnalyticsFn = createServerFn({ method: "GET" })
     const orgId = new ObjectId(data.orgId);
     await requireOrgMember(db, orgId, context.user._id);
 
-    const { testScenarios, testCases, runResults, testPlans, projects, testRuns } =
-      collections(db);
+    const { testScenarios, testCases, runResults, testPlans, projects, testRuns } = collections(db);
 
     const [scenarios, cases, results, plans, orgProjects, runs] = await Promise.all([
       testScenarios.find({ orgId }).toArray(),
@@ -64,7 +65,9 @@ export const getOrgAnalyticsFn = createServerFn({ method: "GET" })
 
       const typeScenarioIds = new Set(typeScenarios.map((s) => s._id.toString()));
       const typeCaseIds = new Set(
-        cases.filter((c) => typeScenarioIds.has(c.scenarioId.toString())).map((c) => c._id.toString()),
+        cases
+          .filter((c) => typeScenarioIds.has(c.scenarioId.toString()))
+          .map((c) => c._id.toString()),
       );
       const typeResults = results.filter((r) => typeCaseIds.has(r.testCaseId.toString()));
       const passRate = typeResults.length
@@ -110,10 +113,12 @@ export const getOrgAnalyticsFn = createServerFn({ method: "GET" })
       const failed = recent.filter((r) => r.status === "failed").length;
 
       flakyTests.push({
+        testCaseId: caseId,
         scenarioTitle: scenario?.title ?? "Unknown scenario",
         projectName,
         flips,
         rate: Math.round((failed / recent.length) * 100),
+        quarantined: testCase?.quarantined ?? false,
       });
     }
     flakyTests.sort((a, b) => b.flips - a.flips);

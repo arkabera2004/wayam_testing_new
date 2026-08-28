@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import {
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { getOrgAnalyticsFn } from "@/lib/analytics/functions";
+import { setQuarantineFn } from "@/lib/quarantine/functions";
 
 export const Route = createFileRoute("/_app/analytics")({
   loader: async ({ context }) => {
@@ -46,6 +49,19 @@ function riskTone(risk: number) {
 function AnalyticsPage() {
   const { org } = Route.useRouteContext();
   const data = Route.useLoaderData();
+  const setQuarantine = useServerFn(setQuarantineFn);
+  const [quarantining, setQuarantining] = useState<string | null>(null);
+  const [justQuarantined, setJustQuarantined] = useState<Set<string>>(new Set());
+
+  async function handleQuarantine(testCaseId: string) {
+    setQuarantining(testCaseId);
+    try {
+      await setQuarantine({ data: { testCaseId, quarantined: true } });
+      setJustQuarantined((prev) => new Set(prev).add(testCaseId));
+    } finally {
+      setQuarantining(null);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -197,24 +213,45 @@ function AnalyticsPage() {
                       <TableHead>Project</TableHead>
                       <TableHead>Flips</TableHead>
                       <TableHead>Flake rate</TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.flakyTests.map((test) => (
-                      <TableRow key={`${test.projectName}-${test.scenarioTitle}`}>
-                        <TableCell className="font-medium">{test.scenarioTitle}</TableCell>
-                        <TableCell className="text-muted-foreground">{test.projectName}</TableCell>
-                        <TableCell>{test.flips}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="border-warning/30 bg-warning/15 text-warning"
-                          >
-                            {test.rate}%
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {data.flakyTests.map((test) => {
+                      const isQuarantined =
+                        test.quarantined || justQuarantined.has(test.testCaseId);
+                      return (
+                        <TableRow key={test.testCaseId}>
+                          <TableCell className="font-medium">{test.scenarioTitle}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {test.projectName}
+                          </TableCell>
+                          <TableCell>{test.flips}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className="border-warning/30 bg-warning/15 text-warning"
+                            >
+                              {test.rate}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {isQuarantined ? (
+                              <Badge variant="outline">Quarantined</Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleQuarantine(test.testCaseId)}
+                                disabled={quarantining === test.testCaseId}
+                              >
+                                {quarantining === test.testCaseId ? "Quarantining…" : "Quarantine"}
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

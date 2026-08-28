@@ -58,9 +58,15 @@ export const evaluateReleaseGateFn = createServerFn({ method: "GET" })
     const results = await runResults
       .find({ testCaseId: { $in: cases.map((c) => c._id) } })
       .toArray();
+    // Quarantined tests never block a release gate — same rule as the
+    // dashboard's headline flaky count.
+    const quarantinedCaseIds = new Set(
+      cases.filter((c) => c.quarantined).map((c) => c._id.toString()),
+    );
     const resultsByCase = new Map<string, typeof results>();
     for (const result of results) {
       const key = result.testCaseId.toString();
+      if (quarantinedCaseIds.has(key)) continue;
       resultsByCase.set(key, [...(resultsByCase.get(key) ?? []), result]);
     }
     let flakyTestCount = 0;
