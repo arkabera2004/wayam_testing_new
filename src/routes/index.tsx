@@ -107,7 +107,7 @@ function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <WayamMark className="h-7 w-7" />
+            <WayamMark className="h-10 w-10" />
             <span className="font-display text-sm tracking-tight">Parikshan</span>
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
@@ -264,7 +264,7 @@ function LandingPage() {
       <footer className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col items-center justify-between gap-6 border-t border-border/60 pt-8 sm:flex-row">
           <div className="flex items-center gap-2">
-            <WayamMark className="h-6 w-6" />
+            <WayamMark className="h-9 w-9" />
             <span className="font-display text-sm">Parikshan</span>
             <span className="text-sm text-muted-foreground">© {new Date().getFullYear()}</span>
           </div>

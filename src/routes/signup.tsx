@@ -47,7 +47,7 @@ function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <WayamMark className="h-7 w-7" />
+          <WayamMark className="h-12 w-12" />
           <span className="font-display text-sm tracking-tight">Parikshan</span>
         </Link>
         <Card className="border-border/60">

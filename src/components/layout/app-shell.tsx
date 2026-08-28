@@ -67,7 +67,7 @@ export function AppShell({
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <WayamMark className="h-7 w-7 shrink-0" />
+            <WayamMark className="h-10 w-10 shrink-0" />
             <span className="font-display text-sm tracking-tight group-data-[collapsible=icon]:hidden">
               Parikshan
             </span>
