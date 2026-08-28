@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WayamMark } from "@/components/brand/wayam-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -23,41 +24,49 @@ const STEPS = [
   {
     icon: GitBranch,
     title: "Connect a repo or URL",
-    description: "Paste a GitHub repository or a live app URL — no config files, no agents to install.",
+    description:
+      "Paste a GitHub repository or a live app URL — no config files, no agents to install.",
   },
   {
     icon: Sparkles,
     title: "AI generates a test plan",
-    description: "Get editable, plain-English scenarios across E2E, API, regression, a11y, and visual.",
+    description:
+      "Get editable, plain-English scenarios across E2E, API, regression, a11y, and visual.",
   },
   {
     icon: PlayCircle,
     title: "Run the suite",
-    description: "Accept scenarios, generate runnable code, and execute on demand, on a schedule, or on every PR.",
+    description:
+      "Accept scenarios, generate runnable code, and execute on demand, on a schedule, or on every PR.",
   },
   {
     icon: BarChart3,
     title: "See coverage & trends",
-    description: "Track pass/fail history, flaky tests, and risk by feature area from one dashboard.",
+    description:
+      "Track pass/fail history, flaky tests, and risk by feature area from one dashboard.",
   },
 ];
 
 const FEATURES = [
   {
     title: "Human-in-the-loop test plans",
-    description: "Every AI-generated scenario is a card you can accept, edit, or reject before it becomes code.",
+    description:
+      "Every AI-generated scenario is a card you can accept, edit, or reject before it becomes code.",
   },
   {
     title: "Multi-tenant by design",
-    description: "Every workspace is fully isolated — bring your whole team in without data ever crossing over.",
+    description:
+      "Every workspace is fully isolated — bring your whole team in without data ever crossing over.",
   },
   {
     title: "Flaky test detection",
-    description: "Parikshan tracks inconsistent results across runs and surfaces a flaky-test leaderboard automatically.",
+    description:
+      "Parikshan tracks inconsistent results across runs and surfaces a flaky-test leaderboard automatically.",
   },
   {
     title: "CI-native",
-    description: "Connect GitHub to run your suite on every pull request, with Slack and Jira wired in for the fallout.",
+    description:
+      "Connect GitHub to run your suite on every pull request, with Slack and Jira wired in for the fallout.",
   },
 ];
 
@@ -111,11 +120,18 @@ function LandingPage() {
             <span className="font-display text-sm tracking-tight">Parikshan</span>
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-            <a href="#how-it-works" className="hover:text-foreground">How it works</a>
-            <a href="#features" className="hover:text-foreground">Features</a>
-            <a href="#pricing" className="hover:text-foreground">Pricing</a>
+            <a href="#how-it-works" className="hover:text-foreground">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-foreground">
+              Features
+            </a>
+            <a href="#pricing" className="hover:text-foreground">
+              Pricing
+            </a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Log in</Link>
             </Button>
@@ -164,7 +180,9 @@ function LandingPage() {
                   <step.icon className="h-5 w-5" />
                 </div>
                 <CardTitle className="text-base">
-                  <span className="mr-2 text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="mr-2 text-muted-foreground">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   {step.title}
                 </CardTitle>
                 <CardDescription>{step.description}</CardDescription>
@@ -219,7 +237,9 @@ function LandingPage() {
                 <CardTitle className="text-lg">{tier.name}</CardTitle>
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className="text-3xl font-semibold">{tier.price}</span>
-                  {tier.price !== "Custom" && <span className="text-sm text-muted-foreground">/mo</span>}
+                  {tier.price !== "Custom" && (
+                    <span className="text-sm text-muted-foreground">/mo</span>
+                  )}
                 </div>
                 <CardDescription>{tier.cadence}</CardDescription>
                 <p className="pt-2 text-sm text-muted-foreground">{tier.description}</p>
@@ -233,11 +253,7 @@ function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="mt-2"
-                  variant={tier.highlighted ? "default" : "outline"}
-                  asChild
-                >
+                <Button className="mt-2" variant={tier.highlighted ? "default" : "outline"} asChild>
                   <Link to="/signup">{tier.cta}</Link>
                 </Button>
               </CardContent>

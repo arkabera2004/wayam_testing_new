@@ -120,8 +120,65 @@
     0 18px 50px -24px color-mix(in oklab, var(--primary) 45%, transparent);
 }
 
-.dark {
+:root,
+:root[data-theme="dark"] {
   color-scheme: dark;
+}
+
+/* Light mode — same orange accent, warm off-white canvas instead of
+   near-black. Toggled via [data-theme] on <html> (see
+   src/components/theme-toggle.tsx and the no-flash inline script in
+   __root.tsx) rather than a media query, so the choice is explicit and
+   persisted, not just inherited from the OS. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: oklch(0.985 0.004 240);
+  --foreground: oklch(0.2 0.02 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 250);
+  --primary: oklch(0.68 0.19 45);
+  --primary-foreground: oklch(0.99 0.005 240);
+  --secondary: oklch(0.95 0.01 245);
+  --secondary-foreground: oklch(0.22 0.02 250);
+  --muted: oklch(0.96 0.008 245);
+  --muted-foreground: oklch(0.48 0.02 250);
+  --accent: oklch(0.94 0.03 50);
+  --accent-foreground: oklch(0.25 0.03 45);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 240);
+  --success: oklch(0.55 0.14 158);
+  --success-foreground: oklch(0.99 0.005 240);
+  --warning: oklch(0.62 0.16 78);
+  --warning-foreground: oklch(0.99 0.005 240);
+  --border: oklch(0.9 0.008 245);
+  --input: oklch(0.9 0.008 245);
+  --ring: oklch(0.68 0.19 45);
+  --chart-1: oklch(0.68 0.19 45);
+  --chart-2: oklch(0.58 0.22 25);
+  --chart-3: oklch(0.62 0.16 78);
+  --chart-4: oklch(0.55 0.16 255);
+  --chart-5: oklch(0.55 0.14 158);
+  --sidebar: oklch(0.97 0.006 245);
+  --sidebar-foreground: oklch(0.28 0.02 250);
+  --sidebar-primary: oklch(0.68 0.19 45);
+  --sidebar-primary-foreground: oklch(0.99 0.005 240);
+  --sidebar-accent: oklch(0.93 0.025 50);
+  --sidebar-accent-foreground: oklch(0.25 0.03 45);
+  --sidebar-border: oklch(0.9 0.008 245);
+  --sidebar-ring: oklch(0.68 0.19 45);
+
+  --gradient-hero: radial-gradient(
+      1200px 600px at 15% -10%,
+      color-mix(in oklab, var(--primary) 14%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(900px 500px at 90% 0%, oklch(0.62 0.14 255 / 0.14), transparent 60%);
+  --gradient-accent: linear-gradient(135deg, var(--primary), oklch(0.6 0.17 30));
+  --shadow-elevated: 0 24px 60px -30px oklch(0 0 0 / 0.18);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent),
+    0 18px 50px -24px color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
 @layer base {

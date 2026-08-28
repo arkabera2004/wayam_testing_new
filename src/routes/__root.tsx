@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { NO_FLASH_THEME_SCRIPT } from "../lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -97,9 +98,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the no-flash script below sets data-theme
+    // on this element before React hydrates, which will never match the
+    // server-rendered (theme-less) markup by design — without this,
+    // React's hydration-mismatch bailout on <html> was corrupting
+    // unrelated client-only rendering further down the tree (e.g. Recharts
+    // bars silently rendering as empty <g> nodes). See
+    // https://react.dev/link/hydration-mismatch — this is React's
+    // documented escape hatch for exactly this pattern.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Must run before first paint so a stored light-mode preference
+            doesn't flash dark first — see src/lib/theme.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>
       <body>
         {children}

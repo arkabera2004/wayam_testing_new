@@ -38,6 +38,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { logOut, type PublicUser } from "@/lib/auth/functions";
 import type { PublicOrganization } from "@/lib/org/functions";
 import { WayamMark } from "@/components/brand/wayam-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function initials(user: PublicUser): string {
   const source = user.fullName?.trim() || user.email;
@@ -142,6 +143,7 @@ export function AppShell({ user, org }: { user: PublicUser; org: PublicOrganizat
           <span className="text-sm text-muted-foreground">
             {org ? `${org.name} workspace` : "No workspace yet"}
           </span>
+          <ThemeToggle className="ml-auto" />
         </header>
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
