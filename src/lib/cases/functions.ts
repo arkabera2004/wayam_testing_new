@@ -86,6 +86,8 @@ export const getOrCreateTestCaseFn = createServerFn({ method: "GET" })
         language: scenario.type === "API" ? "typescript" : "typescript",
         framework: scenario.type === "API" ? "http" : "playwright",
         status: "not_run",
+        quarantined: false,
+        quarantinedAt: null,
         createdAt: now,
         updatedAt: now,
       };

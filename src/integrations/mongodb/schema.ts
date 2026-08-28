@@ -109,6 +109,11 @@ export interface TestCaseDoc {
   status: CaseStatus;
   createdAt: Date;
   updatedAt: Date;
+  // Quarantine: a flaky test can be pulled out of release-gate/CI-blocking
+  // consideration without deleting it or losing its history — it still
+  // runs and still reports, it just can't fail a merge on its own.
+  quarantined: boolean;
+  quarantinedAt: Date | null;
 }
 
 export type RunTrigger = "manual" | "on_pr" | "scheduled";
@@ -143,6 +148,15 @@ export interface RunResultDoc {
   // proposed scenario); healNote carries its confidence/reasoning.
   healedSelector: string | null;
   healNote: string | null;
+  // Whether a human has approved applying this heal suggestion to the
+  // test case's generatedCode yet (see
+  // src/lib/self-healing/functions.ts::applyHealFn). Never flipped
+  // automatically — same human-in-the-loop review step as accepting a
+  // proposed scenario. Applying doesn't blindly string-replace a selector
+  // we can't verify against the (still-stubbed, see
+  // src/lib/cases/functions.ts) generated code — it appends a clearly
+  // marked, reviewable annotation instead.
+  healApplied: boolean;
 }
 
 export type IntegrationProvider = "github" | "slack" | "jira";
@@ -233,6 +247,45 @@ export interface DocTestRunDoc {
 // boundary, which requires statically-known-serializable return types.
 export type JsonValue =
   string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+// PRD Analysis (ported from aidlc_azure's PRDGenerator/Requirements pages,
+// and demonstrated in the product demo video this app is being built
+// toward — see docs on lib/prd-analysis): extracts numbered requirements
+// from pasted PRD text, classifies each, flags what can't be tested as
+// written, and drafts a traced test case per testable requirement.
+export type RequirementCategory = "functional" | "non-functional" | "security";
+export type RequirementCoverage = "covered" | "partial" | "gap";
+export type ScenarioTag = "happy-path" | "edge-case" | "negative";
+
+export interface PrdRequirement {
+  id: string; // "REQ-1"
+  text: string;
+  category: RequirementCategory;
+  coverage: RequirementCoverage;
+  issue: string | null;
+}
+
+export interface PrdTestCase {
+  requirementId: string; // the PrdRequirement.id it traces back to
+  title: string;
+  description: string;
+  type: ScenarioType;
+  priority: ScenarioPriority;
+  tag: ScenarioTag;
+  filePath: string;
+}
+
+export interface PrdAnalysisDoc {
+  _id: ObjectId;
+  orgId: ObjectId;
+  projectId: ObjectId;
+  docTitle: string;
+  docExcerpt: string;
+  requirements: PrdRequirement[];
+  testCases: PrdTestCase[];
+  source: "gemini" | "heuristic";
+  createdAt: Date;
+}
 
 // Loosely typed on purpose — the record shape is inferred per-scenario
 // (Gemini) or field-guessed (heuristic fallback), see

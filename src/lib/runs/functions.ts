@@ -30,6 +30,7 @@ export interface PublicRunResult {
   errorMessage: string | null;
   healedSelector: string | null;
   healNote: string | null;
+  healApplied: boolean;
 }
 
 function toPublicRun(doc: TestRunDoc, passed: number, failed: number): PublicRun {
@@ -57,14 +58,9 @@ export const listRunsFn = createServerFn({ method: "GET" })
     if (!project) throw new ForbiddenError("Project not found");
     await requireOrgMember(db, project.orgId, context.user._id);
 
-    const runs = await testRuns
-      .find({ projectId: project._id })
-      .sort({ startedAt: -1 })
-      .toArray();
+    const runs = await testRuns.find({ projectId: project._id }).sort({ startedAt: -1 }).toArray();
 
-    const results = await runResults
-      .find({ runId: { $in: runs.map((r) => r._id) } })
-      .toArray();
+    const results = await runResults.find({ runId: { $in: runs.map((r) => r._id) } }).toArray();
     const byRun = new Map<string, RunResultDoc[]>();
     for (const result of results) {
       const key = result.runId.toString();
@@ -112,6 +108,7 @@ export const getRunDetailFn = createServerFn({ method: "GET" })
         errorMessage: result.errorMessage,
         healedSelector: result.healedSelector,
         healNote: result.healNote,
+        healApplied: result.healApplied,
       };
     });
 
@@ -177,6 +174,7 @@ async function runTestCases(
       createdAt: new Date(),
       healedSelector: heal?.selector ?? null,
       healNote: heal ? `[${heal.confidence} confidence] ${heal.notes}` : null,
+      healApplied: false,
     };
   });
   if (results.length > 0) await runResults.insertMany(results);
@@ -193,7 +191,13 @@ async function runTestCases(
   const failed = results.filter((r) => r.status === "failed").length;
   const finishedAt = new Date();
   const overallStatus: TestRunDoc["status"] =
-    results.length === 0 ? "passed" : failed === 0 ? "passed" : failed === results.length ? "failed" : "flaky";
+    results.length === 0
+      ? "passed"
+      : failed === 0
+        ? "passed"
+        : failed === results.length
+          ? "failed"
+          : "flaky";
 
   await testRuns.updateOne({ _id: runId }, { $set: { status: overallStatus, finishedAt } });
 
@@ -292,9 +296,7 @@ export const rerunFailedFn = createServerFn({ method: "POST" })
     if (!run) throw new ForbiddenError("Run not found");
     await requireOrgWrite(db, run.orgId, context.user._id);
 
-    const failedResults = await runResults
-      .find({ runId: run._id, status: "failed" })
-      .toArray();
+    const failedResults = await runResults.find({ runId: run._id, status: "failed" }).toArray();
     const testCaseIds = failedResults.map((r) => r.testCaseId);
 
     const healOutcomes = await attemptSelfHeal(db, run.projectId, testCaseIds);

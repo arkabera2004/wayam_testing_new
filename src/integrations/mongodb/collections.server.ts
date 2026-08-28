@@ -7,6 +7,7 @@ import type {
   OrganizationDoc,
   OrganizationInviteDoc,
   OrganizationMemberDoc,
+  PrdAnalysisDoc,
   ProjectDoc,
   RunResultDoc,
   SessionDoc,
@@ -40,5 +41,6 @@ export function collections(db: Db) {
     testSelectionRuns: db.collection<TestSelectionRunDoc>("test_selection_runs"),
     docTestRuns: db.collection<DocTestRunDoc>("doc_test_runs"),
     syntheticDataRuns: db.collection<SyntheticDataRunDoc>("synthetic_data_runs"),
+    prdAnalyses: db.collection<PrdAnalysisDoc>("prd_analyses"),
   };
 }
