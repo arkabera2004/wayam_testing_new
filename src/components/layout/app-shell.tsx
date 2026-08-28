@@ -14,6 +14,7 @@ import {
   BookOpen,
   Database,
   Bug,
+  ScanSearch,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ const NAV_ITEMS = [
   { to: "/doc-tests", label: "Doc Tests", icon: BookOpen },
   { to: "/synthetic-data", label: "Synthetic Data", icon: Database },
   { to: "/defect-prediction", label: "Defect Prediction", icon: Bug },
+  { to: "/repo-baseline", label: "Repo Baseline", icon: ScanSearch },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },

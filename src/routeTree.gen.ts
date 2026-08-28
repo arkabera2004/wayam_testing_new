@@ -22,6 +22,7 @@ import { Route as AppDefectPredictionRouteImport } from './routes/_app/defect-pr
 import { Route as AppDocTestsRouteImport } from './routes/_app/doc-tests'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppReleaseGateRouteImport } from './routes/_app/release-gate'
+import { Route as AppRepoBaselineRouteImport } from './routes/_app/repo-baseline'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSyntheticDataRouteImport } from './routes/_app/synthetic-data'
 import { Route as AppTestSelectionRouteImport } from './routes/_app/test-selection'
@@ -96,6 +97,11 @@ const AppReleaseGateRoute = AppReleaseGateRouteImport.update({
   path: '/release-gate',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRepoBaselineRoute = AppRepoBaselineRouteImport.update({
+  id: '/repo-baseline',
+  path: '/repo-baseline',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
+  '/repo-baseline': typeof AppRepoBaselineRoute
   '/settings': typeof AppSettingsRoute
   '/synthetic-data': typeof AppSyntheticDataRoute
   '/test-selection': typeof AppTestSelectionRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
+  '/repo-baseline': typeof AppRepoBaselineRoute
   '/settings': typeof AppSettingsRoute
   '/synthetic-data': typeof AppSyntheticDataRoute
   '/test-selection': typeof AppTestSelectionRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_app/doc-tests': typeof AppDocTestsRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/release-gate': typeof AppReleaseGateRoute
+  '/_app/repo-baseline': typeof AppRepoBaselineRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/synthetic-data': typeof AppSyntheticDataRoute
   '/_app/test-selection': typeof AppTestSelectionRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/doc-tests'
     | '/integrations'
     | '/release-gate'
+    | '/repo-baseline'
     | '/settings'
     | '/synthetic-data'
     | '/test-selection'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/doc-tests'
     | '/integrations'
     | '/release-gate'
+    | '/repo-baseline'
     | '/settings'
     | '/synthetic-data'
     | '/test-selection'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_app/doc-tests'
     | '/_app/integrations'
     | '/_app/release-gate'
+    | '/_app/repo-baseline'
     | '/_app/settings'
     | '/_app/synthetic-data'
     | '/_app/test-selection'
@@ -391,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReleaseGateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/repo-baseline': {
+      id: '/_app/repo-baseline'
+      path: '/repo-baseline'
+      fullPath: '/repo-baseline'
+      preLoaderRoute: typeof AppRepoBaselineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -466,6 +485,7 @@ interface AppRouteChildren {
   AppDocTestsRoute: typeof AppDocTestsRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppReleaseGateRoute: typeof AppReleaseGateRoute
+  AppRepoBaselineRoute: typeof AppRepoBaselineRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSyntheticDataRoute: typeof AppSyntheticDataRoute
   AppTestSelectionRoute: typeof AppTestSelectionRoute
@@ -486,6 +506,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocTestsRoute: AppDocTestsRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppReleaseGateRoute: AppReleaseGateRoute,
+  AppRepoBaselineRoute: AppRepoBaselineRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSyntheticDataRoute: AppSyntheticDataRoute,
   AppTestSelectionRoute: AppTestSelectionRoute,
