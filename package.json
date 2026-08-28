@@ -13,7 +13,8 @@
     "db:init": "node scripts/init-db.mjs",
     "test:org-isolation": "node --test tests/org-isolation.test.ts",
     "test:scenario-generation": "node --test tests/scenario-generation.test.ts",
-    "test": "node --test tests/org-isolation.test.ts tests/scenario-generation.test.ts"
+    "test:test-selection": "node --test tests/test-selection-scoring.test.ts",
+    "test": "node --test tests/org-isolation.test.ts tests/scenario-generation.test.ts tests/test-selection-scoring.test.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

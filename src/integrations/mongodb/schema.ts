@@ -169,3 +169,37 @@ export interface ApiKeyDoc {
   lastUsedAt: Date | null;
   revokedAt: Date | null;
 }
+
+// Intelligent Test Selection (ported from aidlc_azure's TestSelection
+// page/test_selection_service): given a set of changed file paths, ranks
+// a project's test cases by how likely they are to cover that change, so
+// a full suite run isn't required for every commit.
+export interface TestSelectionReason {
+  label: string;
+  matched: boolean;
+}
+
+export interface TestSelectionCandidate {
+  testCaseId: ObjectId;
+  scenarioTitle: string;
+  scenarioType: ScenarioType;
+  filePath: string | null;
+  priority: ScenarioPriority;
+  score: number;
+  selected: boolean;
+  reasons: TestSelectionReason[];
+}
+
+export interface TestSelectionRunDoc {
+  _id: ObjectId;
+  orgId: ObjectId;
+  projectId: ObjectId;
+  changedFiles: string[];
+  diffAvailable: boolean;
+  totalTests: number;
+  selectedTests: number;
+  skippedTests: number;
+  estimatedSavingsPct: number;
+  candidates: TestSelectionCandidate[];
+  createdAt: Date;
+}

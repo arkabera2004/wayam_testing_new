@@ -13,6 +13,7 @@ import type {
   TestPlanDoc,
   TestRunDoc,
   TestScenarioDoc,
+  TestSelectionRunDoc,
   UserDoc,
 } from "./schema.ts";
 
@@ -34,5 +35,6 @@ export function collections(db: Db) {
     runResults: db.collection<RunResultDoc>("run_results"),
     integrations: db.collection<IntegrationDoc>("integrations"),
     apiKeys: db.collection<ApiKeyDoc>("api_keys"),
+    testSelectionRuns: db.collection<TestSelectionRunDoc>("test_selection_runs"),
   };
 }

@@ -7,6 +7,7 @@ import {
   Plug,
   Settings as SettingsIcon,
   LogOut,
+  ListFilter,
 } from "lucide-react";
 
 import {
@@ -41,18 +42,13 @@ function initials(user: PublicUser): string {
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
+  { to: "/test-selection", label: "Test Selection", icon: ListFilter },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
-export function AppShell({
-  user,
-  org,
-}: {
-  user: PublicUser;
-  org: PublicOrganization | null;
-}) {
+export function AppShell({ user, org }: { user: PublicUser; org: PublicOrganization | null }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const logOutFn = useServerFn(logOut);

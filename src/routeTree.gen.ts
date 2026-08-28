@@ -18,6 +18,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppTestSelectionRouteImport } from './routes/_app/test-selection'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
 import { Route as AppProjectsNewRouteImport } from './routes/_app/projects/new'
 import { Route as AppProjectsProjectIdIndexRouteImport } from './routes/_app/projects/$projectId/index'
@@ -69,6 +70,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTestSelectionRoute = AppTestSelectionRouteImport.update({
+  id: '/test-selection',
+  path: '/test-selection',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
+  '/test-selection': typeof AppTestSelectionRoute
   '/projects/new': typeof AppProjectsNewRoute
   '/projects/': typeof AppProjectsIndexRoute
   '/projects/$projectId/': typeof AppProjectsProjectIdIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
+  '/test-selection': typeof AppTestSelectionRoute
   '/projects/new': typeof AppProjectsNewRoute
   '/projects': typeof AppProjectsIndexRoute
   '/projects/$projectId': typeof AppProjectsProjectIdIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/test-selection': typeof AppTestSelectionRoute
   '/_app/projects/new': typeof AppProjectsNewRoute
   '/_app/projects/': typeof AppProjectsIndexRoute
   '/_app/projects/$projectId/': typeof AppProjectsProjectIdIndexRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/integrations'
     | '/settings'
+    | '/test-selection'
     | '/projects/new'
     | '/projects/'
     | '/projects/$projectId/'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/integrations'
     | '/settings'
+    | '/test-selection'
     | '/projects/new'
     | '/projects'
     | '/projects/$projectId'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/integrations'
     | '/_app/settings'
+    | '/_app/test-selection'
     | '/_app/projects/new'
     | '/_app/projects/'
     | '/_app/projects/$projectId/'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/test-selection': {
+      id: '/_app/test-selection'
+      path: '/test-selection'
+      fullPath: '/test-selection'
+      preLoaderRoute: typeof AppTestSelectionRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/projects/': {
       id: '/_app/projects/'
       path: '/projects'
@@ -329,6 +348,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTestSelectionRoute: typeof AppTestSelectionRoute
   AppProjectsNewRoute: typeof AppProjectsNewRoute
   AppProjectsIndexRoute: typeof AppProjectsIndexRoute
   AppProjectsProjectIdIndexRoute: typeof AppProjectsProjectIdIndexRoute
@@ -342,6 +362,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTestSelectionRoute: AppTestSelectionRoute,
   AppProjectsNewRoute: AppProjectsNewRoute,
   AppProjectsIndexRoute: AppProjectsIndexRoute,
   AppProjectsProjectIdIndexRoute: AppProjectsProjectIdIndexRoute,

@@ -30,9 +30,7 @@ async function main() {
   await db.collection("organization_members").createIndex({ userId: 1 });
   await db.collection("organization_members").createIndex({ orgId: 1 });
 
-  await db
-    .collection("organization_invites")
-    .createIndex({ orgId: 1, email: 1 }, { unique: true });
+  await db.collection("organization_invites").createIndex({ orgId: 1, email: 1 }, { unique: true });
   await db.collection("organization_invites").createIndex({ email: 1 });
 
   // TTL index: sessions are deleted automatically once expiresAt passes.
@@ -52,11 +50,12 @@ async function main() {
   await db.collection("run_results").createIndex({ runId: 1 });
   await db.collection("run_results").createIndex({ testCaseId: 1 });
 
-  await db
-    .collection("integrations")
-    .createIndex({ orgId: 1, provider: 1 }, { unique: true });
+  await db.collection("integrations").createIndex({ orgId: 1, provider: 1 }, { unique: true });
 
   await db.collection("api_keys").createIndex({ orgId: 1 });
+
+  await db.collection("test_selection_runs").createIndex({ orgId: 1 });
+  await db.collection("test_selection_runs").createIndex({ projectId: 1, createdAt: -1 });
 
   console.log(`Indexes created on database "${dbName}".`);
 }
