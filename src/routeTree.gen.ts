@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
+import { Route as AppCiIntelligenceRouteImport } from './routes/_app/ci-intelligence'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -53,6 +54,11 @@ const SignupRoute = SignupRouteImport.update({
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCiIntelligenceRoute = AppCiIntelligenceRouteImport.update({
+  id: '/ci-intelligence',
+  path: '/ci-intelligence',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/signup': typeof SignupRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/signup': typeof SignupRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/signup': typeof SignupRoute
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/ci-intelligence': typeof AppCiIntelligenceRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/signup'
     | '/analytics'
+    | '/ci-intelligence'
     | '/dashboard'
     | '/integrations'
     | '/settings'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/signup'
     | '/analytics'
+    | '/ci-intelligence'
     | '/dashboard'
     | '/integrations'
     | '/settings'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/signup'
     | '/_app/analytics'
+    | '/_app/ci-intelligence'
     | '/_app/dashboard'
     | '/_app/integrations'
     | '/_app/settings'
@@ -268,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ci-intelligence': {
+      id: '/_app/ci-intelligence'
+      path: '/ci-intelligence'
+      fullPath: '/ci-intelligence'
+      preLoaderRoute: typeof AppCiIntelligenceRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -345,6 +364,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppCiIntelligenceRoute: typeof AppCiIntelligenceRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -359,6 +379,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppCiIntelligenceRoute: AppCiIntelligenceRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppSettingsRoute: AppSettingsRoute,

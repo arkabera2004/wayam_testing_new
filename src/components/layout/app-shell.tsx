@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
   LogOut,
   ListFilter,
+  Activity,
 } from "lucide-react";
 
 import {
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/test-selection", label: "Test Selection", icon: ListFilter },
+  { to: "/ci-intelligence", label: "CI Intelligence", icon: Activity },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
