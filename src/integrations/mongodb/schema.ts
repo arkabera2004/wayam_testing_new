@@ -224,3 +224,26 @@ export interface DocTestRunDoc {
   source: "gemini" | "heuristic";
   createdAt: Date;
 }
+
+// Synthetic Data (ported from aidlc_azure's SyntheticData page): realistic
+// JSON test records generated for a given scenario, either by Gemini or a
+// heuristic field-guessing fallback.
+// A JSON-serializable value — kept explicit (rather than `unknown`) since
+// values flowing through it cross a TanStack Start server-function
+// boundary, which requires statically-known-serializable return types.
+export type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+// Loosely typed on purpose — the record shape is inferred per-scenario
+// (Gemini) or field-guessed (heuristic fallback), see
+// src/lib/synthetic-data/gemini.ts.
+export interface SyntheticDataRunDoc {
+  _id: ObjectId;
+  orgId: ObjectId;
+  scenarioId: ObjectId;
+  scenarioTitle: string;
+  count: number;
+  records: Array<Record<string, JsonValue>>;
+  source: "gemini" | "heuristic";
+  createdAt: Date;
+}

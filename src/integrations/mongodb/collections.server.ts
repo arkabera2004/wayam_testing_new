@@ -10,6 +10,7 @@ import type {
   ProjectDoc,
   RunResultDoc,
   SessionDoc,
+  SyntheticDataRunDoc,
   TestCaseDoc,
   TestPlanDoc,
   TestRunDoc,
@@ -38,5 +39,6 @@ export function collections(db: Db) {
     apiKeys: db.collection<ApiKeyDoc>("api_keys"),
     testSelectionRuns: db.collection<TestSelectionRunDoc>("test_selection_runs"),
     docTestRuns: db.collection<DocTestRunDoc>("doc_test_runs"),
+    syntheticDataRuns: db.collection<SyntheticDataRunDoc>("synthetic_data_runs"),
   };
 }
