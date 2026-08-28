@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   BookOpen,
   Database,
+  Bug,
 } from "lucide-react";
 
 import {
@@ -53,6 +54,7 @@ const NAV_ITEMS = [
   { to: "/release-gate", label: "Release Gate", icon: ShieldCheck },
   { to: "/doc-tests", label: "Doc Tests", icon: BookOpen },
   { to: "/synthetic-data", label: "Synthetic Data", icon: Database },
+  { to: "/defect-prediction", label: "Defect Prediction", icon: Bug },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },

@@ -18,6 +18,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppCiIntelligenceRouteImport } from './routes/_app/ci-intelligence'
 import { Route as AppCodeImpactRouteImport } from './routes/_app/code-impact'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppDefectPredictionRouteImport } from './routes/_app/defect-prediction'
 import { Route as AppDocTestsRouteImport } from './routes/_app/doc-tests'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppReleaseGateRouteImport } from './routes/_app/release-gate'
@@ -73,6 +74,11 @@ const AppCodeImpactRoute = AppCodeImpactRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDefectPredictionRoute = AppDefectPredictionRouteImport.update({
+  id: '/defect-prediction',
+  path: '/defect-prediction',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocTestsRoute = AppDocTestsRouteImport.update({
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
+  '/defect-prediction': typeof AppDefectPredictionRoute
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/ci-intelligence': typeof AppCiIntelligenceRoute
   '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
+  '/defect-prediction': typeof AppDefectPredictionRoute
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/release-gate': typeof AppReleaseGateRoute
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/_app/ci-intelligence': typeof AppCiIntelligenceRoute
   '/_app/code-impact': typeof AppCodeImpactRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/defect-prediction': typeof AppDefectPredictionRoute
   '/_app/doc-tests': typeof AppDocTestsRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/release-gate': typeof AppReleaseGateRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/ci-intelligence'
     | '/code-impact'
     | '/dashboard'
+    | '/defect-prediction'
     | '/doc-tests'
     | '/integrations'
     | '/release-gate'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/ci-intelligence'
     | '/code-impact'
     | '/dashboard'
+    | '/defect-prediction'
     | '/doc-tests'
     | '/integrations'
     | '/release-gate'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/_app/ci-intelligence'
     | '/_app/code-impact'
     | '/_app/dashboard'
+    | '/_app/defect-prediction'
     | '/_app/doc-tests'
     | '/_app/integrations'
     | '/_app/release-gate'
@@ -349,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/defect-prediction': {
+      id: '/_app/defect-prediction'
+      path: '/defect-prediction'
+      fullPath: '/defect-prediction'
+      preLoaderRoute: typeof AppDefectPredictionRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/doc-tests': {
@@ -443,6 +462,7 @@ interface AppRouteChildren {
   AppCiIntelligenceRoute: typeof AppCiIntelligenceRoute
   AppCodeImpactRoute: typeof AppCodeImpactRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDefectPredictionRoute: typeof AppDefectPredictionRoute
   AppDocTestsRoute: typeof AppDocTestsRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppReleaseGateRoute: typeof AppReleaseGateRoute
@@ -462,6 +482,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCiIntelligenceRoute: AppCiIntelligenceRoute,
   AppCodeImpactRoute: AppCodeImpactRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDefectPredictionRoute: AppDefectPredictionRoute,
   AppDocTestsRoute: AppDocTestsRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppReleaseGateRoute: AppReleaseGateRoute,

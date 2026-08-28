@@ -14,7 +14,7 @@
     "test:org-isolation": "node --test tests/org-isolation.test.ts",
     "test:scenario-generation": "node --test tests/scenario-generation.test.ts",
     "test:test-selection": "node --test tests/test-selection-scoring.test.ts",
-    "test": "node --test tests/org-isolation.test.ts tests/scenario-generation.test.ts tests/test-selection-scoring.test.ts tests/ci-intelligence-aggregate.test.ts tests/code-impact.test.ts tests/release-gate.test.ts tests/doc-tests.test.ts tests/synthetic-data.test.ts"
+    "test": "node --test tests/org-isolation.test.ts tests/scenario-generation.test.ts tests/test-selection-scoring.test.ts tests/ci-intelligence-aggregate.test.ts tests/code-impact.test.ts tests/release-gate.test.ts tests/doc-tests.test.ts tests/synthetic-data.test.ts tests/defect-prediction.test.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
