@@ -52,8 +52,8 @@ function AnalyticsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Coverage &amp; Analytics</h1>
         <p className="text-sm text-muted-foreground">
-          Coverage by scenario type, pass/fail trends, and the flaky-test leaderboard across
-          your org.
+          Coverage by scenario type, pass/fail trends, and the flaky-test leaderboard across your
+          org.
         </p>
       </div>
 
@@ -72,7 +72,9 @@ function AnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Coverage by scenario type</CardTitle>
-                <CardDescription>Share of scenarios accepted, per type, across all projects</CardDescription>
+                <CardDescription>
+                  Share of scenarios accepted, per type, across all projects
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {data.coverageByType.length === 0 ? (
@@ -86,7 +88,20 @@ function AnalyticsPage() {
                       <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} />
                       <YAxis tickLine={false} axisLine={false} width={32} />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="coverage" fill="var(--color-coverage)" radius={4} />
+                      {/* isAnimationActive={false}: Recharts' default mount
+                          animation for <Bar> would sometimes never finish
+                          populating the bar shapes (rectangleGroups mount
+                          empty, permanently) once the app had more
+                          concurrent state updates in flight on first paint
+                          (extra sidebar nav items, the theme toggle's
+                          effect). Static bars render immediately and
+                          reliably instead. */}
+                      <Bar
+                        dataKey="coverage"
+                        fill="var(--color-coverage)"
+                        radius={4}
+                        isAnimationActive={false}
+                      />
                     </BarChart>
                   </ChartContainer>
                 )}
@@ -104,8 +119,20 @@ function AnalyticsPage() {
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line dataKey="passed" type="monotone" stroke="var(--color-passed)" strokeWidth={2} dot={false} />
-                    <Line dataKey="failed" type="monotone" stroke="var(--color-failed)" strokeWidth={2} dot={false} />
+                    <Line
+                      dataKey="passed"
+                      type="monotone"
+                      stroke="var(--color-passed)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      dataKey="failed"
+                      type="monotone"
+                      stroke="var(--color-failed)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ChartContainer>
               </CardContent>
@@ -179,7 +206,10 @@ function AnalyticsPage() {
                         <TableCell className="text-muted-foreground">{test.projectName}</TableCell>
                         <TableCell>{test.flips}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="border-warning/30 bg-warning/15 text-warning">
+                          <Badge
+                            variant="outline"
+                            className="border-warning/30 bg-warning/15 text-warning"
+                          >
                             {test.rate}%
                           </Badge>
                         </TableCell>
