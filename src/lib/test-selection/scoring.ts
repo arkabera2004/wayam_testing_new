@@ -8,6 +8,8 @@
 // real, deterministic signal — not a simulation — though it's coarser than
 // aidlc_azure's original AST-aware impact analysis (that's a further
 // INTEGRATION POINT, not reimplemented here).
+import { filenameStem, pathSegments } from "../shared/file-overlap.ts";
+
 export interface SelectionInput {
   testCaseId: string;
   scenarioTitle: string;
@@ -24,20 +26,6 @@ export interface SelectionResult {
   score: number;
   selected: boolean;
   reasons: SelectionReason[];
-}
-
-function pathSegments(path: string): string[] {
-  return path
-    .split(/[/\\]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function filenameStem(path: string): string {
-  const base = pathSegments(path).at(-1) ?? path;
-  // Strip everything from the first dot on, not just the last extension,
-  // so "checkout.spec.ts" and "checkout.ts" both stem to "checkout".
-  return base.slice(0, base.indexOf(".") === -1 ? undefined : base.indexOf(".")).toLowerCase();
 }
 
 /** Splits a title/description into lowercase word tokens for a loose

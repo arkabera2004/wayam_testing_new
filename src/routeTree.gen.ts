@@ -16,6 +16,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppCiIntelligenceRouteImport } from './routes/_app/ci-intelligence'
+import { Route as AppCodeImpactRouteImport } from './routes/_app/code-impact'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -59,6 +60,11 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
 const AppCiIntelligenceRoute = AppCiIntelligenceRouteImport.update({
   id: '/ci-intelligence',
   path: '/ci-intelligence',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCodeImpactRoute = AppCodeImpactRouteImport.update({
+  id: '/code-impact',
+  path: '/code-impact',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/analytics': typeof AppAnalyticsRoute
   '/ci-intelligence': typeof AppCiIntelligenceRoute
+  '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/analytics': typeof AppAnalyticsRoute
   '/ci-intelligence': typeof AppCiIntelligenceRoute
+  '/code-impact': typeof AppCodeImpactRoute
   '/dashboard': typeof AppDashboardRoute
   '/integrations': typeof AppIntegrationsRoute
   '/settings': typeof AppSettingsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/ci-intelligence': typeof AppCiIntelligenceRoute
+  '/_app/code-impact': typeof AppCodeImpactRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/analytics'
     | '/ci-intelligence'
+    | '/code-impact'
     | '/dashboard'
     | '/integrations'
     | '/settings'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/analytics'
     | '/ci-intelligence'
+    | '/code-impact'
     | '/dashboard'
     | '/integrations'
     | '/settings'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_app/analytics'
     | '/_app/ci-intelligence'
+    | '/_app/code-impact'
     | '/_app/dashboard'
     | '/_app/integrations'
     | '/_app/settings'
@@ -287,6 +299,13 @@ declare module '@tanstack/react-router' {
       path: '/ci-intelligence'
       fullPath: '/ci-intelligence'
       preLoaderRoute: typeof AppCiIntelligenceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/code-impact': {
+      id: '/_app/code-impact'
+      path: '/code-impact'
+      fullPath: '/code-impact'
+      preLoaderRoute: typeof AppCodeImpactRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -365,6 +384,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCiIntelligenceRoute: typeof AppCiIntelligenceRoute
+  AppCodeImpactRoute: typeof AppCodeImpactRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -380,6 +400,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCiIntelligenceRoute: AppCiIntelligenceRoute,
+  AppCodeImpactRoute: AppCodeImpactRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppSettingsRoute: AppSettingsRoute,

@@ -9,6 +9,7 @@ import {
   LogOut,
   ListFilter,
   Activity,
+  GitBranch,
 } from "lucide-react";
 
 import {
@@ -44,6 +45,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/test-selection", label: "Test Selection", icon: ListFilter },
+  { to: "/code-impact", label: "Code Impact", icon: GitBranch },
   { to: "/ci-intelligence", label: "CI Intelligence", icon: Activity },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
