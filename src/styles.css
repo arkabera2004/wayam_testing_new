@@ -68,7 +68,7 @@
 }
 
 /* Parikshan — dark-first B2B testing platform.
-   Near-black canvas, teal signal accent, deep-blue secondary surfaces. */
+   Near-black canvas, orange signal accent, deep-blue secondary surfaces. */
 :root {
   --radius: 0.625rem;
   --background: oklch(0.16 0.018 250);
@@ -77,7 +77,7 @@
   --card-foreground: oklch(0.97 0.005 240);
   --popover: oklch(0.203 0.021 252);
   --popover-foreground: oklch(0.97 0.005 240);
-  --primary: oklch(0.78 0.14 184);
+  --primary: oklch(0.75 0.17 50);
   --primary-foreground: oklch(0.18 0.03 220);
   --secondary: oklch(0.26 0.03 253);
   --secondary-foreground: oklch(0.95 0.006 240);
@@ -93,20 +93,20 @@
   --warning-foreground: oklch(0.2 0.03 60);
   --border: oklch(0.29 0.025 252);
   --input: oklch(0.29 0.025 252);
-  --ring: oklch(0.78 0.14 184);
-  --chart-1: oklch(0.78 0.14 184);
+  --ring: oklch(0.75 0.17 50);
+  --chart-1: oklch(0.75 0.17 50);
   --chart-2: oklch(0.63 0.21 22);
   --chart-3: oklch(0.79 0.15 78);
   --chart-4: oklch(0.62 0.14 255);
   --chart-5: oklch(0.72 0.16 158);
   --sidebar: oklch(0.185 0.02 252);
   --sidebar-foreground: oklch(0.9 0.008 240);
-  --sidebar-primary: oklch(0.78 0.14 184);
+  --sidebar-primary: oklch(0.75 0.17 50);
   --sidebar-primary-foreground: oklch(0.18 0.03 220);
   --sidebar-accent: oklch(0.26 0.03 253);
   --sidebar-accent-foreground: oklch(0.97 0.005 240);
   --sidebar-border: oklch(0.28 0.025 252);
-  --sidebar-ring: oklch(0.78 0.14 184);
+  --sidebar-ring: oklch(0.75 0.17 50);
 
   --gradient-hero: radial-gradient(
       1200px 600px at 15% -10%,
