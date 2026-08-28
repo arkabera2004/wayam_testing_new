@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "db:init": "node scripts/init-db.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs",
     "test:org-isolation": "node --test tests/org-isolation.test.ts",
     "test:scenario-generation": "node --test tests/scenario-generation.test.ts",
     "test:test-selection": "node --test tests/test-selection-scoring.test.ts",
