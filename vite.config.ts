@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
@@ -20,7 +21,12 @@ export default defineConfig({
     // by mistake breaks client hydration entirely, since the generated
     // route tree then expects src/server.ts to export `startInstance`).
     tanstackStart({ server: { entry: "server" } }),
-    // MUST come after tanstackStart().
+    // Runs the actual Nitro build (presets, zero-config Vercel output,
+    // `.output/server/index.mjs`) that consumes the entry above — without
+    // this, `vite build` only emits a plain dist/client + dist/server SSR
+    // bundle that Vercel's zero-config detection can't route to. MUST
+    // come after tanstackStart().
+    nitro(),
     viteReact(),
   ],
 });
