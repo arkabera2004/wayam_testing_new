@@ -21,8 +21,11 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDefectPredictionRouteImport } from './routes/_app/defect-prediction'
 import { Route as AppDocTestsRouteImport } from './routes/_app/doc-tests'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
+import { Route as AppPrdAnalysisRouteImport } from './routes/_app/prd-analysis'
+import { Route as AppQuarantineRouteImport } from './routes/_app/quarantine'
 import { Route as AppReleaseGateRouteImport } from './routes/_app/release-gate'
 import { Route as AppRepoBaselineRouteImport } from './routes/_app/repo-baseline'
+import { Route as AppSelfHealingRouteImport } from './routes/_app/self-healing'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSyntheticDataRouteImport } from './routes/_app/synthetic-data'
 import { Route as AppTestSelectionRouteImport } from './routes/_app/test-selection'
@@ -92,6 +95,16 @@ const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPrdAnalysisRoute = AppPrdAnalysisRouteImport.update({
+  id: '/prd-analysis',
+  path: '/prd-analysis',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuarantineRoute = AppQuarantineRouteImport.update({
+  id: '/quarantine',
+  path: '/quarantine',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReleaseGateRoute = AppReleaseGateRouteImport.update({
   id: '/release-gate',
   path: '/release-gate',
@@ -100,6 +113,11 @@ const AppReleaseGateRoute = AppReleaseGateRouteImport.update({
 const AppRepoBaselineRoute = AppRepoBaselineRouteImport.update({
   id: '/repo-baseline',
   path: '/repo-baseline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSelfHealingRoute = AppSelfHealingRouteImport.update({
+  id: '/self-healing',
+  path: '/self-healing',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -164,8 +182,11 @@ export interface FileRoutesByFullPath {
   '/defect-prediction': typeof AppDefectPredictionRoute
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/prd-analysis': typeof AppPrdAnalysisRoute
+  '/quarantine': typeof AppQuarantineRoute
   '/release-gate': typeof AppReleaseGateRoute
   '/repo-baseline': typeof AppRepoBaselineRoute
+  '/self-healing': typeof AppSelfHealingRoute
   '/settings': typeof AppSettingsRoute
   '/synthetic-data': typeof AppSyntheticDataRoute
   '/test-selection': typeof AppTestSelectionRoute
@@ -188,8 +209,11 @@ export interface FileRoutesByTo {
   '/defect-prediction': typeof AppDefectPredictionRoute
   '/doc-tests': typeof AppDocTestsRoute
   '/integrations': typeof AppIntegrationsRoute
+  '/prd-analysis': typeof AppPrdAnalysisRoute
+  '/quarantine': typeof AppQuarantineRoute
   '/release-gate': typeof AppReleaseGateRoute
   '/repo-baseline': typeof AppRepoBaselineRoute
+  '/self-healing': typeof AppSelfHealingRoute
   '/settings': typeof AppSettingsRoute
   '/synthetic-data': typeof AppSyntheticDataRoute
   '/test-selection': typeof AppTestSelectionRoute
@@ -214,8 +238,11 @@ export interface FileRoutesById {
   '/_app/defect-prediction': typeof AppDefectPredictionRoute
   '/_app/doc-tests': typeof AppDocTestsRoute
   '/_app/integrations': typeof AppIntegrationsRoute
+  '/_app/prd-analysis': typeof AppPrdAnalysisRoute
+  '/_app/quarantine': typeof AppQuarantineRoute
   '/_app/release-gate': typeof AppReleaseGateRoute
   '/_app/repo-baseline': typeof AppRepoBaselineRoute
+  '/_app/self-healing': typeof AppSelfHealingRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/synthetic-data': typeof AppSyntheticDataRoute
   '/_app/test-selection': typeof AppTestSelectionRoute
@@ -240,8 +267,11 @@ export interface FileRouteTypes {
     | '/defect-prediction'
     | '/doc-tests'
     | '/integrations'
+    | '/prd-analysis'
+    | '/quarantine'
     | '/release-gate'
     | '/repo-baseline'
+    | '/self-healing'
     | '/settings'
     | '/synthetic-data'
     | '/test-selection'
@@ -264,8 +294,11 @@ export interface FileRouteTypes {
     | '/defect-prediction'
     | '/doc-tests'
     | '/integrations'
+    | '/prd-analysis'
+    | '/quarantine'
     | '/release-gate'
     | '/repo-baseline'
+    | '/self-healing'
     | '/settings'
     | '/synthetic-data'
     | '/test-selection'
@@ -289,8 +322,11 @@ export interface FileRouteTypes {
     | '/_app/defect-prediction'
     | '/_app/doc-tests'
     | '/_app/integrations'
+    | '/_app/prd-analysis'
+    | '/_app/quarantine'
     | '/_app/release-gate'
     | '/_app/repo-baseline'
+    | '/_app/self-healing'
     | '/_app/settings'
     | '/_app/synthetic-data'
     | '/_app/test-selection'
@@ -396,6 +432,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIntegrationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/prd-analysis': {
+      id: '/_app/prd-analysis'
+      path: '/prd-analysis'
+      fullPath: '/prd-analysis'
+      preLoaderRoute: typeof AppPrdAnalysisRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/quarantine': {
+      id: '/_app/quarantine'
+      path: '/quarantine'
+      fullPath: '/quarantine'
+      preLoaderRoute: typeof AppQuarantineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/release-gate': {
       id: '/_app/release-gate'
       path: '/release-gate'
@@ -408,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/repo-baseline'
       fullPath: '/repo-baseline'
       preLoaderRoute: typeof AppRepoBaselineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/self-healing': {
+      id: '/_app/self-healing'
+      path: '/self-healing'
+      fullPath: '/self-healing'
+      preLoaderRoute: typeof AppSelfHealingRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -484,8 +541,11 @@ interface AppRouteChildren {
   AppDefectPredictionRoute: typeof AppDefectPredictionRoute
   AppDocTestsRoute: typeof AppDocTestsRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
+  AppPrdAnalysisRoute: typeof AppPrdAnalysisRoute
+  AppQuarantineRoute: typeof AppQuarantineRoute
   AppReleaseGateRoute: typeof AppReleaseGateRoute
   AppRepoBaselineRoute: typeof AppRepoBaselineRoute
+  AppSelfHealingRoute: typeof AppSelfHealingRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSyntheticDataRoute: typeof AppSyntheticDataRoute
   AppTestSelectionRoute: typeof AppTestSelectionRoute
@@ -505,8 +565,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppDefectPredictionRoute: AppDefectPredictionRoute,
   AppDocTestsRoute: AppDocTestsRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
+  AppPrdAnalysisRoute: AppPrdAnalysisRoute,
+  AppQuarantineRoute: AppQuarantineRoute,
   AppReleaseGateRoute: AppReleaseGateRoute,
   AppRepoBaselineRoute: AppRepoBaselineRoute,
+  AppSelfHealingRoute: AppSelfHealingRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSyntheticDataRoute: AppSyntheticDataRoute,
   AppTestSelectionRoute: AppTestSelectionRoute,

@@ -13,6 +13,9 @@ import {
   Database,
   Bug,
   ScanSearch,
+  FileSearch,
+  Wrench,
+  ShieldOff,
 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
@@ -88,6 +91,24 @@ const SUITE_MODULES = [
     icon: ScanSearch,
     title: "Repo Baseline",
     description: "A structural snapshot before drafting a test plan.",
+  },
+  {
+    to: "/prd-analysis",
+    icon: FileSearch,
+    title: "PRD Analysis",
+    description: "Traced test cases from a requirements document.",
+  },
+  {
+    to: "/self-healing",
+    icon: Wrench,
+    title: "Self-Healing",
+    description: "Every locator fix Parikshan has proposed, org-wide.",
+  },
+  {
+    to: "/quarantine",
+    icon: ShieldOff,
+    title: "Quarantine",
+    description: "Flaky tests pulled out of release-gate blocking.",
   },
 ] as const;
 

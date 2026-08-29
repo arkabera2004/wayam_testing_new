@@ -15,6 +15,9 @@ import {
   Database,
   Bug,
   ScanSearch,
+  FileSearch,
+  Wrench,
+  ShieldOff,
 } from "lucide-react";
 
 import {
@@ -58,6 +61,9 @@ const NAV_ITEMS = [
   { to: "/synthetic-data", label: "Synthetic Data", icon: Database },
   { to: "/defect-prediction", label: "Defect Prediction", icon: Bug },
   { to: "/repo-baseline", label: "Repo Baseline", icon: ScanSearch },
+  { to: "/prd-analysis", label: "PRD Analysis", icon: FileSearch },
+  { to: "/self-healing", label: "Self-Healing", icon: Wrench },
+  { to: "/quarantine", label: "Quarantine", icon: ShieldOff },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/integrations", label: "Integrations", icon: Plug },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
