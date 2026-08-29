@@ -63,7 +63,13 @@ change providers.
 cd services/crawl-agent
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-playwright install chromium --with-deps
+# browser-use 0.13.8 drives a real Chromium over CDP (via its own
+# browser-harness/cdp-use stack) — it does NOT depend on the `playwright`
+# package, so there's no `playwright install` step. It auto-discovers an
+# installed Chrome/Chromium on PATH (see
+# browser_use.browser.chrome.find_chrome_executable); on macOS that's
+# usually already Google Chrome, on Linux install one, e.g.:
+#   sudo apt-get install -y chromium   # Debian/Ubuntu
 cp .env.example .env   # fill in GOOGLE_API_KEY (or reuse the repo root .env)
 uvicorn app.main:app --reload --port 8090
 ```
@@ -76,6 +82,26 @@ curl -X POST localhost:8090/crawls -H 'content-type: application/json' \
 curl localhost:8090/crawls/<crawl_id>
 # => {"status": "completed", "graph": {...}}
 ```
+
+## Deploying (Render)
+
+This service ships as a container (`Dockerfile`) since Render — like most
+PaaS platforms — can't run a persistent Chromium process on a generic
+Node/Python buildpack. `render.yaml` is a Render Blueprint:
+
+1. Render dashboard -> **New** -> **Blueprint** -> select this GitHub repo.
+   Render finds `services/crawl-agent/render.yaml` automatically.
+2. It'll prompt once for `GOOGLE_API_KEY` (left out of the committed
+   blueprint on purpose) — reuse the same key already used by the main
+   app.
+3. Once live, copy the service's `https://<name>.onrender.com` URL into
+   the main app's `CRAWL_AGENT_URL` env var (Vercel project settings, or
+   local `.env` for dev) and redeploy the main app.
+
+The Dockerfile installs Debian's `chromium` package (not
+`playwright install`, see the note above) — `browser_use` auto-discovers
+it on `PATH` and auto-disables the Chrome sandbox once it detects
+`/.dockerenv`, so no extra flags are needed.
 
 ## Status
 

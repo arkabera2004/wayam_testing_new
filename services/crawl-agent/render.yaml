@@ -1,0 +1,22 @@
+# Render Blueprint for the crawl-agent service. In the Render dashboard:
+# New -> Blueprint -> select this repo -> Render finds this file
+# automatically (root-relative path below matters since the repo root is
+# the frontend app, not this directory).
+#
+# GOOGLE_API_KEY is intentionally left as `sync: false` (i.e. no value
+# here) — Render will prompt for it once in the dashboard rather than
+# having it committed to git. Paste the same key already used in the
+# main app's Vercel env / local .env.
+services:
+  - type: web
+    name: parikshan-crawl-agent
+    runtime: docker
+    dockerfilePath: ./services/crawl-agent/Dockerfile
+    dockerContext: ./services/crawl-agent
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: CRAWL_AGENT_BACKEND
+        value: self_hosted
+      - key: GOOGLE_API_KEY
+        sync: false
