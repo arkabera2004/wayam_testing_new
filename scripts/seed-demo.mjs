@@ -167,6 +167,8 @@ async function seedProject(db, orgId, def, index) {
     language: "typescript",
     framework: scenario.type === "API" ? "http" : "playwright",
     status: "not_run",
+    quarantined: false,
+    quarantinedAt: null,
     createdAt: scenario.createdAt,
     updatedAt: scenario.createdAt,
   }));
@@ -184,9 +186,14 @@ async function seedProject(db, orgId, def, index) {
       const runId = new ObjectId();
       const results = caseDocs.map((c, i) => {
         let status = Math.random() < 0.82 ? "passed" : "failed";
-        if (flakyCaseId && c._id.equals(flakyCaseId)) {
+        const isFlakyCase = flakyCaseId && c._id.equals(flakyCaseId);
+        if (isFlakyCase) {
           status = (day + r) % 2 === 0 ? "passed" : "failed";
         }
+        // Give the flaky case's very last failure a heal suggestion, so
+        // /self-healing has something real to show.
+        const givesHealSuggestion =
+          isFlakyCase && status === "failed" && day === 0 && r === runsThisDay - 1;
         return {
           _id: new ObjectId(),
           orgId,
@@ -199,8 +206,13 @@ async function seedProject(db, orgId, def, index) {
               ? "Error: expected element to be visible within 5000ms — locator resolved to 0 elements."
               : null,
           createdAt: new Date(startedAt.getTime() + i * 1500),
-          healedSelector: null,
-          healNote: null,
+          healedSelector: givesHealSuggestion
+            ? "getByRole('button', { name: 'Place order' })"
+            : null,
+          healNote: givesHealSuggestion
+            ? "[high confidence] The element's accessible name changed; position and class list are unchanged."
+            : null,
+          healApplied: false,
         };
       });
       const failed = results.filter((r2) => r2.status === "failed").length;

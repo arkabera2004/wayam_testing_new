@@ -63,6 +63,12 @@ async function main() {
   await db.collection("synthetic_data_runs").createIndex({ orgId: 1 });
   await db.collection("synthetic_data_runs").createIndex({ scenarioId: 1, createdAt: -1 });
 
+  await db.collection("prd_analyses").createIndex({ orgId: 1 });
+  await db.collection("prd_analyses").createIndex({ projectId: 1, createdAt: -1 });
+
+  await db.collection("test_cases").createIndex({ orgId: 1, quarantined: 1 });
+  await db.collection("run_results").createIndex({ orgId: 1, healedSelector: 1 });
+
   console.log(`Indexes created on database "${dbName}".`);
 }
 
