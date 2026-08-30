@@ -1,0 +1,283 @@
+@import "tailwindcss";
+@import "../styles/reference-tokens.css";
+@import "../styles/semantic-tokens.css";
+
+/* ============================================================
+   TIER 3 — TAILWIND SURFACE
+   Semantic tokens exposed as readable utilities.
+
+   `@theme inline` is used for anything that must re-resolve when
+   the theme changes: the utility emits the semantic var directly,
+   so [data-theme="light"] flips every utility with zero component
+   edits.
+   ============================================================ */
+
+@theme {
+  /* Font families are emitted as real :root vars so base styles and
+     raw CSS can reference them too. */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-display: var(--font-michroma), var(--font-geist), ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+@theme inline {
+  /* ---------- SURFACE -> bg-* ---------- */
+  --color-page: var(--surface-page-background);
+  --color-container: var(--surface-container);
+  --color-raised: var(--surface-raised);
+  --color-raised-2: var(--surface-raised-x2);
+  --color-action: var(--surface-action);
+  --color-scrollbar: var(--surface-scroll-bar);
+  --color-scrim: var(--surface-scrim);
+
+  /* ---------- TEXT -> text-* ---------- */
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-quaternary: var(--text-quaternary);
+  --color-on-color: var(--text-on-color);
+
+  /* ---------- STROKE -> border-* / ring-* / divide-* ---------- */
+  --color-default: var(--stroke-default);
+  --color-active: var(--stroke-active);
+  --color-muted: var(--stroke-muted);
+  --color-disabled: var(--stroke-disabled);
+  --color-on-color-stroke: var(--stroke-on-color);
+
+  /* ---------- ACTION SURFACE ---------- */
+  --color-action-primary: var(--action-primary-default);
+  --color-action-primary-hover: var(--action-primary-hover);
+  --color-action-primary-focused: var(--action-primary-focused);
+  --color-action-primary-disabled: var(--action-primary-disabled);
+  --color-action-primary-content: var(--action-primary-content);
+
+  --color-action-secondary: var(--action-secondary-default);
+  --color-action-secondary-hover: var(--action-secondary-hover);
+  --color-action-secondary-focused: var(--action-secondary-focused);
+  --color-action-secondary-disabled: var(--action-secondary-disabled);
+  --color-action-secondary-content: var(--action-secondary-content);
+
+  --color-action-tertiary: var(--action-tertiary-default);
+  --color-action-tertiary-hover: var(--action-tertiary-hover);
+  --color-action-tertiary-focused: var(--action-tertiary-focused);
+  --color-action-tertiary-content: var(--action-tertiary-content);
+
+  /* ---------- FEEDBACK ---------- */
+  --color-success: var(--feedback-success-content);
+  --color-success-icon: var(--feedback-success-icon);
+  --color-success-stroke: var(--feedback-success-stroke);
+  --color-success-surface: var(--feedback-success-background);
+  --color-success-solid: var(--feedback-success-solid);
+
+  --color-info: var(--feedback-info-content);
+  --color-info-icon: var(--feedback-info-icon);
+  --color-info-stroke: var(--feedback-info-stroke);
+  --color-info-surface: var(--feedback-info-background);
+  --color-info-solid: var(--feedback-info-solid);
+
+  --color-neutral: var(--feedback-neutral-content);
+  --color-neutral-icon: var(--feedback-neutral-icon);
+  --color-neutral-stroke: var(--feedback-neutral-stroke);
+  --color-neutral-surface: var(--feedback-neutral-background);
+  --color-neutral-solid: var(--feedback-neutral-solid);
+
+  --color-warning: var(--feedback-warning-content);
+  --color-warning-icon: var(--feedback-warning-icon);
+  --color-warning-stroke: var(--feedback-warning-stroke);
+  --color-warning-surface: var(--feedback-warning-background);
+  --color-warning-solid: var(--feedback-warning-solid);
+
+  --color-error: var(--feedback-error-content);
+  --color-error-icon: var(--feedback-error-icon);
+  --color-error-stroke: var(--feedback-error-stroke);
+  --color-error-surface: var(--feedback-error-background);
+  --color-error-solid: var(--feedback-error-solid);
+  --color-on-solid: var(--text-on-solid);
+
+  /* ============================================================
+     SEMANTIC TYPOGRAPHY -> text-<name>
+     Each token carries size + line-height + weight + tracking, so
+     components never pick raw sizes.
+     ============================================================ */
+
+  /* Michroma — display / telemetry */
+  --text-display-page: var(--ref-display-3xl-size);
+  --text-display-page--line-height: var(--ref-display-3xl-line);
+  --text-display-page--font-weight: 400;
+  --text-display-page--letter-spacing: var(--ref-tracking-display-tight);
+
+  --text-display-metric-xl: var(--ref-display-6xl-size);
+  --text-display-metric-xl--line-height: 1;
+  --text-display-metric-xl--font-weight: 400;
+  --text-display-metric-xl--letter-spacing: var(--ref-tracking-display-tight);
+
+  --text-display-metric: var(--ref-display-4xl-size);
+  --text-display-metric--line-height: 1.05;
+  --text-display-metric--font-weight: 400;
+  --text-display-metric--letter-spacing: var(--ref-tracking-display-tight);
+
+  --text-display-sm: var(--ref-display-lg-size);
+  --text-display-sm--line-height: var(--ref-display-lg-line);
+  --text-display-sm--font-weight: 400;
+  --text-display-sm--letter-spacing: var(--ref-tracking-display-loose);
+
+  --text-display-xs: var(--ref-display-base-size);
+  --text-display-xs--line-height: var(--ref-display-base-line);
+  --text-display-xs--font-weight: 400;
+  --text-display-xs--letter-spacing: var(--ref-tracking-display-loose);
+
+  /* Geist — functional UI */
+  --text-heading-lg: var(--ref-text-2xl-size);
+  --text-heading-lg--line-height: var(--ref-text-2xl-line);
+  --text-heading-lg--font-weight: 600;
+  --text-heading-lg--letter-spacing: var(--ref-tracking-body);
+
+  --text-heading-md: var(--ref-text-lg-size);
+  --text-heading-md--line-height: var(--ref-text-lg-line);
+  --text-heading-md--font-weight: 600;
+  --text-heading-md--letter-spacing: var(--ref-tracking-body);
+
+  --text-heading-sm: var(--ref-text-base-size);
+  --text-heading-sm--line-height: 22px;
+  --text-heading-sm--font-weight: 600;
+  --text-heading-sm--letter-spacing: var(--ref-tracking-body);
+
+  --text-body-lg: var(--ref-text-base-size);
+  --text-body-lg--line-height: var(--ref-text-base-line);
+  --text-body-lg--font-weight: 400;
+  --text-body-lg--letter-spacing: var(--ref-tracking-body);
+
+  --text-body-md: var(--ref-text-sm-size);
+  --text-body-md--line-height: var(--ref-text-sm-line);
+  --text-body-md--font-weight: 400;
+  --text-body-md--letter-spacing: var(--ref-tracking-body);
+
+  --text-body-sm: var(--ref-text-xs-size);
+  --text-body-sm--line-height: var(--ref-text-xs-line);
+  --text-body-sm--font-weight: 400;
+  --text-body-sm--letter-spacing: var(--ref-tracking-body);
+
+  --text-label-md: var(--ref-text-sm-size);
+  --text-label-md--line-height: var(--ref-text-sm-line);
+  --text-label-md--font-weight: 500;
+  --text-label-md--letter-spacing: var(--ref-tracking-label);
+
+  --text-label-sm: var(--ref-text-xs-size);
+  --text-label-sm--line-height: var(--ref-text-xs-line);
+  --text-label-sm--font-weight: 500;
+  --text-label-sm--letter-spacing: var(--ref-tracking-label);
+
+  --text-caption: 11px;
+  --text-caption--line-height: var(--ref-text-xs-line);
+  --text-caption--font-weight: 500;
+  --text-caption--letter-spacing: var(--ref-tracking-label);
+}
+
+/* ------------------------------------------------------------
+   ICON UTILITIES
+   Icons follow the typographic hierarchy but get their own
+   vocabulary so intent stays readable at the call site.
+   ------------------------------------------------------------ */
+@utility icon-primary {
+  color: var(--icon-primary);
+}
+@utility icon-secondary {
+  color: var(--icon-secondary);
+}
+@utility icon-tertiary {
+  color: var(--icon-tertiary);
+}
+@utility icon-quaternary {
+  color: var(--icon-quaternary);
+}
+@utility icon-on-color {
+  color: var(--icon-on-color);
+}
+
+/* Graph nodes fade in as discovery finds them. Opacity only, so it composes
+   with the translate utilities that position each node. */
+@utility node-pop {
+  animation: node-pop 300ms ease-out both;
+}
+
+@keyframes node-pop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Numeric alignment for telemetry values. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------
+   BRAND LOCKUP
+   Both wordmark variants ship in the markup; the theme attribute
+   decides which one is painted, so there is no swap on hydration.
+   Light is the product default, so it is the one shown when no
+   attribute is present yet.
+   ------------------------------------------------------------ */
+.brand-on-light {
+  display: block;
+}
+
+.brand-on-dark {
+  display: none;
+}
+
+[data-theme="dark"] .brand-on-light {
+  display: none;
+}
+
+[data-theme="dark"] .brand-on-dark {
+  display: block;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--surface-page-background);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--ref-text-sm-size);
+    line-height: var(--ref-text-sm-line);
+    letter-spacing: var(--ref-tracking-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+  }
+
+  ::selection {
+    background-color: var(--stroke-active);
+    color: var(--text-primary);
+  }
+
+  /* Dense, unobtrusive scrollbars for interior scroll regions. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-scroll-bar) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--surface-scroll-bar);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

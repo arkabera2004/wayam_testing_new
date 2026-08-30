@@ -1,0 +1,188 @@
+/* ============================================================
+   TIER 2 — SEMANTIC TOKENS
+   These describe WHAT a color DOES. Components consume these
+   (via the Tailwind utilities declared in globals.css).
+
+   Dark-mode-first: the dark mapping lives on :root so the app
+   is correct with no theme attribute present. A light mapping
+   can be filled in under [data-theme="light"] later without
+   touching a single component.
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  /* ---------- SURFACE ---------- */
+  --surface-page-background: var(--ref-black);
+  --surface-container: var(--ref-gray-950);
+  --surface-raised: var(--ref-gray-900);
+  --surface-raised-x2: var(--ref-gray-850);
+  --surface-action: var(--ref-gray-900);
+  --surface-scroll-bar: var(--ref-gray-750);
+  --surface-scrim: rgba(0, 0, 0, 0.6);
+
+  /* ---------- TEXT ---------- */
+  --text-primary: var(--ref-gray-50);
+  --text-secondary: var(--ref-gray-300);
+  --text-tertiary: var(--ref-gray-500);
+  --text-quaternary: var(--ref-gray-600);
+  --text-on-color: var(--ref-black);
+
+  /* ---------- ICON ---------- */
+  --icon-primary: var(--ref-gray-50);
+  --icon-secondary: var(--ref-gray-300);
+  --icon-tertiary: var(--ref-gray-500);
+  --icon-quaternary: var(--ref-gray-600);
+  --icon-on-color: var(--ref-black);
+
+  /* ---------- STROKE ---------- */
+  --stroke-default: rgba(255, 255, 255, 0.14);
+  --stroke-active: rgba(255, 255, 255, 0.24);
+  --stroke-muted: rgba(255, 255, 255, 0.08);
+  --stroke-disabled: rgba(255, 255, 255, 0.04);
+  --stroke-on-color: rgba(0, 0, 0, 0.18);
+
+  /* ---------- ACTION SURFACE ---------- */
+  --action-primary-default: var(--ref-gray-50);
+  --action-primary-hover: var(--ref-gray-200);
+  --action-primary-focused: var(--ref-white);
+  --action-primary-disabled: var(--ref-gray-700);
+  --action-primary-content: var(--ref-black);
+
+  --action-secondary-default: var(--ref-gray-850);
+  --action-secondary-hover: var(--ref-gray-800);
+  --action-secondary-focused: var(--ref-gray-750);
+  --action-secondary-disabled: var(--ref-gray-950);
+  --action-secondary-content: var(--text-primary);
+
+  --action-tertiary-default: transparent;
+  --action-tertiary-hover: rgba(255, 255, 255, 0.06);
+  --action-tertiary-focused: rgba(255, 255, 255, 0.1);
+  --action-tertiary-disabled: transparent;
+  --action-tertiary-content: var(--text-secondary);
+
+  /* ---------- FEEDBACK ---------- */
+  --feedback-success-content: var(--ref-green-300);
+  --feedback-success-icon: var(--ref-green-400);
+  --feedback-success-stroke: var(--ref-green-700);
+  --feedback-success-background: rgba(63, 174, 105, 0.12);
+
+  --feedback-info-content: var(--ref-blue-300);
+  --feedback-info-icon: var(--ref-blue-400);
+  --feedback-info-stroke: var(--ref-blue-700);
+  --feedback-info-background: rgba(44, 150, 219, 0.12);
+
+  --feedback-neutral-content: var(--ref-gray-300);
+  --feedback-neutral-icon: var(--ref-gray-400);
+  --feedback-neutral-stroke: var(--ref-gray-650);
+  --feedback-neutral-background: rgba(255, 255, 255, 0.06);
+
+  --feedback-warning-content: var(--ref-orange-300);
+  --feedback-warning-icon: var(--ref-orange-400);
+  --feedback-warning-stroke: var(--ref-orange-700);
+  --feedback-warning-background: rgba(255, 123, 28, 0.12);
+
+  --feedback-error-content: var(--ref-red-300);
+  --feedback-error-icon: var(--ref-red-400);
+  --feedback-error-stroke: var(--ref-red-700);
+  --feedback-error-background: rgba(255, 65, 73, 0.12);
+
+  /* Solid fills: saturated badge backgrounds that carry white content.
+     Deliberately identical in both themes; these shades already clear AA
+     against white, and keeping them stable stops a status badge from
+     changing meaning when the theme flips. */
+  --feedback-success-solid: var(--ref-green-700);
+  --feedback-info-solid: var(--ref-blue-700);
+  --feedback-neutral-solid: var(--ref-gray-700);
+  --feedback-warning-solid: var(--ref-orange-700);
+  --feedback-error-solid: var(--ref-red-700);
+  --text-on-solid: var(--ref-white);
+}
+
+/* ------------------------------------------------------------
+   LIGHT MODE
+   Dark remains the design target, but this is a real mapping, not a
+   stub: containers lift to white on a gray page so elevation reads
+   the same way it does in dark. Every token is an override of the
+   same semantic name, so no component changes when the theme flips.
+   ------------------------------------------------------------ */
+[data-theme="light"] {
+  --surface-page-background: var(--ref-gray-100);
+  --surface-container: var(--ref-white);
+  --surface-raised: var(--ref-gray-50);
+  --surface-raised-x2: var(--ref-gray-100);
+  --surface-action: var(--ref-gray-100);
+  --surface-scroll-bar: var(--ref-gray-300);
+  --surface-scrim: rgba(0, 0, 0, 0.4);
+
+  --text-primary: var(--ref-gray-950);
+  --text-secondary: var(--ref-gray-700);
+  --text-tertiary: var(--ref-gray-550);
+  --text-quaternary: var(--ref-gray-500);
+  --text-on-color: var(--ref-white);
+
+  --icon-primary: var(--ref-gray-950);
+  --icon-secondary: var(--ref-gray-700);
+  --icon-tertiary: var(--ref-gray-550);
+  --icon-quaternary: var(--ref-gray-500);
+  --icon-on-color: var(--ref-white);
+
+  --stroke-default: rgba(0, 0, 0, 0.14);
+  --stroke-active: rgba(0, 0, 0, 0.24);
+  --stroke-muted: rgba(0, 0, 0, 0.08);
+  --stroke-disabled: rgba(0, 0, 0, 0.04);
+  --stroke-on-color: rgba(255, 255, 255, 0.18);
+
+  --action-primary-default: var(--ref-gray-950);
+  --action-primary-hover: var(--ref-gray-850);
+  --action-primary-focused: var(--ref-black);
+  --action-primary-disabled: var(--ref-gray-300);
+  --action-primary-content: var(--ref-white);
+
+  --action-secondary-default: var(--ref-gray-100);
+  --action-secondary-hover: var(--ref-gray-200);
+  --action-secondary-focused: var(--ref-gray-300);
+  --action-secondary-disabled: var(--ref-gray-50);
+  --action-secondary-content: var(--text-primary);
+
+  --action-tertiary-default: transparent;
+  --action-tertiary-hover: rgba(0, 0, 0, 0.06);
+  --action-tertiary-focused: rgba(0, 0, 0, 0.1);
+  --action-tertiary-disabled: transparent;
+  --action-tertiary-content: var(--text-secondary);
+
+  --feedback-success-content: var(--ref-green-700);
+  --feedback-success-icon: var(--ref-green-600);
+  --feedback-success-stroke: var(--ref-green-300);
+  --feedback-success-background: rgba(63, 174, 105, 0.1);
+
+  --feedback-info-content: var(--ref-blue-700);
+  --feedback-info-icon: var(--ref-blue-600);
+  --feedback-info-stroke: var(--ref-blue-300);
+  --feedback-info-background: rgba(44, 150, 219, 0.1);
+
+  --feedback-neutral-content: var(--ref-gray-700);
+  --feedback-neutral-icon: var(--ref-gray-600);
+  --feedback-neutral-stroke: var(--ref-gray-300);
+  --feedback-neutral-background: rgba(0, 0, 0, 0.06);
+
+  --feedback-warning-content: var(--ref-orange-700);
+  --feedback-warning-icon: var(--ref-orange-600);
+  --feedback-warning-stroke: var(--ref-orange-300);
+  --feedback-warning-background: rgba(255, 123, 28, 0.1);
+
+  --feedback-error-content: var(--ref-red-700);
+  --feedback-error-icon: var(--ref-red-600);
+  --feedback-error-stroke: var(--ref-red-300);
+  --feedback-error-background: rgba(255, 65, 73, 0.1);
+
+  /* Solid fills: saturated badge backgrounds that carry white content.
+     Deliberately identical in both themes; these shades already clear AA
+     against white, and keeping them stable stops a status badge from
+     changing meaning when the theme flips. */
+  --feedback-success-solid: var(--ref-green-700);
+  --feedback-info-solid: var(--ref-blue-700);
+  --feedback-neutral-solid: var(--ref-gray-700);
+  --feedback-warning-solid: var(--ref-orange-700);
+  --feedback-error-solid: var(--ref-red-700);
+  --text-on-solid: var(--ref-white);
+}

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+
+# video pipeline build artifacts
+Video/work/
+Video/raw/
+Video/out/
+Video/assets/
+Video/server.log

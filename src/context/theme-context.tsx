@@ -1,0 +1,77 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+
+import { THEME_STORAGE_KEY, type ThemeMode } from "@/lib/theme";
+
+export type { ThemeMode };
+
+type ThemeContextValue = {
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
+  isDark: boolean;
+};
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+/**
+ * Writes the theme everywhere it needs to live: the DOM attribute the tokens
+ * key off, the native color-scheme (so form controls and scrollbars follow),
+ * localStorage, and a cookie the server reads on the next request. The cookie
+ * is what prevents a flash of the wrong theme on reload.
+ */
+function persist(theme: ThemeMode) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  root.style.colorScheme = theme;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    /* Storage can be unavailable in private windows; the cookie still works. */
+  }
+  document.cookie = `${THEME_STORAGE_KEY}=${theme}; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function ThemeProvider({
+  children,
+  initialTheme = "light",
+}: {
+  children: ReactNode;
+  initialTheme?: ThemeMode;
+}) {
+  const [theme, setThemeState] = useState<ThemeMode>(initialTheme);
+
+  const setTheme = useCallback((next: ThemeMode) => {
+    persist(next);
+    setThemeState(next);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      persist(next);
+      return next;
+    });
+  }, []);
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({ theme, setTheme, toggleTheme, isDark: theme === "dark" }),
+    [theme, setTheme, toggleTheme],
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  return ctx;
+}

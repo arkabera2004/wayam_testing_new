@@ -1,0 +1,253 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Bell,
+  Book,
+  Bug,
+  ChevronsLeft,
+  ChevronsRight,
+  ClipboardList,
+  FileText,
+  FlaskConical,
+  LayoutDashboard,
+  Map,
+  PlayCircle,
+  Plug,
+  Settings,
+  Wrench,
+} from "lucide-react";
+
+import { cn } from "@/components/ui";
+import { useDismissable } from "@/components/ui/menu";
+
+import { ThemeToggle } from "./theme-toggle";
+import { healingStats, project, projects, quarantined, users, workspace } from "@/lib/demo-data";
+
+import { Logo, Wordmark } from "./logo";
+import { SidebarItem } from "./sidebar-item";
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useDismissable<HTMLDivElement>(switcherOpen, () =>
+    setSwitcherOpen(false),
+  );
+
+  const base = `/projects/${project.id}`;
+
+  const primaryNav = [
+    { icon: LayoutDashboard, label: "Overview", href: base },
+    { icon: Map, label: "Application Map", href: `${base}/map` },
+    { icon: ClipboardList, label: "Test Plan", href: `${base}/plan` },
+    { icon: FileText, label: "PRD Analysis", href: `${base}/prd` },
+    { icon: FlaskConical, label: "Tests", href: `${base}/tests`, badge: project.tests },
+    { icon: PlayCircle, label: "Runs", href: `${base}/runs`, badge: project.runs },
+    { icon: BarChart3, label: "Analytics", href: `${base}/analytics` },
+    { icon: Plug, label: "Integrations", href: `${base}/integrations` },
+    { icon: Settings, label: "Settings", href: `${base}/settings` },
+  ];
+
+  const secondaryNav = [
+    {
+      icon: Wrench,
+      label: "Self-Healing",
+      href: `${base}/healing`,
+      badge: `${healingStats.healedToday} today`,
+    },
+    { icon: Bug, label: "Quarantine", href: `${base}/quarantine`, badge: quarantined.length },
+    { icon: Bell, label: "Notifications", href: "/notifications" },
+  ];
+
+  const isActive = (href: string) =>
+    href === base ? pathname === base : pathname.startsWith(href);
+
+  const usagePct = Math.round((workspace.minutesUsed / workspace.minutesTotal) * 100);
+
+  return (
+    <aside
+      aria-label="Primary"
+      className={cn(
+        "border-muted bg-container flex h-full shrink-0 flex-col border-r",
+        "transition-[width] duration-200 ease-out",
+        collapsed ? "w-16 items-center" : "w-60",
+      )}
+    >
+      {/* ---- Logo + project switcher ---- */}
+      <div className={cn("flex flex-col gap-3 py-4", collapsed ? "items-center px-3" : "px-3")}>
+        <Link
+          href="/projects"
+          aria-label="Parikshan, back to all projects"
+          className={cn("flex items-center", collapsed ? "justify-center" : "px-0.5")}
+        >
+          {collapsed ? <Logo size={38} /> : <Wordmark height={34} />}
+        </Link>
+
+        {!collapsed && (
+          <div className="relative" ref={switcherRef}>
+            <button
+              type="button"
+              onClick={() => setSwitcherOpen((o) => !o)}
+              aria-expanded={switcherOpen}
+              className={cn(
+                "border-muted bg-action hover:bg-raised-2 flex w-full items-center gap-2 rounded-lg border px-2 py-1.5",
+                "transition-colors duration-[170ms] focus-visible:ring-2 focus-visible:ring-active focus-visible:outline-none",
+              )}
+            >
+              <span className="bg-raised-2 text-label-sm text-secondary grid h-5 w-5 shrink-0 place-items-center rounded">
+                {project.name.charAt(0)}
+              </span>
+              <span className="text-label-md text-primary min-w-0 flex-1 truncate text-left">
+                {project.name}
+              </span>
+              <ChevronsRight size={13} className="icon-quaternary rotate-90" aria-hidden="true" />
+            </button>
+
+            {switcherOpen && (
+              <div className="border-muted bg-raised absolute top-full left-0 z-30 mt-1 w-full overflow-hidden rounded-lg border p-1">
+                {projects.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/projects/${p.id}`}
+                    onClick={() => setSwitcherOpen(false)}
+                    className="text-body-md text-secondary hover:bg-raised-2 hover:text-primary block truncate rounded px-2 py-1.5"
+                  >
+                    {p.name}
+                  </Link>
+                ))}
+                <div className="border-muted mt-1 border-t pt-1">
+                  <Link
+                    href="/projects"
+                    onClick={() => setSwitcherOpen(false)}
+                    className="text-body-md text-tertiary hover:bg-raised-2 hover:text-primary block rounded px-2 py-1.5"
+                  >
+                    All projects
+                  </Link>
+                  <Link
+                    href="/projects/new"
+                    onClick={() => setSwitcherOpen(false)}
+                    className="text-body-md text-tertiary hover:bg-raised-2 hover:text-primary block rounded px-2 py-1.5"
+                  >
+                    New project
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ---- Navigation ---- */}
+      <nav
+        aria-label="Main navigation"
+        className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", collapsed && "px-3")}
+      >
+        <ul className={cn("flex flex-col gap-1", collapsed && "items-center")}>
+          {primaryNav.map((item) => (
+            <li key={item.label} className={collapsed ? undefined : "w-full"}>
+              <SidebarItem
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                badge={item.badge}
+                collapsed={collapsed}
+                active={isActive(item.href)}
+              />
+            </li>
+          ))}
+        </ul>
+
+        <div className={cn("border-muted my-3 border-t", collapsed && "w-9")} />
+
+        <ul className={cn("flex flex-col gap-1", collapsed && "items-center")}>
+          {secondaryNav.map((item) => (
+            <li key={item.label} className={collapsed ? undefined : "w-full"}>
+              <SidebarItem
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                badge={item.badge}
+                collapsed={collapsed}
+                active={isActive(item.href)}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* ---- Bottom block ---- */}
+      <div className={cn("border-muted border-t px-3 py-3", collapsed && "w-full")}>
+        <div className={cn("mb-3 flex", collapsed && "justify-center")}>
+          <ThemeToggle variant="nav" collapsed={collapsed} />
+        </div>
+
+        {!collapsed && (
+          <div className="mb-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-label-sm text-tertiary">Test minutes</span>
+              <span className="text-label-sm text-secondary tabular">
+                {workspace.minutesUsed.toLocaleString()} / {workspace.minutesTotal.toLocaleString()}
+              </span>
+            </div>
+            <div className="bg-raised mt-1.5 h-1 w-full overflow-hidden rounded-full">
+              <div className="bg-action-primary h-full rounded-full" style={{ width: `${usagePct}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className={cn("flex items-center gap-2", collapsed && "flex-col")}>
+          <Link
+            href="/settings"
+            className={cn(
+              "group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1",
+              "hover:bg-action-tertiary-hover transition-colors duration-[170ms]",
+              collapsed && "flex-none justify-center px-0",
+            )}
+            title={collapsed ? users[0].name : undefined}
+          >
+            <span className="bg-raised-2 text-secondary text-label-sm grid h-6 w-6 shrink-0 place-items-center rounded-full">
+              {users[0].initials}
+            </span>
+            {!collapsed && (
+              <span className="min-w-0 flex-1">
+                <span className="text-label-md text-primary block truncate">{users[0].name}</span>
+                <span className="text-caption text-quaternary block truncate">
+                  {workspace.name} · Wayam AI
+                </span>
+              </span>
+            )}
+          </Link>
+
+          {!collapsed && (
+            <a
+              href="#"
+              title="Documentation"
+              aria-label="Documentation"
+              className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms]"
+            >
+              <Book size={14} strokeWidth={1.75} aria-hidden="true" />
+            </a>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms] focus-visible:ring-2 focus-visible:ring-active focus-visible:outline-none"
+          >
+            {collapsed ? (
+              <ChevronsRight size={14} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <ChevronsLeft size={14} strokeWidth={1.75} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}

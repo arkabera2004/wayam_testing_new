@@ -1,0 +1,115 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { AlertTriangle, Check, Info, TriangleAlert, X } from "lucide-react";
+
+import { cn } from "./index";
+
+type ToastTone = "success" | "info" | "warning" | "error";
+
+type Toast = {
+  id: number;
+  tone: ToastTone;
+  title: string;
+  body?: string;
+  action?: { label: string; href: string };
+};
+
+type ToastContextValue = {
+  toast: (t: Omit<Toast, "id">) => void;
+};
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+const TONES: Record<ToastTone, { icon: typeof Check; chip: string; border: string }> = {
+  success: { icon: Check, chip: "bg-success-surface text-success", border: "border-success-stroke/50" },
+  info: { icon: Info, chip: "bg-info-surface text-info", border: "border-info-stroke/50" },
+  warning: { icon: TriangleAlert, chip: "bg-warning-surface text-warning", border: "border-warning-stroke/50" },
+  error: { icon: AlertTriangle, chip: "bg-error-surface text-error", border: "border-error-stroke/50" },
+};
+
+const AUTODISMISS_MS = 4000;
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const dismiss = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const toast = useCallback(
+    (t: Omit<Toast, "id">) => {
+      const id = Date.now() + Math.random();
+      setToasts((prev) => [...prev, { ...t, id }]);
+      setTimeout(() => dismiss(id), AUTODISMISS_MS);
+    },
+    [dismiss],
+  );
+
+  const value = useMemo(() => ({ toast }), [toast]);
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed top-4 right-4 z-[60] flex w-full max-w-sm flex-col gap-2"
+      >
+        {toasts.map((t) => {
+          const meta = TONES[t.tone];
+          return (
+            <div
+              key={t.id}
+              role="status"
+              className={cn(
+                "bg-container pointer-events-auto flex gap-3 rounded-xl border p-3.5",
+                "node-pop",
+                meta.border,
+              )}
+            >
+              <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full", meta.chip)}>
+                <meta.icon size={14} strokeWidth={2} aria-hidden="true" />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-label-md text-primary">{t.title}</p>
+                {t.body ? <p className="text-body-sm text-tertiary mt-0.5">{t.body}</p> : null}
+                {t.action ? (
+                  <a
+                    href={t.action.href}
+                    className="text-label-sm text-info mt-2 inline-block hover:underline underline-offset-4"
+                  >
+                    {t.action.label}
+                  </a>
+                ) : null}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => dismiss(t.id)}
+                aria-label="Dismiss notification"
+                className="icon-quaternary hover:icon-secondary grid h-5 w-5 shrink-0 place-items-center rounded"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast(): ToastContextValue {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}

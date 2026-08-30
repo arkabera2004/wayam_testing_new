@@ -1,0 +1,204 @@
+/* ============================================================
+   TIER 1 — REFERENCE TOKENS
+   Raw design values. These describe WHAT a color is.
+   Components must not consume these directly.
+   ============================================================ */
+
+:root {
+  /* ---------- NEUTRAL ---------- */
+  --ref-white: #ffffff;
+  --ref-black: #000000;
+
+  /* ---------- GRAY (granular) ---------- */
+  --ref-gray-50: #fafafa;
+  --ref-gray-100: #f2f2f2;
+  --ref-gray-200: #e5e5e5;
+  --ref-gray-300: #d4d4d4;
+  --ref-gray-400: #afafaf;
+  --ref-gray-500: #8a8a8a;
+  --ref-gray-550: #737373;
+  --ref-gray-600: #626262;
+  --ref-gray-650: #525252;
+  --ref-gray-700: #464646;
+  --ref-gray-750: #3b3b3b;
+  --ref-gray-800: #323232;
+  --ref-gray-825: #2a2a2a;
+  --ref-gray-850: #232323;
+  --ref-gray-900: #191919;
+  --ref-gray-950: #101010;
+
+  /* ---------- RED ---------- */
+  --ref-red-50: #fff1f2;
+  --ref-red-100: #ffe0e2;
+  --ref-red-200: #ffc2c5;
+  --ref-red-300: #ff969b;
+  --ref-red-400: #ff646b;
+  --ref-red-500: #ff4149;
+  --ref-red-600: #e9343c;
+  --ref-red-700: #c62830;
+  --ref-red-800: #a62329;
+  --ref-red-900: #891f24;
+  --ref-red-950: #4b0d10;
+
+  /* ---------- PURPLE ---------- */
+  --ref-purple-50: #f8f0ff;
+  --ref-purple-100: #eedbff;
+  --ref-purple-200: #dcb8f5;
+  --ref-purple-300: #ca8deb;
+  --ref-purple-400: #b65bd8;
+  --ref-purple-500: #9f35be;
+  --ref-purple-600: #862aa3;
+  --ref-purple-700: #6f2589;
+  --ref-purple-800: #5b2170;
+  --ref-purple-900: #481b59;
+  --ref-purple-950: #2b0e36;
+
+  /* ---------- BLUE ---------- */
+  --ref-blue-50: #eef8ff;
+  --ref-blue-100: #d8efff;
+  --ref-blue-200: #b7e1fa;
+  --ref-blue-300: #88cef4;
+  --ref-blue-400: #55b4eb;
+  --ref-blue-500: #2c96db;
+  --ref-blue-600: #2179be;
+  --ref-blue-700: #1e61a0;
+  --ref-blue-800: #1c5083;
+  --ref-blue-900: #19436d;
+  --ref-blue-950: #0e2948;
+
+  /* ---------- CYAN ---------- */
+  --ref-cyan-50: #ecfcff;
+  --ref-cyan-100: #d0f7fc;
+  --ref-cyan-200: #a7eef6;
+  --ref-cyan-300: #70e0ec;
+  --ref-cyan-400: #39cadc;
+  --ref-cyan-500: #17aec4;
+  --ref-cyan-600: #138da3;
+  --ref-cyan-700: #157287;
+  --ref-cyan-800: #175c6d;
+  --ref-cyan-900: #164c5b;
+  --ref-cyan-950: #082f3a;
+
+  /* ---------- TEAL ---------- */
+  --ref-teal-50: #ecfdfb;
+  --ref-teal-100: #d0f8f3;
+  --ref-teal-200: #a5ede5;
+  --ref-teal-300: #71ddd2;
+  --ref-teal-400: #43c7bc;
+  --ref-teal-500: #25aaa0;
+  --ref-teal-600: #208a84;
+  --ref-teal-700: #1f706c;
+  --ref-teal-800: #205a58;
+  --ref-teal-900: #1e4a49;
+  --ref-teal-950: #0d2d2d;
+
+  /* ---------- GREEN ---------- */
+  --ref-green-50: #effbf3;
+  --ref-green-100: #dcf5e5;
+  --ref-green-200: #bceacb;
+  --ref-green-300: #8ed8a9;
+  --ref-green-400: #62c487;
+  --ref-green-500: #3fae69;
+  --ref-green-600: #318c54;
+  --ref-green-700: #2b7046;
+  --ref-green-800: #275a3b;
+  --ref-green-900: #224a32;
+  --ref-green-950: #10291b;
+
+  /* ---------- YELLOW ---------- */
+  --ref-yellow-50: #fffceb;
+  --ref-yellow-100: #fff7c6;
+  --ref-yellow-200: #ffed88;
+  --ref-yellow-300: #ffdf4d;
+  --ref-yellow-400: #ffd22d;
+  --ref-yellow-500: #f7bc0b;
+  --ref-yellow-600: #d99506;
+  --ref-yellow-700: #ad6b08;
+  --ref-yellow-800: #8e530d;
+  --ref-yellow-900: #764411;
+  --ref-yellow-950: #442304;
+
+  /* ---------- AMBER ---------- */
+  --ref-amber-50: #fff9eb;
+  --ref-amber-100: #ffedbd;
+  --ref-amber-200: #ffdd82;
+  --ref-amber-300: #ffc94d;
+  --ref-amber-400: #ffb72a;
+  --ref-amber-500: #f59a0b;
+  --ref-amber-600: #d57806;
+  --ref-amber-700: #ac550a;
+  --ref-amber-800: #8a430f;
+  --ref-amber-900: #713810;
+  --ref-amber-950: #421c05;
+
+  /* ---------- ORANGE ---------- */
+  --ref-orange-50: #fff6ed;
+  --ref-orange-100: #ffe8ce;
+  --ref-orange-200: #ffd09e;
+  --ref-orange-300: #ffb365;
+  --ref-orange-400: #ff963d;
+  --ref-orange-500: #ff7b1c;
+  --ref-orange-600: #e95d0f;
+  --ref-orange-700: #c1460f;
+  --ref-orange-800: #9a3814;
+  --ref-orange-900: #7c3014;
+  --ref-orange-950: #431507;
+
+  /* ---------- DEEP ORANGE ---------- */
+  --ref-deep-orange-50: #fff2ef;
+  --ref-deep-orange-100: #ffddd5;
+  --ref-deep-orange-200: #ffb8a7;
+  --ref-deep-orange-300: #ff8f74;
+  --ref-deep-orange-400: #ff6948;
+  --ref-deep-orange-500: #ff4c28;
+  --ref-deep-orange-600: #ed3516;
+  --ref-deep-orange-700: #c72911;
+  --ref-deep-orange-800: #a12413;
+  --ref-deep-orange-900: #841f14;
+  --ref-deep-orange-950: #480d07;
+
+  /* ---------- REFERENCE TYPE SCALE ---------- */
+  /* Michroma display scale */
+  --ref-display-6xl-size: 64px;
+  --ref-display-6xl-line: 1.05;
+  --ref-display-5xl-size: 52px;
+  --ref-display-5xl-line: 1.08;
+  --ref-display-4xl-size: 42px;
+  --ref-display-4xl-line: 1.1;
+  --ref-display-3xl-size: 34px;
+  --ref-display-3xl-line: 1.12;
+  --ref-display-2xl-size: 28px;
+  --ref-display-2xl-line: 1.15;
+  --ref-display-xl-size: 22px;
+  --ref-display-xl-line: 1.2;
+  --ref-display-lg-size: 18px;
+  --ref-display-lg-line: 1.25;
+  --ref-display-base-size: 14px;
+  --ref-display-base-line: 1.4;
+
+  /* Geist functional scale */
+  --ref-text-5xl-size: 48px;
+  --ref-text-5xl-line: 52px;
+  --ref-text-4xl-size: 40px;
+  --ref-text-4xl-line: 44px;
+  --ref-text-3xl-size: 32px;
+  --ref-text-3xl-line: 38px;
+  --ref-text-2xl-size: 24px;
+  --ref-text-2xl-line: 30px;
+  --ref-text-xl-size: 20px;
+  --ref-text-xl-line: 26px;
+  --ref-text-lg-size: 18px;
+  --ref-text-lg-line: 24px;
+  --ref-text-base-size: 16px;
+  --ref-text-base-line: 24px;
+  --ref-text-sm-size: 14px;
+  --ref-text-sm-line: 20px;
+  --ref-text-xs-size: 12px;
+  --ref-text-xs-line: 16px;
+
+  /* Tracking */
+  --ref-tracking-display-loose: -0.01em;
+  --ref-tracking-display-tight: -0.03em;
+  --ref-tracking-body: -0.01em;
+  --ref-tracking-label: 0;
+}
