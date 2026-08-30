@@ -13,7 +13,7 @@ services:
     runtime: docker
     dockerfilePath: ./services/crawl-agent/Dockerfile
     dockerContext: ./services/crawl-agent
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: CRAWL_AGENT_BACKEND
