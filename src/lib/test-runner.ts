@@ -1,7 +1,7 @@
 import "server-only";
 
 import { spawn } from "node:child_process";
-import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { copyFile, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { eq } from "drizzle-orm";
@@ -27,8 +27,27 @@ import { getDb, schema } from "@/db";
 const RUN_ROOT = "parikshan-runs";
 /** Hard ceiling so a hung page cannot block the request forever. */
 const RUN_TIMEOUT_MS = 120_000;
+/**
+ * Screenshots outlive the run directory.
+ *
+ * Playwright writes them beside the generated specs, which are deleted once
+ * results are recorded — so the evidence for a failure was being thrown away
+ * with them. They are copied here first and served by
+ * /api/runs/[runId]/artifacts/[file].
+ *
+ * Local disk is the right store while this runs as a long-lived server. On a
+ * serverless deploy the filesystem is ephemeral and this becomes the one place
+ * to swap in blob storage.
+ */
+const ARTIFACT_ROOT = "run-artifacts";
 
-type SpecResult = { duration: number; status: string; error?: { message?: string } };
+type Attachment = { name: string; path?: string; contentType: string };
+type SpecResult = {
+  duration: number;
+  status: string;
+  error?: { message?: string };
+  attachments?: Attachment[];
+};
 type PlaywrightSpec = { title: string; ok: boolean; file?: string; tests: { results: SpecResult[] }[] };
 type ReportSuite = { specs?: PlaywrightSpec[]; suites?: ReportSuite[] };
 
@@ -76,6 +95,7 @@ export async function runSuite(projectId: string, opts?: { baseUrl?: string }): 
     .returning();
 
   const dir = path.join(process.cwd(), RUN_ROOT, run.id);
+  const artifactDir = path.join(process.cwd(), ARTIFACT_ROOT, run.id);
   const started = Date.now();
 
   try {
@@ -125,12 +145,28 @@ export async function runSuite(projectId: string, opts?: { baseUrl?: string }): 
       if (ok) passed++;
       else failed++;
 
+      // Keep the screenshot before the working directory goes away.
+      let screenshotUrl: string | null = null;
+      const shot = result?.attachments?.find(
+        (a) => a.contentType === "image/png" && a.path,
+      );
+      if (shot?.path) {
+        try {
+          await mkdir(artifactDir, { recursive: true });
+          await copyFile(shot.path, path.join(artifactDir, c.id + ".png"));
+          screenshotUrl = "/api/runs/" + run.id + "/artifacts/" + c.id + ".png";
+        } catch {
+          // A missing screenshot must not lose the result row it belongs to.
+        }
+      }
+
       await db.insert(schema.testRunResults).values({
         runId: run.id,
         testCaseId: c.id,
         status: ok ? "pass" : spec ? "fail" : "error",
         durationMs: result?.duration ?? 0,
         errorMessage: result?.error?.message ? stripAnsi(result.error.message).slice(0, 2000) : null,
+        screenshotUrl,
       });
     }
 

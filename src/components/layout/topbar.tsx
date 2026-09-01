@@ -13,6 +13,8 @@ import { project } from "@/lib/demo-data";
 import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 
+const UUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Maps a URL segment to the label shown in the breadcrumb trail. */
 const SEGMENT_LABELS: Record<string, string> = {
   projects: "Projects",
@@ -48,7 +50,13 @@ function useBreadcrumbs() {
   const segments = pathname.split("/").filter(Boolean);
 
   return segments.map((segment, i) => ({
-    label: SEGMENT_LABELS[segment] ?? decodeURIComponent(segment).replace(/-/g, " "),
+    // A uuid segment is a record id, not words: dash-splitting turned a run id
+    // into "7a7f3b97 0db0 4fea 894d 4bf000e795d8" across the breadcrumb.
+    label:
+      SEGMENT_LABELS[segment] ??
+      (UUID_SEGMENT.test(segment)
+        ? segment.slice(0, 8)
+        : decodeURIComponent(segment).replace(/-/g, " ")),
     href: "/" + segments.slice(0, i + 1).join("/"),
     last: i === segments.length - 1,
   }));

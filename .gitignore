@@ -27,3 +27,6 @@ drizzle/
 
 # Generated spec files and reporter output for suite runs
 parikshan-runs/
+
+# Screenshots kept per run and served by the artifacts route
+run-artifacts/

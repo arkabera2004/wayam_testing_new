@@ -18,7 +18,10 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:3000",
     trace: "off",
-    screenshot: "only-on-failure",
+    // "on" rather than "only-on-failure": a passing screenshot is the baseline
+    // a later failure gets compared against, and at this suite size the cost
+    // is a few hundred milliseconds.
+    screenshot: "on",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });
