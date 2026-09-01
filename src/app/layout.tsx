@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
 
 import { ToastProvider } from "@/components/ui/toast";
@@ -59,11 +60,13 @@ export default async function RootLayout({
       className={`${geist.variable} ${geistMono.variable} ${michroma.variable} h-full antialiased`}
     >
       <body className="h-full">
+        <ClerkProvider>
         <ThemeProvider initialTheme={theme}>
           <ToastProvider>
             <NotificationsProvider>{children}</NotificationsProvider>
           </ToastProvider>
         </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -1,14 +1,23 @@
 import "server-only";
 
+import { auth } from "@clerk/nextjs/server";
+
 /**
- * Resolves the caller's identity for data scoping.
+ * The signed-in user's id, used to scope every database read.
  *
- * Clerk is provisioned on this project (CLERK_SECRET_KEY is present) but is not
- * yet wired into the app, so this is the seam that real session lookup drops
- * into. Until then it falls back to a single demo tenant, and every query still
- * scopes by whatever this returns — so switching to Clerk changes this function
- * and nothing else.
+ * Throws rather than falling back to a shared tenant: middleware already
+ * guarantees a session on every protected route, so no session here means a
+ * routing mistake, and silently returning a default id would serve one user's
+ * data to another.
  */
 export async function currentUserId(): Promise<string> {
-  return process.env.SEED_USER_ID ?? "demo-user";
+  const { userId } = await auth();
+  if (!userId) throw new Error("No active session");
+  return userId;
+}
+
+/** Null instead of throwing, for the few places that render either way. */
+export async function optionalUserId(): Promise<string | null> {
+  const { userId } = await auth();
+  return userId ?? null;
 }

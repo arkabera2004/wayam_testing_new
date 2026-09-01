@@ -15,7 +15,9 @@ import {
   Table,
   Td,
   Th,
+  EmptyState,
 } from "@/components/ui";
+import { Icon3D } from "@/components/ui/icon-3d";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
 import { coverageTrend, minutesTrend, passRateTrend } from "@/lib/demo-data";
@@ -40,6 +42,22 @@ export function ProjectsTable({ projects }: { projects: ProjectSummary[] }) {
         }
       />
 
+      {projects.length === 0 ? (
+        <EmptyState
+          icon={Plus}
+          art={<Icon3D name="first-discovery" size={96} />}
+          title="No projects yet"
+          description="Point Parikshan at a URL or a repository and it will explore the app, propose a test plan, and keep the suite green."
+          action={
+            <Link href="/projects/new">
+              <Button variant="primary" icon={Plus}>
+                Create your first project
+              </Button>
+            </Link>
+          }
+        />
+      ) : (
+      <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total projects" value="3" delta="+1" deltaTone="success" trend={[1, 1, 2, 2, 2, 3, 3, 3]} />
         <StatCard label="Tests generated this month" value="79" delta="+42" deltaTone="success" trend={coverageTrend} />
@@ -133,6 +151,8 @@ export function ProjectsTable({ projects }: { projects: ProjectSummary[] }) {
           </tbody>
         </Table>
       </Card>
+      </>
+      )}
     </PageBody>
   );
 }

@@ -9,7 +9,7 @@ import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
 import { healingStats, project, quarantined, users, workspace } from "@/lib/demo-data";
-import type { ActiveProject, ShellProject } from "./app-shell";
+import type { ActiveProject, ShellProject, ShellUser } from "./app-shell";
 
 import { Logo, Wordmark } from "./logo";
 import { SidebarItem } from "./sidebar-item";
@@ -17,9 +17,11 @@ import { SidebarItem } from "./sidebar-item";
 export function Sidebar({
   projects = [],
   activeProject = null,
+  user = null,
 }: {
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
+  user?: ShellUser | null;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -28,8 +30,11 @@ export function Sidebar({
     setSwitcherOpen(false),
   );
 
-  // Route from the live project when there is one; fall back to the demo slug.
+  // Route from the live project when there is one. With no projects yet the
+  // project-scoped nav is hidden entirely rather than linking into a project
+  // that does not exist.
   const base = `/projects/${activeProject?.slug ?? project.id}`;
+  const hasProject = Boolean(activeProject);
 
   const primaryNav = [
     { icon: "dashboard" as const, label: "Overview", href: base },
@@ -149,6 +154,8 @@ export function Sidebar({
         aria-label="Main navigation"
         className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", collapsed && "px-3")}
       >
+        {hasProject ? (
+        <>
         <ul className={cn("flex flex-col gap-1", collapsed && "items-center")}>
           {primaryNav.map((item) => (
             <li key={item.label} className={collapsed ? undefined : "w-full"}>
@@ -196,6 +203,12 @@ export function Sidebar({
             </li>
           ))}
         </ul>
+        </>
+        ) : (
+          <p className={cn("text-body-sm text-quaternary px-1 py-2", collapsed && "hidden")}>
+            Create a project to get started.
+          </p>
+        )}
       </nav>
 
       {/* ---- Bottom block ---- */}
@@ -226,16 +239,16 @@ export function Sidebar({
               "hover:bg-action-tertiary-hover transition-colors duration-[170ms]",
               collapsed && "flex-none justify-center px-0",
             )}
-            title={collapsed ? users[0].name : undefined}
+            title={collapsed ? (user?.name ?? users[0].name) : undefined}
           >
             <span className="bg-raised-2 text-secondary text-label-sm grid h-6 w-6 shrink-0 place-items-center rounded-full">
-              {users[0].initials}
+              {user?.initials ?? users[0].initials}
             </span>
             {!collapsed && (
               <span className="min-w-0 flex-1">
-                <span className="text-label-md text-primary block truncate">{users[0].name}</span>
+                <span className="text-label-md text-primary block truncate">{user?.name ?? users[0].name}</span>
                 <span className="text-caption text-quaternary block truncate">
-                  {workspace.name} · Wayam AI
+                  {user?.email || `${workspace.name} · Wayam AI`}
                 </span>
               </span>
             )}

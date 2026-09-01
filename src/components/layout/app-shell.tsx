@@ -5,19 +5,22 @@ import { Topbar } from "./topbar";
 
 export type ShellProject = { id: string; name: string; slug: string };
 export type ActiveProject = { name: string; slug: string; tests: number };
+export type ShellUser = { name: string; email: string; initials: string };
 
 export function AppShell({
   children,
   projects = [],
   activeProject = null,
+  user = null,
 }: {
   children: ReactNode;
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
+  user?: ShellUser | null;
 }) {
   return (
     <div className="bg-page text-primary flex h-screen w-screen overflow-hidden">
-      <Sidebar projects={projects} activeProject={activeProject} />
+      <Sidebar projects={projects} activeProject={activeProject} user={user} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
