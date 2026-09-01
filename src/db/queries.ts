@@ -484,3 +484,45 @@ export async function setCaseApproved(userId: string, caseId: string, approved: 
     .returning();
   return row;
 }
+
+/**
+ * One test case with everything its detail page shows: the stored spec, the
+ * plain-language steps, and its result history newest first.
+ */
+export type TestCaseDetail = NonNullable<Awaited<ReturnType<typeof getTestCase>>>;
+
+export async function getTestCase(userId: string, caseId: string) {
+  const db = getDb();
+
+  const [row] = await db
+    .select({ testCase: schema.testCases, suite: schema.testSuites, project: schema.projects })
+    .from(schema.testCases)
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.testCases.id, caseId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!row) return null;
+
+  const history = await db
+    .select({
+      runId: schema.testRunResults.runId,
+      status: schema.testRunResults.status,
+      durationMs: schema.testRunResults.durationMs,
+      errorMessage: schema.testRunResults.errorMessage,
+      screenshotUrl: schema.testRunResults.screenshotUrl,
+      startedAt: schema.testRuns.startedAt,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .where(eq(schema.testRunResults.testCaseId, caseId))
+    .orderBy(desc(schema.testRuns.startedAt))
+    .limit(20);
+
+  return {
+    ...row.testCase,
+    steps: Array.isArray(row.testCase.steps) ? (row.testCase.steps as string[]) : [],
+    journey: row.suite.name ?? "Unassigned",
+    projectSlug: projectSlug(row.project.name),
+    history,
+  };
+}
