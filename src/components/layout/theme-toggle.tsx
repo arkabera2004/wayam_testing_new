@@ -1,9 +1,8 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
-
 import { useTheme } from "@/context/theme-context";
 import { cn } from "@/components/ui";
+import { AppIcon } from "@/components/ui/app-icon";
 
 /**
  * Two shapes, one behaviour:
@@ -18,7 +17,7 @@ export function ThemeToggle({
   collapsed?: boolean;
 }) {
   const { isDark, toggleTheme } = useTheme();
-  const Icon = isDark ? Sun : Moon;
+  const icon = isDark ? "themeLight" : "themeDark";
   const label = isDark ? "Switch to light theme" : "Switch to dark theme";
 
   if (variant === "nav") {
@@ -41,7 +40,7 @@ export function ThemeToggle({
             "transition-[background-color,color] duration-[170ms] ease-out",
           )}
         >
-          <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+          <AppIcon name={icon} size="md" />
         </span>
 
         {!collapsed && (
@@ -61,7 +60,7 @@ export function ThemeToggle({
       aria-label={label}
       className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms] focus-visible:ring-2 focus-visible:ring-active focus-visible:outline-none"
     >
-      <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+      <AppIcon name={icon} size="md" />
     </button>
   );
 }

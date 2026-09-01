@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CornerDownLeft, Play, Search } from "lucide-react";
 
 import { cn } from "@/components/ui";
+import { AppIcon } from "@/components/ui/app-icon";
 import { generatedTests, project, runs } from "@/lib/demo-data";
 
 type Item = { group: string; label: string; hint?: string; href: string };
@@ -99,7 +99,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
       <div className="border-default bg-container relative z-10 w-full max-w-xl overflow-hidden rounded-xl border">
         <div className="border-muted flex items-center gap-2.5 border-b px-3.5 py-3">
-          <Search size={15} className="icon-tertiary shrink-0" aria-hidden="true" />
+          <AppIcon name="search" size="sm" className="icon-tertiary" />
           <input
             autoFocus
             value={query}
@@ -138,7 +138,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       i === cursor ? "bg-raised-2" : "hover:bg-raised",
                     )}
                   >
-                    <Play size={12} className="icon-quaternary shrink-0" aria-hidden="true" />
+                    <AppIcon name="play" size="xs" className="icon-quaternary" />
                     <span className="text-body-md text-primary min-w-0 flex-1 truncate">
                       {item.label}
                     </span>
@@ -146,7 +146,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       <span className="text-caption text-quaternary shrink-0">{item.hint}</span>
                     ) : null}
                     {i === cursor ? (
-                      <CornerDownLeft size={12} className="icon-quaternary shrink-0" aria-hidden="true" />
+                      <AppIcon name="enterKey" size="xs" className="icon-quaternary" />
                     ) : null}
                   </button>
                 </div>

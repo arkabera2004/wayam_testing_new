@@ -40,7 +40,7 @@ export function StatusBadge({ status, label }: { status: Status; label?: string 
     >
       <span
         className={cn(
-          "h-1.5 w-1.5 shrink-0 rounded-full bg-white/70",
+          "h-1.5 w-1.5 shrink-0 rounded-full bg-on-solid/70",
           status === "running" && "animate-pulse",
         )}
       />

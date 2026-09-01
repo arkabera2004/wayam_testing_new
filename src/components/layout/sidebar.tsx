@@ -3,25 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Bell,
-  Book,
-  Bug,
-  ChevronsLeft,
-  ChevronsRight,
-  ClipboardList,
-  FileText,
-  FlaskConical,
-  LayoutDashboard,
-  Map,
-  PlayCircle,
-  Plug,
-  Settings,
-  Wrench,
-} from "lucide-react";
-
 import { cn } from "@/components/ui";
+import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
@@ -41,26 +24,26 @@ export function Sidebar() {
   const base = `/projects/${project.id}`;
 
   const primaryNav = [
-    { icon: LayoutDashboard, label: "Overview", href: base },
-    { icon: Map, label: "Application Map", href: `${base}/map` },
-    { icon: ClipboardList, label: "Test Plan", href: `${base}/plan` },
-    { icon: FileText, label: "Requirements", href: `${base}/prd` },
-    { icon: FlaskConical, label: "Tests", href: `${base}/tests`, badge: project.tests },
-    { icon: PlayCircle, label: "Runs", href: `${base}/runs`, badge: project.runs },
-    { icon: BarChart3, label: "Analytics", href: `${base}/analytics` },
-    { icon: Plug, label: "Integrations", href: `${base}/integrations` },
-    { icon: Settings, label: "Settings", href: `${base}/settings` },
+    { icon: "dashboard" as const, label: "Overview", href: base },
+    { icon: "applicationMap" as const, label: "Application Map", href: `${base}/map` },
+    { icon: "testPlan" as const, label: "Test Plan", href: `${base}/plan` },
+    { icon: "requirements" as const, label: "Requirements", href: `${base}/prd` },
+    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: project.tests },
+    { icon: "runs" as const, label: "Runs", href: `${base}/runs`, badge: project.runs },
+    { icon: "analytics" as const, label: "Analytics", href: `${base}/analytics` },
+    { icon: "integrations" as const, label: "Integrations", href: `${base}/integrations` },
+    { icon: "settings" as const, label: "Settings", href: `${base}/settings` },
   ];
 
   const secondaryNav = [
     {
-      icon: Wrench,
+      icon: "maintenance" as const,
       label: "Self-Healing",
       href: `${base}/healing`,
       badge: `${healingStats.healedToday} today`,
     },
-    { icon: Bug, label: "Quarantine", href: `${base}/quarantine`, badge: quarantined.length },
-    { icon: Bell, label: "Notifications", href: "/notifications" },
+    { icon: "quarantine" as const, label: "Quarantine", href: `${base}/quarantine`, badge: quarantined.length },
+    { icon: "notification" as const, label: "Notifications", href: "/notifications" },
   ];
 
   const isActive = (href: string) =>
@@ -104,7 +87,7 @@ export function Sidebar() {
               <span className="text-label-md text-primary min-w-0 flex-1 truncate text-left">
                 {project.name}
               </span>
-              <ChevronsRight size={13} className="icon-quaternary rotate-90" aria-hidden="true" />
+              <AppIcon name="chevronDown" size="xs" className="icon-quaternary" />
             </button>
 
             {switcherOpen && (
@@ -229,7 +212,7 @@ export function Sidebar() {
               aria-label="Documentation"
               className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms]"
             >
-              <Book size={14} strokeWidth={1.75} aria-hidden="true" />
+              <AppIcon name="docs" size="sm" />
             </a>
           )}
 
@@ -240,11 +223,7 @@ export function Sidebar() {
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms] focus-visible:ring-2 focus-visible:ring-active focus-visible:outline-none"
           >
-            {collapsed ? (
-              <ChevronsRight size={14} strokeWidth={1.75} aria-hidden="true" />
-            ) : (
-              <ChevronsLeft size={14} strokeWidth={1.75} aria-hidden="true" />
-            )}
+            <AppIcon name={collapsed ? "expand" : "collapse"} size="sm" />
           </button>
         </div>
       </div>

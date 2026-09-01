@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronRight, Play, Search } from "lucide-react";
 
 import { Button, cn } from "@/components/ui";
+import { AppIcon } from "@/components/ui/app-icon";
+import { icons } from "@/lib/icons";
 import { notifications, project } from "@/lib/demo-data";
 
 import { CommandPalette } from "./command-palette";
@@ -79,7 +80,7 @@ export function Topbar() {
                     >
                       {crumb.label}
                     </Link>
-                    <ChevronRight size={13} className="icon-quaternary shrink-0" aria-hidden="true" />
+                    <AppIcon name="chevronRight" size="xs" className="icon-quaternary" />
                   </>
                 )}
               </li>
@@ -96,7 +97,7 @@ export function Topbar() {
             "transition-colors duration-[170ms] focus-visible:ring-2 focus-visible:ring-active focus-visible:outline-none",
           )}
         >
-          <Search size={14} className="icon-quaternary shrink-0" aria-hidden="true" />
+          <AppIcon name="search" size="sm" className="icon-quaternary" />
           <span className="text-body-md text-quaternary min-w-0 flex-1 truncate text-left">
             Search tests, runs, pages...
           </span>
@@ -112,7 +113,7 @@ export function Topbar() {
 
         <Button
           variant="primary"
-          icon={Play}
+          icon={icons.play}
           onClick={() => router.push(`/projects/${project.id}/runs/137`)}
         >
           Run suite
@@ -123,7 +124,7 @@ export function Topbar() {
           aria-label={`Notifications, ${unread} unread`}
           className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover relative grid h-8 w-8 place-items-center rounded-lg transition-colors duration-[170ms]"
         >
-          <Bell size={16} strokeWidth={1.75} aria-hidden="true" />
+          <AppIcon name="notification" size="md" />
           {unread > 0 && (
             <span className="bg-error-icon ring-page absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full ring-2" />
           )}

@@ -19,6 +19,8 @@
     "Segoe UI", sans-serif;
   --font-display: var(--font-michroma), var(--font-geist), ui-sans-serif,
     system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
 }
 
 @theme inline {

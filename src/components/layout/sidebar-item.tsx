@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-
 import { cn } from "@/components/ui";
+import { AppIcon } from "@/components/ui/app-icon";
+import type { IconName } from "@/lib/icons";
 
 type SidebarItemProps = {
-  icon: LucideIcon;
+  icon: IconName;
   /** Always present. Rendered when expanded; the aria-label when collapsed. */
   label: string;
   href?: string;
@@ -18,7 +18,7 @@ type SidebarItemProps = {
 };
 
 export function SidebarItem({
-  icon: Icon,
+  icon,
   label,
   href,
   active = false,
@@ -40,7 +40,7 @@ export function SidebarItem({
               : "bg-action icon-tertiary group-hover:bg-raised-2 group-hover:icon-secondary",
         )}
       >
-        <Icon size={16} strokeWidth={1.75} aria-hidden="true" />
+        <AppIcon name={icon} size="md" />
       </span>
 
       {!collapsed && (

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Geist, Michroma } from "next/font/google";
+import { Geist, Geist_Mono, Michroma } from "next/font/google";
 
 import { ToastProvider } from "@/components/ui/toast";
 import { ThemeProvider } from "@/context/theme-context";
@@ -13,6 +13,14 @@ const geist = Geist({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-geist",
+  display: "swap",
+});
+
+/** Code / test-source typeface. Pairs metrically with Geist. */
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -47,7 +55,7 @@ export default async function RootLayout({
       data-theme={theme}
       style={{ colorScheme: theme }}
       suppressHydrationWarning
-      className={`${geist.variable} ${michroma.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${michroma.variable} h-full antialiased`}
     >
       <body className="h-full">
         <ThemeProvider initialTheme={theme}>
