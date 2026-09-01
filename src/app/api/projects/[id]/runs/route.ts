@@ -8,7 +8,11 @@ import { runSuite } from "@/lib/test-runner";
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const userId = await currentUserId();
-  return NextResponse.json({ runs: await listRuns(userId, id) });
+
+  const project = await resolveProject(userId, id);
+  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json({ runs: await listRuns(userId, project.id) });
 }
 
 /**

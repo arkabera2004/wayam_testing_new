@@ -288,3 +288,54 @@ export async function listRunsWithCounts(userId: string, projectId: string, limi
     };
   });
 }
+
+/**
+ * Workspace totals for the projects screen.
+ *
+ * These four cards previously showed fixed demo numbers — "Total projects 3"
+ * sat above a table listing seven — so they are computed from the same rows
+ * the table renders. Pass rate is measured per result rather than per run,
+ * which is the honest denominator when a run can be partially green.
+ */
+export type WorkspaceStats = Awaited<ReturnType<typeof workspaceStats>>;
+
+export async function workspaceStats(userId: string) {
+  const db = getDb();
+  const projects = await listProjects(userId);
+  if (projects.length === 0) {
+    return { projects: 0, tests: 0, passRate: null as number | null, testMs: 0, runs: 0 };
+  }
+
+  const suites = await db
+    .select({ id: schema.testSuites.id })
+    .from(schema.testSuites)
+    .where(inArray(schema.testSuites.projectId, projects.map((p) => p.id)));
+  const suiteIds = suites.map((s) => s.id);
+
+  if (suiteIds.length === 0) {
+    return { projects: projects.length, tests: 0, passRate: null, testMs: 0, runs: 0 };
+  }
+
+  const [[tests], runs] = await Promise.all([
+    db.select({ n: count() }).from(schema.testCases).where(inArray(schema.testCases.suiteId, suiteIds)),
+    db.select({ id: schema.testRuns.id }).from(schema.testRuns).where(inArray(schema.testRuns.suiteId, suiteIds)),
+  ]);
+
+  if (runs.length === 0) {
+    return { projects: projects.length, tests: tests.n, passRate: null, testMs: 0, runs: 0 };
+  }
+
+  const results = await db
+    .select({ status: schema.testRunResults.status, durationMs: schema.testRunResults.durationMs })
+    .from(schema.testRunResults)
+    .where(inArray(schema.testRunResults.runId, runs.map((r) => r.id)));
+
+  const passed = results.filter((r) => r.status === "pass").length;
+  return {
+    projects: projects.length,
+    tests: tests.n,
+    passRate: results.length ? Math.round((passed / results.length) * 1000) / 10 : null,
+    testMs: results.reduce((n, r) => n + (r.durationMs ?? 0), 0),
+    runs: runs.length,
+  };
+}

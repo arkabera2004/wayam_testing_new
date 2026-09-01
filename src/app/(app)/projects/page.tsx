@@ -1,5 +1,5 @@
 import { currentUserId } from "@/lib/auth";
-import { listProjectsWithStats } from "@/db/queries";
+import { listProjectsWithStats, workspaceStats } from "@/db/queries";
 
 import { ProjectsTable } from "./projects-table";
 
@@ -10,6 +10,9 @@ import { ProjectsTable } from "./projects-table";
  */
 export default async function ProjectsPage() {
   const userId = await currentUserId();
-  const projects = await listProjectsWithStats(userId);
-  return <ProjectsTable projects={projects} />;
+  const [projects, stats] = await Promise.all([
+    listProjectsWithStats(userId),
+    workspaceStats(userId),
+  ]);
+  return <ProjectsTable projects={projects} stats={stats} />;
 }

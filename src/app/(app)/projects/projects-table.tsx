@@ -20,11 +20,17 @@ import {
 import { Icon3D } from "@/components/ui/icon-3d";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
-import { coverageTrend, minutesTrend, passRateTrend } from "@/lib/demo-data";
-import type { ProjectSummary } from "@/db/queries";
+import { passRateTrend } from "@/lib/demo-data";
+import type { ProjectSummary, WorkspaceStats } from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
 
-export function ProjectsTable({ projects }: { projects: ProjectSummary[] }) {
+export function ProjectsTable({
+  projects,
+  stats,
+}: {
+  projects: ProjectSummary[];
+  stats: WorkspaceStats;
+}) {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -59,10 +65,20 @@ export function ProjectsTable({ projects }: { projects: ProjectSummary[] }) {
       ) : (
       <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total projects" value="3" delta="+1" deltaTone="success" trend={[1, 1, 2, 2, 2, 3, 3, 3]} />
-        <StatCard label="Tests generated this month" value="79" delta="+42" deltaTone="success" trend={coverageTrend} />
-        <StatCard label="Average pass rate" value="97.6%" delta="+1.2" deltaTone="success" trend={passRateTrend} />
-        <StatCard label="Test-minutes used" value="1,240" delta="of 5,000" trend={minutesTrend} />
+        <StatCard label="Total projects" value={String(stats.projects)} />
+        <StatCard label="Tests" value={String(stats.tests)} delta="across all projects" />
+        <StatCard
+          label="Pass rate"
+          value={stats.passRate === null ? "No runs yet" : `${stats.passRate}%`}
+          delta={stats.runs ? `${stats.runs} runs` : undefined}
+          deltaTone={stats.passRate !== null && stats.passRate >= 95 ? "success" : undefined}
+          trend={passRateTrend}
+        />
+        <StatCard
+          label="Test time"
+          value={stats.testMs ? `${(stats.testMs / 1000).toFixed(1)}s` : "—"}
+          delta="summed spec time"
+        />
       </div>
 
       <Card title="All projects" padded={false}>
