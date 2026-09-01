@@ -39,6 +39,10 @@ export function Sidebar() {
   const qualityNav = [
     { icon: "shield" as const, label: "Release Gate", href: `${base}/release-gate` },
     { icon: "codeReview" as const, label: "Code Reviewer", href: `${base}/code-review` },
+    { icon: "filter" as const, label: "Test Selection", href: `${base}/test-selection` },
+    { icon: "trend" as const, label: "Risk Ranking", href: `${base}/prioritization` },
+    { icon: "quarantine" as const, label: "Defect Prediction", href: `${base}/defect-prediction` },
+    { icon: "sparkle" as const, label: "Root Cause", href: `${base}/root-cause` },
   ];
 
   const secondaryNav = [

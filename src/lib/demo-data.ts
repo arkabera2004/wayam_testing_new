@@ -738,3 +738,132 @@ export const codeReviews = [
     ] as ReviewComment[],
   },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Risk Ranking (AIDLC-Azure: Risk-Based Test Prioritization)          */
+/* Tests ordered by risk exposure and failure history. Buckets follow  */
+/* the original thresholds: high >= 80, medium 40-79, low < 40.        */
+/* ------------------------------------------------------------------ */
+
+export type RankedTest = {
+  id: string;
+  name: string;
+  journey: string;
+  priority: number;
+  knownFailure: boolean;
+  status: Status;
+  reason: string;
+};
+
+export const rankedTests: RankedTest[] = [
+  { id: "tc-checkout-expired", name: "user checks out with an expired card", journey: "Checkout", priority: 96, knownFailure: true, status: "failed", reason: "Failing on main, on the revenue path, and touched by the last three commits." },
+  { id: "tc-checkout-valid", name: "user completes checkout with a valid card", journey: "Checkout", priority: 91, knownFailure: false, status: "passed", reason: "Revenue path with the widest blast radius if it regresses." },
+  { id: "tc-newsletter", name: "visitor subscribes to the newsletter", journey: "Sign up", priority: 84, knownFailure: true, status: "flaky", reason: "Quarantined for flakiness; fails roughly one run in five on WebKit." },
+  { id: "tc-login-bad-password", name: "login fails with an incorrect password", journey: "Login", priority: 62, knownFailure: false, status: "passed", reason: "Auth boundary, but stable for 30 days." },
+  { id: "tc-cart-quantity", name: "user updates the quantity of a cart item", journey: "Cart", priority: 55, knownFailure: false, status: "passed", reason: "Recently changed pricing helper sits underneath it." },
+  { id: "tc-cart-remove", name: "user removes the last item from the cart", journey: "Cart", priority: 41, knownFailure: false, status: "passed", reason: "Edge case on a path already covered elsewhere." },
+  { id: "tc-search-empty", name: "search with no matches shows an empty state", journey: "Product search", priority: 28, knownFailure: false, status: "passed", reason: "Presentation only; no data mutation." },
+  { id: "tc-account-email", name: "user changes their account email", journey: "Account settings", priority: 22, knownFailure: false, status: "passed", reason: "Low traffic and unchanged for two months." },
+];
+
+/* ------------------------------------------------------------------ */
+/* Intelligent Test Selection                                          */
+/* Maps changed files to the tests that cover them, and explains why.  */
+/* ------------------------------------------------------------------ */
+
+export const testSelection = {
+  oldSha: "9f2c1ab",
+  newSha: "a1b2c3d",
+  diffAvailable: true,
+  summary: { total: 42, selected: 11, skipped: 31, savingsPct: 74 },
+  changedFiles: ["src/checkout/pay.tsx", "src/cart/totals.ts", "src/api/auth/login.ts"],
+  selected: [
+    { id: "tc-checkout-expired", name: "user checks out with an expired card", priority: "critical" as const, why: "Directly exercises src/checkout/pay.tsx, the file with the largest diff." },
+    { id: "tc-checkout-valid", name: "user completes checkout with a valid card", priority: "critical" as const, why: "Same handler as the change; guards the happy path." },
+    { id: "tc-cart-quantity", name: "user updates the quantity of a cart item", priority: "high" as const, why: "Calls the rounding helper edited in src/cart/totals.ts." },
+    { id: "tc-cart-remove", name: "user removes the last item from the cart", priority: "high" as const, why: "Shares the totals module with the change." },
+    { id: "tc-login-bad-password", name: "login fails with an incorrect password", priority: "medium" as const, why: "src/api/auth/login.ts changed its logging path." },
+    { id: "tc-newsletter", name: "visitor subscribes to the newsletter", priority: "low" as const, why: "Quarantined, but included because it shares the footer bundle." },
+  ],
+  skippedSample: [
+    { id: "tc-search-empty", name: "search with no matches shows an empty state", why: "No path from the changed files reaches the search page." },
+    { id: "tc-account-email", name: "user changes their account email", why: "Account settings is untouched by this diff." },
+  ],
+};
+
+/* ------------------------------------------------------------------ */
+/* Defect Prediction                                                   */
+/* File-level risk scored from change frequency, bug-fix association   */
+/* and churn.                                                          */
+/* ------------------------------------------------------------------ */
+
+export type RiskLevel = "critical" | "high" | "medium" | "low";
+
+export const defectPrediction = {
+  filesAnalysed: 214,
+  commitsAnalysed: 1_482,
+  files: [
+    { filename: "src/checkout/pay.tsx", riskScore: 92, riskLevel: "critical" as RiskLevel, churn: 48, bugFixes: 9, lastTouched: "2m ago" },
+    { filename: "src/api/orders.ts", riskScore: 81, riskLevel: "critical" as RiskLevel, churn: 36, bugFixes: 7, lastTouched: "3h ago" },
+    { filename: "src/cart/totals.ts", riskScore: 68, riskLevel: "high" as RiskLevel, churn: 29, bugFixes: 5, lastTouched: "2m ago" },
+    { filename: "src/api/auth/login.ts", riskScore: 57, riskLevel: "high" as RiskLevel, churn: 21, bugFixes: 4, lastTouched: "2m ago" },
+    { filename: "src/products/list.tsx", riskScore: 44, riskLevel: "medium" as RiskLevel, churn: 18, bugFixes: 2, lastTouched: "3d ago" },
+    { filename: "src/footer/newsletter.tsx", riskScore: 31, riskLevel: "medium" as RiskLevel, churn: 12, bugFixes: 1, lastTouched: "3h ago" },
+    { filename: "src/account/settings.tsx", riskScore: 18, riskLevel: "low" as RiskLevel, churn: 6, bugFixes: 0, lastTouched: "2mo ago" },
+    { filename: "src/support/faq.tsx", riskScore: 9, riskLevel: "low" as RiskLevel, churn: 3, bugFixes: 0, lastTouched: "5mo ago" },
+  ],
+};
+
+/* ------------------------------------------------------------------ */
+/* Root Cause Analysis                                                 */
+/* ------------------------------------------------------------------ */
+
+export const rootCause = {
+  summary: { totalFailures: 6, identified: 4, highConfidence: 3, unresolved: 2 },
+  unanalysed: [
+    { id: "f5", test: "visitor subscribes to the newsletter", run: 135, when: "9h ago" },
+    { id: "f6", test: "search returns results for a partial term", run: 133, when: "1d ago" },
+  ],
+  analysed: [
+    {
+      id: "rc1",
+      test: "user checks out with an expired card",
+      run: 137,
+      category: "Selector drift",
+      confidence: 94,
+      cause: "The 'Pay now' button's accessible name changed to 'Place order' in commit a1b2c3d. The element is otherwise identical: same position, same class list, same handler.",
+      fix: "Parikshan healed the locator automatically; accept the change to make it permanent.",
+      affected: 2,
+    },
+    {
+      id: "rc2",
+      test: "visitor subscribes to the newsletter",
+      run: 135,
+      category: "Race condition",
+      confidence: 78,
+      cause: "The success toast is asserted before the POST to /api/newsletter resolves. On WebKit the request is consistently slower, so the assertion wins the race about one run in five.",
+      fix: "Wait on the network response rather than a fixed timeout.",
+      affected: 1,
+    },
+    {
+      id: "rc3",
+      test: "user completes checkout with a valid card",
+      run: 134,
+      category: "Test data",
+      confidence: 88,
+      cause: "The seeded card expired at the start of the month, so a valid-card test began exercising the decline path.",
+      fix: "Generate the expiry relative to the run date instead of hardcoding it.",
+      affected: 1,
+    },
+    {
+      id: "rc4",
+      test: "search with no matches shows an empty state",
+      run: 133,
+      category: "Environment",
+      confidence: 41,
+      cause: "The search index was mid-rebuild during the run, so the empty state appeared for a term that normally matches.",
+      fix: "Gate the suite on the index-ready health check.",
+      affected: 1,
+    },
+  ],
+};
