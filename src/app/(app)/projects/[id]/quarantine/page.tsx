@@ -4,7 +4,11 @@ import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, PageHeader, Table, Td, Th, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { Icon3D } from "@/components/ui/icon-3d";
-import { quarantined } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { listQuarantined, resolveProject } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
+import { relativeTime } from "@/lib/format";
 
 /** Tiny pass/fail variance strip: one bar per recent run. */
 function VarianceChart({ variance }: { variance: number[] }) {
@@ -23,7 +27,15 @@ function VarianceChart({ variance }: { variance: number[] }) {
   );
 }
 
-export default function QuarantinePage() {
+export default async function QuarantinePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const quarantined = await listQuarantined(userId, project.id);
+
   return (
     <PageBody>
       <PageHeader
@@ -53,17 +65,17 @@ export default function QuarantinePage() {
           </thead>
           <tbody>
             {quarantined.map((q) => (
-              <tr key={q.test} className="hover:bg-raised transition-colors duration-[170ms]">
+              <tr key={q.id} className="hover:bg-raised transition-colors duration-[170ms]">
                 <Td className="text-primary">{q.test}</Td>
                 <Td className="text-right">
-                  <span className="text-label-md text-warning tabular">{q.score}</span>
+                  <span className="text-label-md text-warning tabular">{q.flakyRate ?? 0}%</span>
                   <span className="text-caption text-quaternary">/100</span>
                 </Td>
                 <Td>
-                  <VarianceChart variance={q.variance} />
+                  <span className="text-body-sm text-tertiary">{q.reason}</span>
                 </Td>
                 <Td>{q.pattern}</Td>
-                <Td className="text-quaternary whitespace-nowrap">{q.flagged}</Td>
+                <Td className="text-quaternary whitespace-nowrap">{relativeTime(q.quarantinedAt)}</Td>
                 <Td>
                   <div className="flex justify-end gap-1.5">
                     <ActionButton size="sm" title="Opening triage" body="Failure history and traces for this test.">Investigate</ActionButton>

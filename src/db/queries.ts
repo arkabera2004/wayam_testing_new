@@ -677,3 +677,85 @@ export async function setHealingStatus(
     .returning();
   return row;
 }
+
+/* ------------------------------------------------------------------ */
+/* Quarantine, discovery, notifications                                */
+/* ------------------------------------------------------------------ */
+
+export type QuarantinedView = Awaited<ReturnType<typeof listQuarantined>>[number];
+
+export async function listQuarantined(userId: string, projectId: string) {
+  const db = getDb();
+  const rows = await db
+    .select({ q: schema.quarantinedTests, title: schema.testCases.title })
+    .from(schema.quarantinedTests)
+    .innerJoin(schema.projects, eq(schema.quarantinedTests.projectId, schema.projects.id))
+    .leftJoin(schema.testCases, eq(schema.quarantinedTests.testCaseId, schema.testCases.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.quarantinedTests.projectId, projectId)))
+    .orderBy(desc(schema.quarantinedTests.quarantinedAt));
+  return rows.map((r) => ({ ...r.q, test: r.title ?? "Test no longer present" }));
+}
+
+/** Releases a test back into the gate. */
+export async function releaseQuarantined(userId: string, id: string) {
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.quarantinedTests.id })
+    .from(schema.quarantinedTests)
+    .innerJoin(schema.projects, eq(schema.quarantinedTests.projectId, schema.projects.id))
+    .where(and(eq(schema.quarantinedTests.id, id), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .update(schema.quarantinedTests)
+    .set({ status: "released", releasedAt: new Date() })
+    .where(eq(schema.quarantinedTests.id, id))
+    .returning();
+  return row;
+}
+
+export type DiscoveryView = Awaited<ReturnType<typeof listDiscovery>>;
+
+export async function listDiscovery(userId: string, projectId: string) {
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return { pages: [], endpoints: [], journeys: 0 };
+
+  const [pages, endpoints, suites] = await Promise.all([
+    db.select().from(schema.discoveredPages).where(eq(schema.discoveredPages.projectId, projectId)),
+    db.select().from(schema.apiEndpoints).where(eq(schema.apiEndpoints.projectId, projectId)).orderBy(schema.apiEndpoints.firstSeenSec),
+    db.select({ id: schema.testSuites.id }).from(schema.testSuites).where(eq(schema.testSuites.projectId, projectId)),
+  ]);
+
+  return { pages, endpoints, journeys: suites.length };
+}
+
+export type NotificationView = typeof schema.notifications.$inferSelect;
+
+export async function listNotifications(userId: string) {
+  const db = getDb();
+  const projects = await listProjects(userId);
+  if (projects.length === 0) return [];
+  return db
+    .select()
+    .from(schema.notifications)
+    .where(inArray(schema.notifications.projectId, projects.map((p) => p.id)))
+    .orderBy(desc(schema.notifications.createdAt));
+}
+
+export async function markNotificationsRead(userId: string) {
+  const db = getDb();
+  const projects = await listProjects(userId);
+  if (projects.length === 0) return 0;
+  const rows = await db
+    .update(schema.notifications)
+    .set({ readAt: new Date() })
+    .where(inArray(schema.notifications.projectId, projects.map((p) => p.id)))
+    .returning({ id: schema.notifications.id });
+  return rows.length;
+}
