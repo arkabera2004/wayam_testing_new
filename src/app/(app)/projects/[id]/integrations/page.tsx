@@ -15,19 +15,23 @@ import {
 } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { integrationCards, workflowYaml } from "@/lib/demo-data";
+import { copyText } from "@/lib/copy";
 
 export default function IntegrationsPage() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(workflowYaml);
+    if (await copyText(workflowYaml)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard is unavailable in some embedded contexts; the demo carries on.
+      return;
     }
+    toast({
+      tone: "error",
+      title: "Could not copy",
+      body: "Your browser blocked clipboard access — select the text and copy manually.",
+    });
   };
 
   return (

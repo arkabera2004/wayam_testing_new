@@ -61,7 +61,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
       <div
         aria-live="polite"
-        className="pointer-events-none fixed top-4 right-4 z-[60] flex w-full max-w-sm flex-col gap-2"
+        /* Anchored bottom-right: every screen puts its primary actions in the
+           top-right header, and each toast is pointer-events-auto so it can
+           carry a dismiss button — sitting up there meant a toast swallowed
+           clicks on the very button that raised it. Column-reverse keeps the
+           newest nearest the corner. */
+        className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-full max-w-sm flex-col-reverse gap-2"
       >
         {toasts.map((t) => {
           const meta = TONES[t.tone];

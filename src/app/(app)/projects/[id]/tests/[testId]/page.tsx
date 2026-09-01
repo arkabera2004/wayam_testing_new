@@ -23,6 +23,8 @@ import {
   testPlan,
   testVersions,
 } from "@/lib/demo-data";
+import { copyText } from "@/lib/copy";
+import { useToast } from "@/components/ui/toast";
 
 const TABS = ["Code", "Steps", "History", "Settings"] as const;
 
@@ -33,19 +35,23 @@ export default function TestDetailPage({
 }) {
   const { id, testId } = use(params);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Code");
+  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
   const test = generatedTests.find((t) => t.id === testId) ?? generatedTests[0];
   const planCase = testPlan.find((c) => c.id === testId) ?? testPlan[0];
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(starTestCode);
+    if (await copyText(starTestCode)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard is unavailable in some embedded contexts; the demo carries on.
+      return;
     }
+    toast({
+      tone: "error",
+      title: "Could not copy",
+      body: "Your browser blocked clipboard access — select the text and copy manually.",
+    });
   };
 
   return (
