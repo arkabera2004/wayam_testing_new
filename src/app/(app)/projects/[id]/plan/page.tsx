@@ -7,13 +7,13 @@ import {
   Check,
   ChevronDown,
   Pencil,
-  Plus,
   RotateCcw,
   Sparkles,
   Trash2,
 } from "lucide-react";
 
 import { Button, Card, Chip, ProgressBar, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { journeys, planStats, testPlan, type TestCase } from "@/lib/demo-data";
 
 function TagTone(tag: string) {
@@ -197,8 +197,8 @@ export default function TestPlanPage({ params }: { params: Promise<{ id: string 
             </div>
 
             <div className="flex shrink-0 gap-2">
-              <Button icon={Plus}>Add scenario</Button>
-              <Button icon={RotateCcw}>Regenerate</Button>
+              <ActionButton icon="add" title="Add scenario" body="Manual scenario authoring arrives with the editor.">Add scenario</ActionButton>
+              <ActionButton icon="refresh" title="Regenerating plan" body="Parikshan re-reads the requirements and proposes a fresh set.">Regenerate</ActionButton>
               <Button
                 icon={Check}
                 onClick={() => setCases((prev) => prev.map((c) => ({ ...c, approved: true })))}

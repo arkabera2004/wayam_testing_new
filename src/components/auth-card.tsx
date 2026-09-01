@@ -57,9 +57,11 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </div>
         </div>
 
-        <Button variant="primary" icon={Github} className="mt-6 h-9 w-full">
-          Continue with GitHub
-        </Button>
+        <Link href={isSignup ? "/onboarding" : "/projects"} className="mt-6 block">
+          <Button variant="primary" icon={Github} className="h-9 w-full">
+            Continue with GitHub
+          </Button>
+        </Link>
 
         <div className="my-5 flex items-center gap-3">
           <span className="border-muted h-px flex-1 border-t" />

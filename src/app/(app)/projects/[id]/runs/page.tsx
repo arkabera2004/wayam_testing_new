@@ -25,9 +25,11 @@ export default async function RunsPage({ params }: { params: Promise<{ id: strin
         title="Runs"
         description="Every execution of the suite, triggered by pull requests, schedules or on demand."
         actions={
-          <Button variant="primary" icon={Play}>
-            Run suite
-          </Button>
+          <Link href={`/projects/${id}/runs/137`}>
+            <Button variant="primary" icon={Play}>
+              Run suite
+            </Button>
+          </Link>
         }
       />
 

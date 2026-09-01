@@ -13,6 +13,7 @@ import {
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, Chip, PageHeader, ProgressBar, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
 import { useToast } from "@/components/ui/toast";
 import { analysisStages, samplePrd } from "@/lib/prd-data";
@@ -262,9 +263,9 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
                   </span>
                   <p className="text-heading-sm text-primary mt-3">{src.name}</p>
                   <p className="text-body-md text-tertiary mt-1">{src.detail}</p>
-                  <Button className="mt-3 w-full" size="sm">
+                  <ActionButton className="mt-3 w-full" size="sm" title="Connector unavailable" body="Jira and Confluence import is not part of this build.">
                     Connect
-                  </Button>
+                  </ActionButton>
                 </div>
               ))}
             </div>

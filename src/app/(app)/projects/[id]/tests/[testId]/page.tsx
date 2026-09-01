@@ -2,15 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import {
-  Check,
-  Copy,
-  Download,
-  ExternalLink,
-  Pencil,
-  Play,
-  Upload,
-} from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 
 import {
   Button,
@@ -23,6 +15,7 @@ import {
   Th,
   cn,
 } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import {
   generatedTests,
   runs,
@@ -73,10 +66,10 @@ export default function TestDetailPage({
         </div>
 
         <div className="flex shrink-0 gap-2">
-          <Button icon={Upload}>Export</Button>
-          <Button variant="primary" icon={Play}>
+          <ActionButton icon="externalLink" title="Exported to repo" body="A pull request was opened against acme/shopstack.">Export</ActionButton>
+          <ActionButton variant="primary" icon="play" title="Test queued" body="Running on Chromium.">
             Run this test
-          </Button>
+          </ActionButton>
         </div>
       </header>
 
@@ -113,15 +106,15 @@ export default function TestDetailPage({
                   <Button size="sm" icon={copied ? Check : Copy} onClick={copy}>
                     {copied ? "Copied" : "Copy"}
                   </Button>
-                  <Button size="sm" icon={Download}>
+                  <ActionButton size="sm" icon="download" title="Spec downloaded">
                     Download
-                  </Button>
-                  <Button size="sm" icon={ExternalLink}>
+                  </ActionButton>
+                  <ActionButton size="sm" icon="externalLink" title="Opening in repo" body="acme/shopstack · tests/checkout.spec.ts">
                     Open in repo
-                  </Button>
-                  <Button size="sm" icon={Pencil}>
+                  </ActionButton>
+                  <ActionButton size="sm" icon="settings" title="Editor coming soon" body="Inline spec editing is not part of this build.">
                     Edit
-                  </Button>
+                  </ActionButton>
                 </div>
               </div>
               <div className="p-4">

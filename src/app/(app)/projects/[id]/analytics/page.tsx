@@ -1,6 +1,7 @@
-import { Check, Download, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
+import { ActionButton } from "@/components/ui/action-button";
 import { Button, Card, Chip, PageHeader, Sparkline, StatCard, cn } from "@/components/ui";
 import {
   coverageTrend,
@@ -38,7 +39,7 @@ export default function AnalyticsPage() {
               <option>Last 7 days</option>
               <option>Last 90 days</option>
             </select>
-            <Button icon={Download}>Export</Button>
+            <ActionButton icon="download" tone="success" title="Export queued" body="A CSV of the last 30 days will download when ready.">Export</ActionButton>
           </>
         }
       />

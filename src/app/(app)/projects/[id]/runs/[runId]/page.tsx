@@ -2,9 +2,10 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, RotateCcw, Square, Wrench, X } from "lucide-react";
+import { ChevronRight, Wrench, X } from "lucide-react";
 
 import { Button, Card, Chip, StatusBadge, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { executionCells, generatedTests, runs } from "@/lib/demo-data";
 
 const CELL_INTERVAL = 340;
@@ -57,9 +58,9 @@ export default function RunDetailPage({
 
         <div className="flex gap-2">
           {finished ? (
-            <Button icon={RotateCcw}>Re-run failed</Button>
+            <ActionButton icon="refresh" title="Re-run queued" body="The suite will start on the same commit.">Re-run failed</ActionButton>
           ) : (
-            <Button icon={Square}>Cancel run</Button>
+            <ActionButton icon="close" tone="warning" title="Run cancelled" body="Remaining shards were stopped.">Cancel run</ActionButton>
           )}
         </div>
       </header>

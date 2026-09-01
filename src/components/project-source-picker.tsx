@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, Github, Globe, Lock } from "lucide-react";
 
 import { Button, Chip, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 
 function Field({
   id,
@@ -125,9 +126,9 @@ export function ProjectSourcePicker({ showAdvanced = false }: { showAdvanced?: b
 
       {source === "repo" ? (
         <div className="border-muted bg-container flex flex-col gap-4 rounded-xl border p-4">
-          <Button icon={Github} className="w-full sm:w-auto">
+          <ActionButton icon="externalLink" className="w-full sm:w-auto" title="GitHub authorisation unavailable" body="OAuth needs a server; pick a repository below to continue.">
             Authorise GitHub
-          </Button>
+          </ActionButton>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select id="repo" label="Repository" options={["acme/shopstack", "acme/pay", "acme/docs"]} />
             <Select id="branch" label="Branch" options={["main", "develop", "release/2026.08"]} />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -15,6 +14,7 @@ import {
   Th,
   cn,
 } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { invoices, project, workspace } from "@/lib/demo-data";
 
 const TABS = ["General", "Environments", "Test generation", "Notifications", "Billing"] as const;
@@ -85,7 +85,7 @@ export default function ProjectSettingsPage() {
                   <Field id="p-repo" label="Repository" defaultValue={project.repo} />
                   <Field id="p-branch" label="Default branch" defaultValue={project.branch} />
                   <div>
-                    <Button variant="primary">Save changes</Button>
+                    <ActionButton variant="primary" tone="success" title="Project settings saved">Save changes</ActionButton>
                   </div>
                 </div>
               </Card>
@@ -98,9 +98,9 @@ export default function ProjectSettingsPage() {
                       Removes all tests, runs and healing history. This cannot be undone.
                     </p>
                   </div>
-                  <Button variant="danger" icon={Trash2}>
+                  <ActionButton variant="danger" icon="delete" tone="error" title="Deletion needs confirmation" body="Destructive actions are disabled in this build.">
                     Delete project
-                  </Button>
+                  </ActionButton>
                 </div>
               </Card>
             </>
@@ -131,7 +131,7 @@ export default function ProjectSettingsPage() {
                       <Td className="text-primary">{env.url}</Td>
                       <Td className="text-quaternary">demo@shopstack.demo / ••••••••</Td>
                       <Td>
-                        <Button size="sm">Re-record</Button>
+                        <ActionButton size="sm" title="Re-recording login" body="Parikshan will replay the auth flow and store fresh state.">Re-record</ActionButton>
                       </Td>
                     </tr>
                   ))}
@@ -226,7 +226,7 @@ export default function ProjectSettingsPage() {
                       Usage-based. Unlimited seats.
                     </p>
                   </div>
-                  <Button variant="primary">Upgrade</Button>
+                  <ActionButton variant="primary" title="Billing portal unavailable" body="Plan changes need a billing provider.">Upgrade</ActionButton>
                 </div>
 
                 <div className="mt-5">

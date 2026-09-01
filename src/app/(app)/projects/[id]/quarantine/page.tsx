@@ -2,6 +2,7 @@
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, PageHeader, Table, Td, Th, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { Icon3D } from "@/components/ui/icon-3d";
 import { quarantined } from "@/lib/demo-data";
 
@@ -65,10 +66,16 @@ export default function QuarantinePage() {
                 <Td className="text-quaternary whitespace-nowrap">{q.flagged}</Td>
                 <Td>
                   <div className="flex justify-end gap-1.5">
-                    <Button size="sm">Investigate</Button>
-                    <Button size="sm" variant="ghost">
+                    <ActionButton size="sm" title="Opening triage" body="Failure history and traces for this test.">Investigate</ActionButton>
+                    <ActionButton
+                      size="sm"
+                      variant="ghost"
+                      tone="success"
+                      title="Test un-quarantined"
+                      body="It will block merges again from the next run."
+                    >
                       Un-quarantine
-                    </Button>
+                    </ActionButton>
                   </div>
                 </Td>
               </tr>

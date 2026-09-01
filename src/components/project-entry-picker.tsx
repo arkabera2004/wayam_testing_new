@@ -12,6 +12,7 @@ import {
 
 import { ProjectSourcePicker } from "@/components/project-source-picker";
 import { Button, cn } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { samplePrd } from "@/lib/prd-data";
 
 export type EntryPath = "requirements" | "application";
@@ -212,9 +213,9 @@ export function ProjectEntryPicker({
                     </select>
                   </div>
                 </div>
-                <Button icon={Link2} className="w-full sm:w-auto">
+                <ActionButton icon="link" className="w-full sm:w-auto" title="Jira connector unavailable" body="Issue import is not part of this build.">
                   Connect Jira
-                </Button>
+                </ActionButton>
               </div>
             )}
           </div>

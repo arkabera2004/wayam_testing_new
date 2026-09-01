@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -16,6 +15,7 @@ import {
   Th,
   cn,
 } from "@/components/ui";
+import { ActionButton } from "@/components/ui/action-button";
 import { apiKeys, invoices, users, workspace } from "@/lib/demo-data";
 
 const TABS = ["Profile", "Team", "API keys", "Billing"] as const;
@@ -82,13 +82,13 @@ export default function WorkspaceSettingsPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <Avatar initials={users[0].initials} size={40} />
-                  <Button size="sm">Change avatar</Button>
+                  <ActionButton size="sm" title="Avatar upload unavailable" body="Image uploads need storage, which this build does not have.">Change avatar</ActionButton>
                 </div>
                 <Field id="name" label="Full name" defaultValue={users[0].name} />
                 <Field id="email" label="Email" defaultValue="aarav@acme.inc" type="email" />
                 <Field id="password" label="New password" type="password" />
                 <div>
-                  <Button variant="primary">Save profile</Button>
+                  <ActionButton variant="primary" tone="success" title="Profile saved">Save profile</ActionButton>
                 </div>
               </div>
             </Card>
@@ -99,9 +99,9 @@ export default function WorkspaceSettingsPage() {
               title="Members"
               subtitle="Seats are unlimited on every plan"
               actions={
-                <Button icon={Plus} size="sm">
+                <ActionButton icon="add" size="sm" title="Invite sent" body="They will get an email to join Acme Inc.">
                   Invite
-                </Button>
+                </ActionButton>
               }
               padded={false}
             >
@@ -134,9 +134,9 @@ export default function WorkspaceSettingsPage() {
                         </select>
                       </Td>
                       <Td>
-                        <Button size="sm" variant="ghost">
+                        <ActionButton size="sm" variant="ghost" tone="warning" title="Member removed" body="They lose access to every project in this workspace.">
                           Remove
-                        </Button>
+                        </ActionButton>
                       </Td>
                     </tr>
                   ))}
@@ -150,9 +150,9 @@ export default function WorkspaceSettingsPage() {
               title="API keys"
               subtitle="Used by CI and the Parikshan CLI"
               actions={
-                <Button icon={Plus} size="sm">
+                <ActionButton icon="add" size="sm" tone="success" title="API key created" body="Copy it now — it is not shown again.">
                   Create key
-                </Button>
+                </ActionButton>
               }
               padded={false}
             >
@@ -174,9 +174,9 @@ export default function WorkspaceSettingsPage() {
                       <Td>{k.created}</Td>
                       <Td>{k.lastUsed}</Td>
                       <Td>
-                        <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Revoke ${k.name}`}>
+                        <ActionButton size="sm" variant="ghost" icon="delete" tone="warning" aria-label={`Revoke ${k.name}`} title="Key revoked" body="Any CI job using it will start failing.">
                           Revoke
-                        </Button>
+                        </ActionButton>
                       </Td>
                     </tr>
                   ))}
@@ -193,7 +193,7 @@ export default function WorkspaceSettingsPage() {
                     <p className="font-display text-display-sm text-primary">{workspace.plan}</p>
                     <Chip className="mt-2">Usage-based, unlimited seats</Chip>
                   </div>
-                  <Button variant="primary">Manage plan</Button>
+                  <ActionButton variant="primary" title="Billing portal unavailable" body="Plan management needs a billing provider.">Manage plan</ActionButton>
                 </div>
                 <div className="mt-5">
                   <div className="flex items-baseline justify-between">
