@@ -1,12 +1,12 @@
-"use client";
-
-import { useState } from "react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Card, Chip, PageHeader, StatCard, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
-import { repoBaseline } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { listTestCasesWithStats, listTestPlan, resolveProject } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
 
 /**
  * Ported from AIDLC-Azure's Repo Test Baseline: scan a repository for the
@@ -14,9 +14,45 @@ import { repoBaseline } from "@/lib/demo-data";
  * journeys nothing covers yet — so generation starts from what is missing
  * rather than duplicating what is there.
  */
-export default function RepoBaselinePage() {
-  const b = repoBaseline;
-  const [open, setOpen] = useState<string>(b.tests[0].id);
+export default async function RepoBaselinePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const [{ journeys }, cases] = await Promise.all([
+    listTestPlan(userId, project.id),
+    listTestCasesWithStats(userId, project.id),
+  ]);
+
+  /**
+   * The baseline is what this project already has automated. A coverage gap is
+   * a journey where no scenario carries executable code — a real signal, unlike
+   * the crawled-but-untested list the fixture invented.
+   */
+  const b = {
+    repo: project.githubRepoUrl?.replace("https://github.com/", "") ?? project.name,
+    branch: project.githubDefaultBranch ?? "main",
+    framework: "Playwright",
+    specFiles: new Set(cases.filter((c) => c.executable).map((c) => c.journey)).size,
+    suites: journeys.length,
+    scannedAt: "just now",
+    gaps: journeys
+      .filter((j) => j.cases.every((c) => !c.executable))
+      .map((j) => ({ journey: j.name, reason: "No scenario in this journey has executable code yet." })),
+    tests: journeys.flatMap((j) =>
+      j.cases
+        .filter((c) => c.executable)
+        .map((c) => ({
+          id: c.id,
+          name: c.title,
+          file: "tests/" + j.name.toLowerCase().replace(/ +/g, "-") + ".spec.ts",
+          suite: j.name,
+          steps: c.steps.map((text) => ({ action: "step", target: text, value: undefined, assertion: undefined })),
+        })),
+    ),
+  };
   const totalSteps = b.tests.reduce((n, t) => n + t.steps.length, 0);
 
   return (
@@ -66,13 +102,10 @@ export default function RepoBaselinePage() {
       <Card className="mt-5" title="Existing specs" padded={false}>
         <ul className="divide-muted flex flex-col divide-y">
           {b.tests.map((t) => {
-            const isOpen = open === t.id;
+            const isOpen = true;
             return (
               <li key={t.id}>
-                <button
-                  type="button"
-                  onClick={() => setOpen(isOpen ? "" : t.id)}
-                  aria-expanded={isOpen}
+                <div
                   className="hover:bg-raised flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-[170ms]"
                 >
                   <AppIcon name={isOpen ? "chevronDown" : "chevronRight"} size="sm" className="icon-quaternary" />
@@ -82,7 +115,7 @@ export default function RepoBaselinePage() {
                   </div>
                   <Chip>{t.suite}</Chip>
                   <span className="text-caption text-quaternary tabular shrink-0">{t.steps.length} steps</span>
-                </button>
+                </div>
 
                 {isOpen && (
                   <ol className="border-muted bg-raised/40 flex flex-col gap-1.5 border-t px-4 py-3">

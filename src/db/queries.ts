@@ -797,3 +797,201 @@ export async function discoverySummary(userId: string, projectId: string) {
     },
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Root cause, risk, baseline, release gate                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Failures grouped by the error they produced.
+ *
+ * The category is inferred from the message rather than stored: Playwright's
+ * text distinguishes a strict-mode violation from a timeout from a failed
+ * assertion, and grouping on it is what turns twenty failures into three
+ * causes. Confidence reflects how many failures share the pattern.
+ */
+function categorise(message: string): { category: string; confidence: number } {
+  const m = message.toLowerCase();
+  if (m.includes("strict mode violation")) return { category: "Ambiguous locator", confidence: 95 };
+  if (m.includes("test timeout")) return { category: "Timeout", confidence: 80 };
+  if (m.includes("err_connection") || m.includes("net::")) return { category: "Environment", confidence: 88 };
+  if (m.includes("tobevisible") || m.includes("element(s) not found")) return { category: "Selector drift", confidence: 84 };
+  if (m.includes("expect(")) return { category: "Assertion", confidence: 72 };
+  return { category: "Uncategorised", confidence: 40 };
+}
+
+export async function rootCauseAnalysis(userId: string, projectId: string) {
+  const db = getDb();
+  const ids = await ownedSuiteIds(userId, projectId);
+  if (ids.length === 0) return { groups: [], summary: { totalFailures: 0, identified: 0, highConfidence: 0, unresolved: 0 } };
+
+  const failures = await db
+    .select({
+      resultId: schema.testRunResults.id,
+      runId: schema.testRunResults.runId,
+      status: schema.testRunResults.status,
+      errorMessage: schema.testRunResults.errorMessage,
+      screenshotUrl: schema.testRunResults.screenshotUrl,
+      title: schema.testCases.title,
+      startedAt: schema.testRuns.startedAt,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .innerJoin(schema.testCases, eq(schema.testRunResults.testCaseId, schema.testCases.id))
+    .where(inArray(schema.testRuns.suiteId, ids))
+    .orderBy(desc(schema.testRuns.startedAt));
+
+  const failed = failures.filter((f) => f.status !== "pass" && f.errorMessage);
+
+  const byCategory = new Map<string, typeof failed>();
+  for (const f of failed) {
+    const { category } = categorise(f.errorMessage ?? "");
+    byCategory.set(category, [...(byCategory.get(category) ?? []), f]);
+  }
+
+  const groups = [...byCategory.entries()]
+    .map(([category, items]) => ({
+      category,
+      confidence: categorise(items[0].errorMessage ?? "").confidence,
+      occurrences: items.length,
+      tests: [...new Set(items.map((i) => i.title))],
+      latest: items[0],
+    }))
+    .sort((a, b) => b.occurrences - a.occurrences);
+
+  return {
+    groups,
+    summary: {
+      totalFailures: failed.length,
+      identified: groups.filter((g) => g.category !== "Uncategorised").reduce((n, g) => n + g.occurrences, 0),
+      highConfidence: groups.filter((g) => g.confidence >= 80).reduce((n, g) => n + g.occurrences, 0),
+      unresolved: groups.find((g) => g.category === "Uncategorised")?.occurrences ?? 0,
+    },
+  };
+}
+
+/** File risk, straight from the scores table. */
+export async function listRiskScores(userId: string, projectId: string) {
+  const db = getDb();
+  return db
+    .select({ r: schema.riskScores })
+    .from(schema.riskScores)
+    .innerJoin(schema.projects, eq(schema.riskScores.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.riskScores.projectId, projectId)))
+    .orderBy(desc(schema.riskScores.compositeRiskScore))
+    .then((rows) =>
+      rows.map((x) => ({
+        filePath: x.r.filePath,
+        churn: Number(x.r.changeFrequencyScore ?? 0),
+        complexity: Number(x.r.complexityScore ?? 0),
+        risk: Number(x.r.compositeRiskScore ?? 0),
+        calculatedAt: x.r.calculatedAt,
+      })),
+    );
+}
+
+/**
+ * Release readiness from signals that exist: the latest run's pass rate, tests
+ * still quarantined, and healing repairs nobody has reviewed.
+ */
+export async function releaseGate(userId: string, projectId: string) {
+  const [runs, quarantined, healing] = await Promise.all([
+    listRunsWithCounts(userId, projectId, 5),
+    listQuarantined(userId, projectId),
+    listHealingEvents(userId, projectId),
+  ]);
+
+  const latest = runs[0] ?? null;
+  const passRate = latest && latest.total ? Math.round((latest.passed / latest.total) * 1000) / 10 : null;
+  const stillQuarantined = quarantined.filter((q) => q.status === "quarantined").length;
+  const awaitingReview = healing.events.filter((e) => e.status === "pending").length;
+
+  const conditions: string[] = [];
+  if (passRate !== null && passRate < 100) conditions.push(`${latest?.failed ?? 0} test(s) failing in the latest run.`);
+  if (stillQuarantined > 0) conditions.push(`${stillQuarantined} test(s) still quarantined and excluded from the gate.`);
+  if (awaitingReview > 0) conditions.push(`${awaitingReview} healed locator(s) awaiting review.`);
+
+  // No run at all is not a pass; it is an absence of evidence.
+  const verdict: "GO" | "NO-GO" | "CONDITIONAL" =
+    latest === null ? "NO-GO" : passRate === 100 && conditions.length === 0 ? "GO" : passRate !== null && passRate < 50 ? "NO-GO" : "CONDITIONAL";
+
+  return {
+    verdict,
+    latestRun: latest,
+    passRate,
+    conditions,
+    stillQuarantined,
+    awaitingReview,
+    runsConsidered: runs.length,
+  };
+}
+
+/**
+ * File risk shaped for the defect-prediction screen.
+ *
+ * The level is banded from the composite score rather than stored, so the
+ * bands stay in one place; churn drives the map's tile widths.
+ */
+export type RiskFile = Awaited<ReturnType<typeof defectPrediction>>["files"][number];
+
+export async function defectPrediction(userId: string, projectId: string) {
+  const scores = await listRiskScores(userId, projectId);
+  const files = scores.map((s) => ({
+    filename: s.filePath,
+    riskScore: Math.round(s.risk),
+    riskLevel: (s.risk >= 75 ? "critical" : s.risk >= 50 ? "high" : s.risk >= 25 ? "medium" : "low") as
+      | "critical" | "high" | "medium" | "low",
+    churn: Math.round(s.churn),
+    complexity: Math.round(s.complexity),
+  }));
+  return {
+    files,
+    filesAnalysed: files.length,
+    highRisk: files.filter((f) => f.riskScore >= 50).length,
+    critical: files.filter((f) => f.riskLevel === "critical").length,
+  };
+}
+
+/**
+ * Tests ordered by risk exposure.
+ *
+ * Priority is composed from what the data supports: recent failures dominate,
+ * the stored case priority contributes, and a quarantined test is always
+ * treated as a known failure.
+ */
+export type RankedTestView = Awaited<ReturnType<typeof rankedTests>>[number];
+
+export async function rankedTests(userId: string, projectId: string) {
+  const [cases, quarantined] = await Promise.all([
+    listTestCasesWithStats(userId, projectId, 10),
+    listQuarantined(userId, projectId),
+  ]);
+  const quarantinedIds = new Set(quarantined.filter((q) => q.status === "quarantined").map((q) => q.testCaseId));
+
+  const weight: Record<string, number> = { critical: 30, high: 22, medium: 12, low: 4 };
+
+  return cases
+    .map((c) => {
+      const failures = c.history.filter((h) => h !== "pass").length;
+      const failureShare = c.history.length ? failures / c.history.length : 0;
+      const known = quarantinedIds.has(c.id) || failures > 0;
+      const priority = Math.min(
+        100,
+        Math.round(failureShare * 60 + (weight[c.tags[1] ?? "medium"] ?? 12) + (quarantinedIds.has(c.id) ? 20 : 0)),
+      );
+      return {
+        id: c.id,
+        name: c.name,
+        journey: c.journey,
+        priority,
+        knownFailure: known,
+        status: c.status,
+        reason: quarantinedIds.has(c.id)
+          ? "Quarantined for unstable results; excluded from the gate."
+          : failures > 0
+            ? `Failed ${failures} of the last ${c.history.length} runs.`
+            : `Stable across ${c.history.length} recent run(s).`,
+      };
+    })
+    .sort((a, b) => b.priority - a.priority);
+}

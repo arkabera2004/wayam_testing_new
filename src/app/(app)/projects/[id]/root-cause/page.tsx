@@ -1,13 +1,14 @@
-"use client";
-
 import Link from "next/link";
-import { use } from "react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Card, Chip, PageHeader, StatCard, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
-import { rootCause } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { resolveProject, rootCauseAnalysis } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
+import { relativeTime } from "@/lib/format";
 
 /**
  * Ported from AIDLC-Azure's AI Root Cause Analysis: group failures by cause,
@@ -20,9 +21,14 @@ function confidenceTone(pct: number) {
   return "text-tertiary";
 }
 
-export default function RootCausePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const r = rootCause;
+export default async function RootCausePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const r = await rootCauseAnalysis(userId, project.id);
 
   return (
     <PageBody>
@@ -30,7 +36,7 @@ export default function RootCausePage({ params }: { params: Promise<{ id: string
         title="Root Cause Analysis"
         description="Every failure traced to a cause, with the evidence and a confidence score behind each diagnosis."
         actions={
-          <ActionButton icon="sparkle" title="Analysing failures" body={`${r.unanalysed.length} failures queued for diagnosis.`}>
+          <ActionButton icon="sparkle" title="Analysing failures" body={`${r.summary.totalFailures} recorded failure(s) regrouped.`}>
             Analyse pending
           </ActionButton>
         }
@@ -44,42 +50,14 @@ export default function RootCausePage({ params }: { params: Promise<{ id: string
       </div>
 
       {/* ---- Pending ---- */}
-      {r.unanalysed.length > 0 && (
-        <Card
-          className="mt-5"
-          title="Not yet analysed"
-          subtitle="Failures picked up from recent runs, waiting on a diagnosis"
-          padded={false}
-        >
-          <ul className="divide-muted flex flex-col divide-y">
-            {r.unanalysed.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 px-4 py-3">
-                <AppIcon name="warning" size="sm" className="text-warning" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-label-md text-primary truncate">{f.test}</p>
-                  <p className="text-caption text-quaternary mt-0.5">
-                    Run #{f.run} · {f.when}
-                  </p>
-                </div>
-                <Link
-                  href={`/projects/${id}/runs/${f.run}`}
-                  className="text-label-sm text-secondary hover:text-primary shrink-0"
-                >
-                  Open run
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
+      
       {/* ---- Diagnosed ---- */}
       <div className="mt-5 flex flex-col gap-4">
-        {r.analysed.map((a) => (
-          <Card key={a.id} padded={false}>
+        {r.groups.map((a) => (
+          <Card key={a.category} padded={false}>
             <div className="border-muted flex flex-wrap items-center gap-2 border-b px-4 py-3">
               <Chip tone="neutral">{a.category}</Chip>
-              <span className="text-label-md text-primary min-w-0 flex-1 truncate">{a.test}</span>
+              <span className="text-label-md text-primary min-w-0 flex-1 truncate">{a.tests.slice(0, 2).join(", ")}{a.tests.length > 2 ? ` +${a.tests.length - 2} more` : ""}</span>
               <span className={cn("text-label-sm tabular", confidenceTone(a.confidence))}>
                 {a.confidence}% confidence
               </span>
@@ -87,18 +65,19 @@ export default function RootCausePage({ params }: { params: Promise<{ id: string
             <div className="flex flex-col gap-3 p-4">
               <div>
                 <p className="text-label-sm text-tertiary">Cause</p>
-                <p className="text-body-md text-secondary mt-1">{a.cause}</p>
+                <pre className="text-body-sm text-secondary bg-raised mt-1 max-h-32 overflow-auto rounded-lg p-2.5 font-mono whitespace-pre-wrap">{(a.latest.errorMessage ?? "").split("\n").slice(0, 4).join("\n")}</pre>
               </div>
               <div className="bg-raised rounded-lg px-3 py-2">
                 <p className="text-body-sm text-secondary">
-                  <span className="text-success">Recommended fix — </span>
-                  {a.fix}
+                  <span className="text-success">Seen — </span>
+                  {a.occurrences} time{a.occurrences === 1 ? "" : "s"} across {a.tests.length} test
+                  {a.tests.length === 1 ? "" : "s"}, most recently {relativeTime(a.latest.startedAt)}.
                 </p>
               </div>
               <div className="text-caption text-quaternary flex flex-wrap items-center gap-3">
-                <span>Run #{a.run}</span>
+                <span>Run {a.latest.runId.slice(0, 8)}</span>
                 <span>
-                  {a.affected} test{a.affected === 1 ? "" : "s"} affected
+                  {a.tests.length} test{a.tests.length === 1 ? "" : "s"} affected
                 </span>
               </div>
             </div>

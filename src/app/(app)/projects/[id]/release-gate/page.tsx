@@ -1,13 +1,16 @@
-"use client";
-
-import { use } from "react";
 import Link from "next/link";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, Chip, PageHeader, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
-import { releaseGate, type GateVerdict } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { releaseGate, resolveProject } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
+import { relativeTime } from "@/lib/format";
+
+type GateVerdict = "GO" | "NO-GO" | "CONDITIONAL";
 import type { IconName } from "@/lib/icons";
 
 /**
@@ -106,21 +109,28 @@ function Signal({
   );
 }
 
-export default function ReleaseGatePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const g = releaseGate;
+export default async function ReleaseGatePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const g = await releaseGate(userId, project.id);
+  // The score is the latest run's pass rate; there is no separate model.
+  const score = Math.round(g.passRate ?? 0);
   const v = VERDICT[g.verdict];
 
   return (
     <PageBody>
       <PageHeader
         title="Release Gate"
-        description="A composite readiness score over CI results, open bugs and security findings."
+        description="Readiness from the signals this project records: the latest run, tests still quarantined, and healed locators awaiting review."
         actions={
           <ActionButton
             icon="refresh"
             title="Re-evaluating gate"
-            body={`Recomputing readiness for ${g.version}.`}
+            body="Re-reading the latest run, quarantine and healing queue."
           >
             Re-evaluate
           </ActionButton>
@@ -131,7 +141,7 @@ export default function ReleaseGatePage({ params }: { params: Promise<{ id: stri
       <Card padded={false}>
         <div className="flex flex-col gap-6 p-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
-            <p className="text-caption text-quaternary">Release {g.version}</p>
+            <p className="text-caption text-quaternary">{g.latestRun ? `Latest run ${g.latestRun.id.slice(0, 8)} · ${relativeTime(g.latestRun.startedAt)}` : "No runs recorded"}</p>
 
             <div className={cn("mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5", v.surface, v.border)}>
               <AppIcon name={v.icon} size="md" className={v.text} />
@@ -139,12 +149,20 @@ export default function ReleaseGatePage({ params }: { params: Promise<{ id: stri
               <span className="text-body-sm text-tertiary">· {v.label}</span>
             </div>
 
-            <p className="text-body-md text-secondary mt-3 max-w-2xl">{g.recommendation}</p>
+            <p className="text-body-md text-secondary mt-3 max-w-2xl">
+              {g.verdict === "GO"
+                ? "The latest run is fully green with nothing quarantined and no healed locator awaiting review."
+                : g.verdict === "NO-GO"
+                  ? "There is no passing run to release from."
+                  : "The suite is mostly green, but the conditions below are unresolved."}
+            </p>
 
-            <div className="border-error-stroke/30 bg-error-surface mt-4 rounded-lg border p-3">
-              <p className="text-label-sm text-error">Primary blocker</p>
-              <p className="text-body-md text-secondary mt-1">{g.primaryBlocker}</p>
-            </div>
+            {g.conditions.length > 0 && (
+              <div className="border-error-stroke/30 bg-error-surface mt-4 rounded-lg border p-3">
+                <p className="text-label-sm text-error">Primary blocker</p>
+                <p className="text-body-md text-secondary mt-1">{g.conditions[0]}</p>
+              </div>
+            )}
 
             <div className="mt-4">
               <p className="text-label-sm text-warning">Conditions to resolve</p>
@@ -160,8 +178,8 @@ export default function ReleaseGatePage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="flex flex-col items-center gap-2 lg:pt-4">
-            <ScoreGauge score={g.score} />
-            <Chip tone="neutral">{Math.round(g.confidence * 100)}% confidence</Chip>
+            <ScoreGauge score={score} />
+            <Chip tone="neutral">{g.runsConsidered} run(s) considered</Chip>
           </div>
         </div>
       </Card>
@@ -173,52 +191,34 @@ export default function ReleaseGatePage({ params }: { params: Promise<{ id: stri
           <Signal
             icon="check"
             label="CI pass rate"
-            value={`${g.signals.testPassRate}%`}
-            hint={`across the last ${g.signals.recentEvaluated} runs`}
+            value={g.passRate === null ? "—" : `${g.passRate}%`}
+            hint="latest run"
             tone="text-success"
           />
           <Signal
             icon="quarantine"
-            label="Open critical bugs"
-            value={String(g.signals.openCriticalBugs.length)}
-            hint="blocking this tag"
+            label="Quarantined"
+            value={String(g.stillQuarantined)}
+            hint="excluded from the gate"
             tone="text-error"
-          >
-            <ul className="mt-2 flex flex-col gap-1">
-              {g.signals.openCriticalBugs.map((b) => (
-                <li key={b.key} className="text-caption text-quaternary truncate">
-                  <span className="text-tertiary">{b.key}</span> — {b.summary}
-                </li>
-              ))}
-            </ul>
-          </Signal>
+          />
           <Signal
             icon="warning"
-            label="Security findings"
-            value={String(g.signals.unresolvedSecurityFindings)}
+            label="Healed, awaiting review"
+            value={String(g.awaitingReview)}
             hint="unresolved"
             tone="text-warning"
           />
           <Signal
             icon="trend"
-            label="Verdict confidence"
-            value={`${Math.round(g.confidence * 100)}%`}
-            hint="how sure the gate is"
+            label="Failing tests"
+            value={String(g.latestRun?.failed ?? 0)}
+            hint="in the latest run"
             tone="text-info"
           />
         </div>
       </section>
 
-      {g.warnings.length > 0 && (
-        <div className="border-warning-stroke/30 bg-warning-surface mt-5 rounded-xl border p-4">
-          <p className="text-label-sm text-warning">Partial data</p>
-          <ul className="mt-1.5 flex flex-col gap-1">
-            {g.warnings.map((w) => (
-              <li key={w} className="text-body-sm text-secondary">{w}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Link href={`/projects/${id}/code-review`}>

@@ -1,9 +1,12 @@
-"use client";
-
 import { PageBody } from "@/components/layout/app-shell";
 import { Card, Chip, PageHeader, StatCard, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
-import { defectPrediction, type RiskLevel } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { defectPrediction, resolveProject } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
+
+type RiskLevel = "critical" | "high" | "medium" | "low";
 
 /**
  * Ported from AIDLC-Azure's Defect Prediction: score every file on defect
@@ -28,10 +31,16 @@ const RISK: Record<
   low: { tone: "text-tertiary", surface: "bg-raised", fill: "var(--surface-raised-x2)", label: "Low", onTile: "text-secondary" },
 };
 
-export default function DefectPredictionPage() {
-  const d = defectPrediction;
-  const highRisk = d.files.filter((f) => f.riskScore >= 50).length;
-  const critical = d.files.filter((f) => f.riskLevel === "critical").length;
+export default async function DefectPredictionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const d = await defectPrediction(userId, project.id);
+  const highRisk = d.highRisk;
+  const critical = d.critical;
   const totalChurn = d.files.reduce((n, f) => n + f.churn, 0);
 
   return (
@@ -48,7 +57,8 @@ export default function DefectPredictionPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Files analysed" value={String(d.filesAnalysed)} />
-        <StatCard label="Commits analysed" value={d.commitsAnalysed.toLocaleString()} />
+        {/* Commit totals need a scan record; churn is what the scores carry. */}
+        <StatCard label="Total churn" value={String(d.files.reduce((n, f) => n + f.churn, 0))} delta="changes tracked" />
         <StatCard label="High risk" value={String(highRisk)} delta="score ≥ 50" deltaTone="error" />
         <StatCard label="Critical" value={String(critical)} delta="score ≥ 75" deltaTone="error" />
       </div>
@@ -95,7 +105,7 @@ export default function DefectPredictionPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-label-md text-primary truncate font-mono">{f.filename}</p>
                 <p className="text-caption text-quaternary mt-0.5">
-                  {f.churn} changes · {f.bugFixes} bug fixes · last touched {f.lastTouched}
+                  {f.churn} changes · complexity {f.complexity}
                 </p>
               </div>
               <div className="bg-raised-2 hidden h-1.5 w-32 shrink-0 overflow-hidden rounded-full sm:block">

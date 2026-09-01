@@ -1,26 +1,27 @@
-"use client";
-
 import Link from "next/link";
-import { use } from "react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Card, Chip, PageHeader, StatusBadge, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
-import { rankedTests, type RankedTest } from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { rankedTests, resolveProject, type RankedTestView } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
+import { toUiStatus } from "@/lib/format";
 import type { IconName } from "@/lib/icons";
 
 /**
  * Ported from AIDLC-Azure's Risk-Based Test Prioritization. The bucket
  * thresholds are the original's: high >= 80, medium 40-79, low below that.
  */
-const BUCKETS: { label: string; icon: IconName; tone: string; edge: string; match: (t: RankedTest) => boolean }[] = [
+const BUCKETS: { label: string; icon: IconName; tone: string; edge: string; match: (t: RankedTestView) => boolean }[] = [
   { label: "High priority", icon: "warning", tone: "text-error", edge: "border-l-error-icon", match: (t) => t.priority >= 80 },
   { label: "Medium priority", icon: "info", tone: "text-warning", edge: "border-l-warning-icon", match: (t) => t.priority >= 40 && t.priority < 80 },
   { label: "Low priority", icon: "check", tone: "text-success", edge: "border-l-success-icon", match: (t) => t.priority < 40 },
 ];
 
-function Row({ t, id, edge }: { t: RankedTest; id: string; edge: string }) {
+function Row({ t, id, edge }: { t: RankedTestView; id: string; edge: string }) {
   return (
     <li className={cn("border-muted hover:bg-raised border-l-2 transition-colors duration-[170ms]", edge)}>
       <Link href={`/projects/${id}/tests/${t.id}`} className="flex items-start gap-3 px-4 py-3">
@@ -33,15 +34,21 @@ function Row({ t, id, edge }: { t: RankedTest; id: string; edge: string }) {
           </div>
           <p className="text-body-sm text-tertiary mt-1">{t.reason}</p>
         </div>
-        <StatusBadge status={t.status} />
+        {t.status ? <StatusBadge status={toUiStatus(t.status)} /> : null}
       </Link>
     </li>
   );
 }
 
-export default function PrioritizationPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const known = rankedTests.filter((t) => t.knownFailure);
+export default async function PrioritizationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const ranked = await rankedTests(userId, project.id);
+  const known = ranked.filter((t) => t.knownFailure);
 
   return (
     <PageBody>
@@ -71,7 +78,7 @@ export default function PrioritizationPage({ params }: { params: Promise<{ id: s
 
       <div className="mt-5 flex flex-col gap-5">
         {BUCKETS.map((b) => {
-          const items = rankedTests.filter(b.match);
+          const items = ranked.filter(b.match);
           if (!items.length) return null;
           return (
             <Card key={b.label} padded={false}>
