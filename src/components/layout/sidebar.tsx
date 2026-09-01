@@ -8,12 +8,19 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
-import { healingStats, project, projects, quarantined, suiteSize, users, workspace } from "@/lib/demo-data";
+import { healingStats, project, quarantined, users, workspace } from "@/lib/demo-data";
+import type { ActiveProject, ShellProject } from "./app-shell";
 
 import { Logo, Wordmark } from "./logo";
 import { SidebarItem } from "./sidebar-item";
 
-export function Sidebar() {
+export function Sidebar({
+  projects = [],
+  activeProject = null,
+}: {
+  projects?: ShellProject[];
+  activeProject?: ActiveProject | null;
+}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -21,15 +28,16 @@ export function Sidebar() {
     setSwitcherOpen(false),
   );
 
-  const base = `/projects/${project.id}`;
+  // Route from the live project when there is one; fall back to the demo slug.
+  const base = `/projects/${activeProject?.slug ?? project.id}`;
 
   const primaryNav = [
     { icon: "dashboard" as const, label: "Overview", href: base },
     { icon: "applicationMap" as const, label: "Application Map", href: `${base}/map` },
     { icon: "testPlan" as const, label: "Test Plan", href: `${base}/plan` },
     { icon: "requirements" as const, label: "Requirements", href: `${base}/prd` },
-    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: suiteSize },
-    { icon: "runs" as const, label: "Runs", href: `${base}/runs`, badge: project.runs },
+    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: activeProject?.tests ?? 0 },
+    { icon: "runs" as const, label: "Runs", href: `${base}/runs`, badge: undefined },
     { icon: "analytics" as const, label: "Analytics", href: `${base}/analytics` },
     { icon: "integrations" as const, label: "Integrations", href: `${base}/integrations` },
     { icon: "settings" as const, label: "Settings", href: `${base}/settings` },
@@ -94,10 +102,10 @@ export function Sidebar() {
               )}
             >
               <span className="bg-raised-2 text-label-sm text-secondary grid h-5 w-5 shrink-0 place-items-center rounded">
-                {project.name.charAt(0)}
+                {(activeProject?.name ?? project.name).charAt(0)}
               </span>
               <span className="text-label-md text-primary min-w-0 flex-1 truncate text-left">
-                {project.name}
+                {activeProject?.name ?? project.name}
               </span>
               <AppIcon name="chevronDown" size="xs" className="icon-quaternary" />
             </button>
@@ -107,7 +115,7 @@ export function Sidebar() {
                 {projects.map((p) => (
                   <Link
                     key={p.id}
-                    href={`/projects/${p.id}`}
+                    href={`/projects/${p.slug}`}
                     onClick={() => setSwitcherOpen(false)}
                     className="text-body-md text-secondary hover:bg-raised-2 hover:text-primary block truncate rounded px-2 py-1.5"
                   >

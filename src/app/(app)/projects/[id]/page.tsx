@@ -1,4 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { currentUserId } from "@/lib/auth";
+import { listRunsWithCounts, projectStats, resolveProject } from "@/db/queries";
+import { relativeTime, toUiStatus } from "@/lib/format";
 import { ArrowRight, Globe } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
@@ -33,19 +38,28 @@ export default async function ProjectOverviewPage({
   const { id } = await params;
   const base = `/projects/${id}`;
 
+  const userId = await currentUserId();
+  const dbProject = await resolveProject(userId, id);
+  if (!dbProject) notFound();
+  const [stats, recentRuns] = await Promise.all([
+    projectStats(userId, dbProject.id),
+    listRunsWithCounts(userId, dbProject.id, 5),
+  ]);
+  const latestRun = recentRuns[0] ?? null;
+
   return (
     <PageBody>
       <PageHeader
-        title={project.name}
+        title={dbProject.name}
         display
-        description={`Testing ${project.url} on branch ${project.branch}.`}
+        description={dbProject.description ?? `Tracking ${dbProject.githubRepoUrl ?? "this project"} on ${dbProject.githubDefaultBranch ?? "main"}.`}
         actions={
           <>
             <Chip tone="neutral">
               <Globe size={12} aria-hidden="true" />
-              {project.environment}
+              {dbProject.githubDefaultBranch ?? "main"}
             </Chip>
-            <Link href={`${base}/runs/137`}>
+            <Link href={latestRun ? `${base}/runs/${latestRun.id}` : `${base}/runs`}>
               <Button variant="primary" icon={ArrowRight}>
                 View latest run
               </Button>
@@ -55,8 +69,8 @@ export default async function ProjectOverviewPage({
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Tests" value={String(suiteSize)} delta="+6" deltaTone="success" />
-        <StatCard label="Pass rate (30d)" value={`${project.passRate}%`} delta="+1.2" deltaTone="success" trend={passRateTrend} />
+        <StatCard label="Tests" value={String(stats.tests)} delta="in the suite" />
+        <StatCard label="Pass rate" value={`${stats.passRate}%`} delta={`${stats.runs} runs`} trend={passRateTrend} />
         <StatCard label="Coverage" value={`${project.coverage}%`} delta="+4" deltaTone="success" trend={coverageTrend} />
         <StatCard label="Locators healed" value={String(healingStats.healedThisMonth)} delta="this month" />
       </div>
@@ -84,26 +98,28 @@ export default async function ProjectOverviewPage({
               </tr>
             </thead>
             <tbody>
-              {runs.slice(0, 5).map((run) => (
+              {recentRuns.map((run) => (
                 <tr key={run.id} className="hover:bg-raised transition-colors duration-[170ms]">
                   <Td>
                     <Link href={`${base}/runs/${run.id}`} className="text-label-md text-primary tabular">
-                      #{run.id}
+                      #{run.id.slice(0, 8)}
                     </Link>
-                    <span className="text-body-sm text-quaternary ml-2">{run.started}</span>
+                    <span className="text-body-sm text-quaternary ml-2">
+                      {relativeTime(run.startedAt)}
+                    </span>
                   </Td>
                   <Td>
-                    <Chip>{run.trigger}</Chip>
+                    <Chip>{run.triggeredBy ?? "unknown"}</Chip>
                   </Td>
                   <Td>
                     <span className="flex items-center gap-2.5">
-                      <StatusBadge status={run.status} />
+                      <StatusBadge status={toUiStatus(run.status)} />
                       <span className="w-24">
-                        <PassFailBar passed={run.passed} failed={run.failed} flaky={run.flaky} />
+                        <PassFailBar passed={run.passed} failed={run.failed} flaky={run.skipped} />
                       </span>
                     </span>
                   </Td>
-                  <Td className="tabular text-right">{run.duration}</Td>
+                  <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—"}</Td>
                 </tr>
               ))}
             </tbody>

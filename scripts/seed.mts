@@ -94,14 +94,17 @@ for (const t of generatedTests) {
 // Runs, newest last so startedAt ordering is sane.
 const caseIds = [...caseIdByDemoId.values()];
 let runCount = 0;
-for (const r of [...runs].reverse()) {
+const now = Date.now();
+for (const [i, r] of [...runs].reverse().entries()) {
   const [run] = await db
     .insert(schema.testRuns)
     .values({
       suiteId: fallbackSuite,
       triggeredBy: r.trigger.startsWith("PR") || r.trigger === "cron" ? "automated" : "manual",
       status: r.status === "flaky" ? "partial" : r.status,
-      finishedAt: new Date(),
+      // Oldest first, roughly six hours apart, so "last run" is meaningful.
+      startedAt: new Date(now - (runs.length - i) * 6 * 60 * 60 * 1000),
+      finishedAt: new Date(now - (runs.length - i) * 6 * 60 * 60 * 1000 + 72_000),
     })
     .returning();
   runCount++;

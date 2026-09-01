@@ -21,6 +21,27 @@ export async function listProjects(userId: string) {
     .orderBy(desc(schema.projects.updatedAt));
 }
 
+/**
+ * URL slug for a project. The table has no slug column, so it is derived from
+ * the name — "ShopStack" ↔ /projects/shopstack. Keeps the existing routes
+ * working without a migration.
+ */
+export function projectSlug(name: string) {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolves either a uuid or a slug. Slugs are matched in the application
+ * rather than SQL so the derivation stays in one place.
+ */
+export async function resolveProject(userId: string, idOrSlug: string) {
+  if (UUID.test(idOrSlug)) return getProject(userId, idOrSlug);
+  const all = await listProjects(userId);
+  return all.find((p) => projectSlug(p.name) === idOrSlug.toLowerCase()) ?? null;
+}
+
 export async function getProject(userId: string, projectId: string) {
   const db = getDb();
   const [row] = await db
@@ -154,4 +175,116 @@ export async function projectStats(userId: string, projectId: string) {
 
   const passRate = runs.n > 0 ? Math.round((passed.n / runs.n) * 1000) / 10 : 0;
   return { tests: tests.n, runs: runs.n, passRate };
+}
+
+/**
+ * Everything the projects table renders, assembled server-side.
+ *
+ * The table shows a test count and a last-run summary that no single row
+ * carries, so they are derived here rather than in the component. Coverage has
+ * no table yet and is returned as null so the UI can say so honestly instead of
+ * printing a zero that looks like real measurement.
+ */
+export type ProjectSummary = Awaited<ReturnType<typeof listProjectsWithStats>>[number];
+
+export async function listProjectsWithStats(userId: string) {
+  const db = getDb();
+  const projects = await listProjects(userId);
+  if (projects.length === 0) return [];
+
+  const suites = await db
+    .select({ id: schema.testSuites.id, projectId: schema.testSuites.projectId })
+    .from(schema.testSuites)
+    .where(
+      inArray(
+        schema.testSuites.projectId,
+        projects.map((p) => p.id),
+      ),
+    );
+
+  const suiteIds = suites.map((s) => s.id);
+  const projectOfSuite = new Map(suites.map((s) => [s.id, s.projectId]));
+
+  const [cases, runs] = suiteIds.length
+    ? await Promise.all([
+        db
+          .select({ id: schema.testCases.id, suiteId: schema.testCases.suiteId })
+          .from(schema.testCases)
+          .where(inArray(schema.testCases.suiteId, suiteIds)),
+        db
+          .select({
+            suiteId: schema.testRuns.suiteId,
+            status: schema.testRuns.status,
+            startedAt: schema.testRuns.startedAt,
+          })
+          .from(schema.testRuns)
+          .where(inArray(schema.testRuns.suiteId, suiteIds))
+          .orderBy(desc(schema.testRuns.startedAt)),
+      ])
+    : [[], []];
+
+  return projects.map((p) => {
+    const mine = new Set(suites.filter((s) => s.projectId === p.id).map((s) => s.id));
+    const tests = cases.filter((c) => mine.has(c.suiteId)).length;
+    const latest = runs.find((r) => projectOfSuite.get(r.suiteId) === p.id) ?? null;
+    return {
+      ...p,
+      slug: projectSlug(p.name),
+      tests,
+      lastRunStatus: latest?.status ?? null,
+      lastRunAt: latest?.startedAt ?? null,
+      coverage: null as number | null,
+    };
+  });
+}
+
+/**
+ * Runs with their per-result tallies, for the runs table.
+ *
+ * The counts and duration live in test_run_results, so they are aggregated
+ * here in one extra query rather than N. `finishedAt` is nullable and has no
+ * database default, so duration falls back to the summed result durations.
+ */
+export async function listRunsWithCounts(userId: string, projectId: string, limit = 20) {
+  const ids = await ownedSuiteIds(userId, projectId);
+  if (ids.length === 0) return [];
+  const db = getDb();
+
+  const runs = await db
+    .select()
+    .from(schema.testRuns)
+    .where(inArray(schema.testRuns.suiteId, ids))
+    .orderBy(desc(schema.testRuns.startedAt))
+    .limit(limit);
+  if (runs.length === 0) return [];
+
+  const results = await db
+    .select({
+      runId: schema.testRunResults.runId,
+      status: schema.testRunResults.status,
+      durationMs: schema.testRunResults.durationMs,
+    })
+    .from(schema.testRunResults)
+    .where(
+      inArray(
+        schema.testRunResults.runId,
+        runs.map((r) => r.id),
+      ),
+    );
+
+  return runs.map((run) => {
+    const mine = results.filter((r) => r.runId === run.id);
+    const durationMs =
+      run.finishedAt && run.startedAt
+        ? run.finishedAt.getTime() - run.startedAt.getTime()
+        : mine.reduce((n, r) => n + (r.durationMs ?? 0), 0);
+    return {
+      ...run,
+      passed: mine.filter((r) => r.status === "pass").length,
+      failed: mine.filter((r) => r.status === "fail" || r.status === "error").length,
+      skipped: mine.filter((r) => r.status === "skipped").length,
+      total: mine.length,
+      durationMs,
+    };
+  });
 }

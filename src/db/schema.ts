@@ -88,7 +88,12 @@ export const testRuns = pgTable("test_runs", {
   suiteId: uuid("suite_id").notNull(),
   triggeredBy: text("triggered_by").$type<(typeof RUN_TRIGGER)[number]>(),
   status: text("status").$type<(typeof RUN_STATUS)[number]>(),
-  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  /**
+   * These two columns have no database default, unlike created_at/updated_at
+   * elsewhere. `$defaultFn` makes Drizzle supply the value on insert, so a run
+   * can never land with a null start time and sort to the bottom.
+   */
+  startedAt: timestamp("started_at", { withTimezone: true }).$defaultFn(() => new Date()),
   finishedAt: timestamp("finished_at", { withTimezone: true }),
 });
 

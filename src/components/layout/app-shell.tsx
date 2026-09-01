@@ -3,10 +3,21 @@ import type { ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export type ShellProject = { id: string; name: string; slug: string };
+export type ActiveProject = { name: string; slug: string; tests: number };
+
+export function AppShell({
+  children,
+  projects = [],
+  activeProject = null,
+}: {
+  children: ReactNode;
+  projects?: ShellProject[];
+  activeProject?: ActiveProject | null;
+}) {
   return (
     <div className="bg-page text-primary flex h-screen w-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar projects={projects} activeProject={activeProject} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
