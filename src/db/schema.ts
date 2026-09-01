@@ -182,3 +182,95 @@ export type TestSuite = typeof testSuites.$inferSelect;
 export type TestCase = typeof testCases.$inferSelect;
 export type TestRun = typeof testRuns.$inferSelect;
 export type TestRunResult = typeof testRunResults.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* Tables added for the screens that had no backing store              */
+/* ------------------------------------------------------------------ */
+
+export const HEALING_STATUS = ["pending", "accepted", "reverted"] as const;
+
+/**
+ * A locator Parikshan repaired on its own.
+ *
+ * Keyed to the test case whose selector changed, and to the run that exposed
+ * it, so a healing event can always be traced back to the failure that
+ * triggered it.
+ */
+export const healingEvents = pgTable("healing_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  testCaseId: uuid("test_case_id"),
+  runId: uuid("run_id"),
+  oldSelector: text("old_selector").notNull(),
+  newSelector: text("new_selector").notNull(),
+  /** How the replacement was found: dom-similarity, text-match, position. */
+  strategy: text("strategy"),
+  /** 0-100. Stored as an integer so the UI never has to round a float. */
+  similarity: integer("similarity"),
+  reason: text("reason"),
+  status: text("status").$type<(typeof HEALING_STATUS)[number]>().default("pending"),
+  /** Minutes of manual repair this saved, used for the maintenance figure. */
+  minutesSaved: integer("minutes_saved").default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+});
+
+export const QUARANTINE_STATUS = ["quarantined", "released"] as const;
+
+/** A test held out of the gate because it fails unpredictably. */
+export const quarantinedTests = pgTable("quarantined_tests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  testCaseId: uuid("test_case_id"),
+  reason: text("reason").notNull(),
+  /** Plain-language description of when it fails. */
+  pattern: text("pattern"),
+  /** Failures per hundred runs. */
+  flakyRate: integer("flaky_rate"),
+  status: text("status").$type<(typeof QUARANTINE_STATUS)[number]>().default("quarantined"),
+  quarantinedAt: timestamp("quarantined_at", { withTimezone: true }).$defaultFn(() => new Date()),
+  releasedAt: timestamp("released_at", { withTimezone: true }),
+});
+
+/** A page the crawler reached, and what it found there. */
+export const discoveredPages = pgTable("discovered_pages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  path: text("path").notNull(),
+  title: text("title").notNull(),
+  forms: integer("forms").default(0),
+  apis: integer("apis").default(0),
+  gated: boolean("gated").default(false),
+  risk: text("risk"),
+  discoveredAt: timestamp("discovered_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+/** An endpoint observed in network traffic during the crawl. */
+export const apiEndpoints = pgTable("api_endpoints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  method: text("method").notNull(),
+  path: text("path").notNull(),
+  status: integer("status"),
+  /** Seconds into the crawl when it was first seen. */
+  firstSeenSec: integer("first_seen_sec"),
+  discoveredAt: timestamp("discovered_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+export const NOTIFICATION_TYPE = ["passed", "failed", "flaky", "healing", "quarantine"] as const;
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id"),
+  type: text("type").$type<(typeof NOTIFICATION_TYPE)[number]>().notNull(),
+  title: text("title").notNull(),
+  body: text("body"),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+export type HealingEvent = typeof healingEvents.$inferSelect;
+export type QuarantinedTest = typeof quarantinedTests.$inferSelect;
+export type DiscoveredPage = typeof discoveredPages.$inferSelect;
+export type ApiEndpoint = typeof apiEndpoints.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;

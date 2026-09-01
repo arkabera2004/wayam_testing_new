@@ -606,3 +606,74 @@ export async function projectAnalytics(userId: string, projectId: string) {
     coverage: null,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Self-healing                                                        */
+/* ------------------------------------------------------------------ */
+
+export type HealingEventView = Awaited<ReturnType<typeof listHealingEvents>>["events"][number];
+
+export async function listHealingEvents(userId: string, projectId: string) {
+  const db = getDb();
+
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return { events: [], stats: { healedThisMonth: 0, healedToday: 0, hoursSaved: 0, pending: 0 } };
+
+  const rows = await db
+    .select({ event: schema.healingEvents, testTitle: schema.testCases.title })
+    .from(schema.healingEvents)
+    .leftJoin(schema.testCases, eq(schema.healingEvents.testCaseId, schema.testCases.id))
+    .where(eq(schema.healingEvents.projectId, projectId))
+    .orderBy(desc(schema.healingEvents.createdAt));
+
+  const events = rows.map((r) => ({
+    ...r.event,
+    // A healing event can outlive the case it repaired, so the title is
+    // optional rather than assumed present.
+    test: r.testTitle ?? "Test no longer present",
+  }));
+
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const accepted = events.filter((e) => e.status === "accepted");
+
+  return {
+    events,
+    stats: {
+      healedThisMonth: accepted.filter(
+        (e) => e.createdAt && now - e.createdAt.getTime() < 30 * dayMs,
+      ).length,
+      healedToday: accepted.filter((e) => e.createdAt && now - e.createdAt.getTime() < dayMs).length,
+      // Reported in whole hours; the rows store minutes.
+      hoursSaved: Math.round(accepted.reduce((n, e) => n + (e.minutesSaved ?? 0), 0) / 60),
+      pending: events.filter((e) => e.status === "pending").length,
+    },
+  };
+}
+
+/** Accept or revert a proposed repair. Scoped through the owning project. */
+export async function setHealingStatus(
+  userId: string,
+  eventId: string,
+  status: "accepted" | "reverted",
+) {
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.healingEvents.id })
+    .from(schema.healingEvents)
+    .innerJoin(schema.projects, eq(schema.healingEvents.projectId, schema.projects.id))
+    .where(and(eq(schema.healingEvents.id, eventId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .update(schema.healingEvents)
+    .set({ status, resolvedAt: new Date() })
+    .where(eq(schema.healingEvents.id, eventId))
+    .returning();
+  return row;
+}
