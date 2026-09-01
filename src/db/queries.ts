@@ -526,3 +526,83 @@ export async function getTestCase(userId: string, caseId: string) {
     history,
   };
 }
+
+/**
+ * Analytics for a project, computed from its runs.
+ *
+ * Pass rate is measured per result rather than per run — a run that is half
+ * green is not a binary pass — and the trend is one point per run, oldest
+ * first, so the sparkline traces real history rather than a fixed curve.
+ *
+ * Coverage has no table yet, so it is reported as null and the screen says so
+ * instead of printing a number nothing measured.
+ */
+export type ProjectAnalytics = Awaited<ReturnType<typeof projectAnalytics>>;
+
+export async function projectAnalytics(userId: string, projectId: string) {
+  const db = getDb();
+  const ids = await ownedSuiteIds(userId, projectId);
+  const empty = {
+    passRate: null as number | null,
+    passRateTrend: [] as number[],
+    durationTrend: [] as number[],
+    totalRuns: 0,
+    totalResults: 0,
+    avgDurationMs: null as number | null,
+    flakiest: [] as { title: string; failures: number; runs: number }[],
+    coverage: null as number | null,
+  };
+  if (ids.length === 0) return empty;
+
+  const runs = await db
+    .select({ id: schema.testRuns.id, startedAt: schema.testRuns.startedAt })
+    .from(schema.testRuns)
+    .where(inArray(schema.testRuns.suiteId, ids))
+    .orderBy(schema.testRuns.startedAt);
+  if (runs.length === 0) return empty;
+
+  const results = await db
+    .select({
+      runId: schema.testRunResults.runId,
+      testCaseId: schema.testRunResults.testCaseId,
+      status: schema.testRunResults.status,
+      durationMs: schema.testRunResults.durationMs,
+      title: schema.testCases.title,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testCases, eq(schema.testRunResults.testCaseId, schema.testCases.id))
+    .where(inArray(schema.testRunResults.runId, runs.map((r) => r.id)));
+
+  const perRun = runs.map((run) => {
+    const mine = results.filter((r) => r.runId === run.id);
+    const passed = mine.filter((r) => r.status === "pass").length;
+    return {
+      pct: mine.length ? Math.round((passed / mine.length) * 100) : 0,
+      ms: mine.reduce((n, r) => n + (r.durationMs ?? 0), 0),
+    };
+  });
+
+  const passed = results.filter((r) => r.status === "pass").length;
+
+  // Cases that have failed at least once, worst first.
+  const byCase = new Map<string, { title: string; failures: number; runs: number }>();
+  for (const r of results) {
+    const entry = byCase.get(r.testCaseId) ?? { title: r.title, failures: 0, runs: 0 };
+    entry.runs += 1;
+    if (r.status !== "pass") entry.failures += 1;
+    byCase.set(r.testCaseId, entry);
+  }
+
+  return {
+    passRate: results.length ? Math.round((passed / results.length) * 1000) / 10 : null,
+    passRateTrend: perRun.map((r) => r.pct),
+    durationTrend: perRun.map((r) => Math.round(r.ms / 1000)),
+    totalRuns: runs.length,
+    totalResults: results.length,
+    avgDurationMs: perRun.length
+      ? Math.round(perRun.reduce((n, r) => n + r.ms, 0) / perRun.length)
+      : null,
+    flakiest: [...byCase.values()].filter((c) => c.failures > 0).sort((a, b) => b.failures - a.failures).slice(0, 5),
+    coverage: null,
+  };
+}

@@ -3,13 +3,11 @@ import { Check, Sparkles } from "lucide-react";
 import { PageBody } from "@/components/layout/app-shell";
 import { ActionButton } from "@/components/ui/action-button";
 import { Button, Card, Chip, PageHeader, Sparkline, StatCard, cn } from "@/components/ui";
-import {
-  coverageTrend,
-  discoveredPages,
-  failureClusters,
-  passRateTrend,
-  project,
-} from "@/lib/demo-data";
+import { notFound } from "next/navigation";
+
+import { discoveredPages, failureClusters } from "@/lib/demo-data";
+import { projectAnalytics, resolveProject } from "@/db/queries";
+import { currentUserId } from "@/lib/auth";
 
 /** Deterministic coverage per page so the heatmap is stable across renders. */
 function coverageFor(path: string) {
@@ -23,12 +21,20 @@ function heatTone(value: number) {
   return "bg-error-surface text-error border-error-stroke/40";
 }
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const a = await projectAnalytics(userId, project.id);
+
   return (
     <PageBody>
       <PageHeader
         title="Analytics"
-        description="Coverage, reliability and triage speed over the last 30 days."
+        description={`Reliability across ${a.totalRuns} recorded run${a.totalRuns === 1 ? "" : "s"}.`}
         actions={
           <>
             <select
@@ -45,32 +51,49 @@ export default function AnalyticsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Pass rate (30d)" value="97.6%" delta="+1.2" deltaTone="success" trend={passRateTrend} />
-        <StatCard label="Flaky rate" value="1.4%" delta="-0.6" deltaTone="success" trend={[3, 2.8, 2.5, 2.2, 2, 1.8, 1.6, 1.4]} />
-        <StatCard label="Mean time to triage" value="4m 12s" delta="-38%" deltaTone="success" trend={[12, 11, 9, 8, 7, 6, 5, 4]} />
-        <StatCard label="Coverage" value={`${project.coverage}%`} delta="+4" deltaTone="success" trend={coverageTrend} />
+        <StatCard
+          label="Pass rate"
+          value={a.passRate === null ? "No runs yet" : `${a.passRate}%`}
+          delta={a.totalResults ? `${a.totalResults} results` : undefined}
+          deltaTone={a.passRate !== null && a.passRate >= 95 ? "success" : undefined}
+          trend={a.passRateTrend}
+        />
+        <StatCard label="Runs" value={String(a.totalRuns)} delta="recorded" />
+        <StatCard
+          label="Average run"
+          value={a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s` : "—"}
+          delta="summed spec time"
+          trend={a.durationTrend}
+        />
+        {/* No coverage table exists yet, so this says so rather than printing
+            a number nothing measured. */}
+        <StatCard label="Coverage" value="Not measured" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card
           className="lg:col-span-2"
           title="Pass rate and test count"
-          subtitle="Dual axis, last 12 weeks"
+          subtitle={`One point per run · ${a.totalRuns} runs`}
         >
           <div className="flex flex-col gap-4">
             <div>
               <div className="flex items-baseline justify-between">
-                <span className="text-label-sm text-tertiary">Pass rate</span>
-                <span className="text-label-sm text-success tabular">97.6%</span>
+                <span className="text-label-sm text-tertiary">Pass rate per run</span>
+                <span className="text-label-sm text-success tabular">
+                  {a.passRate === null ? "—" : `${a.passRate}%`}
+                </span>
               </div>
-              <Sparkline values={passRateTrend} tone="success" className="mt-1.5 h-16" />
+              <Sparkline values={a.passRateTrend} tone="success" className="mt-1.5 h-16" />
             </div>
             <div>
               <div className="flex items-baseline justify-between">
-                <span className="text-label-sm text-tertiary">Coverage</span>
-                <span className="text-label-sm text-secondary tabular">{project.coverage}%</span>
+                <span className="text-label-sm text-tertiary">Run duration (s)</span>
+                <span className="text-label-sm text-secondary tabular">
+                  {a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s avg` : "—"}
+                </span>
               </div>
-              <Sparkline values={coverageTrend} className="mt-1.5 h-16" />
+              <Sparkline values={a.durationTrend} className="mt-1.5 h-16" />
             </div>
           </div>
         </Card>
