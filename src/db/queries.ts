@@ -400,3 +400,87 @@ export async function listTestCasesWithStats(userId: string, projectId: string, 
     };
   });
 }
+
+/**
+ * The proposed plan, grouped the way the screen renders it.
+ *
+ * A suite is a journey. "Approved" maps to automation_status = 'automated',
+ * which is what the generator sets once a scenario has been accepted and
+ * turned into a spec.
+ *
+ * The demo grouped scenarios as happy-path / edge-case / negative. The schema
+ * has no such column — its CHECK constraint limits type to unit/api/ui — so
+ * the breakdown is by priority, which is real, rather than inventing a
+ * classification the rows do not carry.
+ */
+export type PlanJourney = Awaited<ReturnType<typeof listTestPlan>>["journeys"][number];
+
+export async function listTestPlan(userId: string, projectId: string) {
+  const db = getDb();
+
+  const suites = await db
+    .select({ id: schema.testSuites.id, name: schema.testSuites.name })
+    .from(schema.testSuites)
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)));
+
+  if (suites.length === 0) return { journeys: [], stats: { total: 0, approved: 0, byPriority: {} as Record<string, number> } };
+
+  const cases = await db
+    .select()
+    .from(schema.testCases)
+    .where(inArray(schema.testCases.suiteId, suites.map((s) => s.id)))
+    .orderBy(desc(schema.testCases.createdAt));
+
+  const journeys = suites
+    .map((s) => {
+      const mine = cases.filter((c) => c.suiteId === s.id);
+      return {
+        id: s.id,
+        name: s.name ?? "Unassigned",
+        cases: mine.map((c) => ({
+          id: c.id,
+          title: c.title,
+          expectation: c.expectedResult,
+          steps: Array.isArray(c.steps) ? (c.steps as string[]) : [],
+          priority: c.priority ?? "medium",
+          type: c.type ?? "ui",
+          approved: c.automationStatus === "automated",
+          executable: Boolean(c.playwrightCode?.trim()),
+        })),
+      };
+    })
+    .filter((j) => j.cases.length > 0);
+
+  const byPriority: Record<string, number> = {};
+  for (const c of cases) byPriority[c.priority ?? "medium"] = (byPriority[c.priority ?? "medium"] ?? 0) + 1;
+
+  return {
+    journeys,
+    stats: {
+      total: cases.length,
+      approved: cases.filter((c) => c.automationStatus === "automated").length,
+      byPriority,
+    },
+  };
+}
+
+/** Flips a scenario between accepted and not. Scoped through its project. */
+export async function setCaseApproved(userId: string, caseId: string, approved: boolean) {
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.testCases.id })
+    .from(schema.testCases)
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.testCases.id, caseId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .update(schema.testCases)
+    .set({ automationStatus: approved ? "automated" : "manual", updatedAt: new Date() })
+    .where(eq(schema.testCases.id, caseId))
+    .returning();
+  return row;
+}
