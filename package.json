@@ -9,7 +9,8 @@
     "lint": "next lint",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "db:seed": "dotenv -e .env.local -- tsx scripts/seed.mts"
+    "db:seed": "dotenv -e .env.local -- tsx scripts/seed.mts",
+    "db:seed:selftest": "dotenv -e .env.local -- tsx scripts/seed-selftest.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -21,6 +22,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22",
     "@types/react": "^19",

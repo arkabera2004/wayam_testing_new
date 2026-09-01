@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { currentUserId } from "@/lib/auth";
 import { listRunsWithCounts, resolveProject } from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
-import { Play } from "lucide-react";
+import { RunSuiteButton } from "@/components/run-suite-button";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -33,11 +33,7 @@ export default async function RunsPage({ params }: { params: Promise<{ id: strin
         title="Runs"
         description="Every execution of the suite, triggered by pull requests, schedules or on demand."
         actions={
-          <Link href={runs[0] ? `/projects/${id}/runs/${runs[0].id}` : `/projects/${id}/runs`}>
-            <Button variant="primary" icon={Play}>
-              Run suite
-            </Button>
-          </Link>
+          <RunSuiteButton projectSlug={id} />
         }
       />
 

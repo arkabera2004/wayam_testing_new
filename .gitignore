@@ -24,3 +24,6 @@ skills-lock.json
 
 # drizzle-kit journal only; no migrations generated yet
 drizzle/
+
+# Generated spec files and reporter output for suite runs
+parikshan-runs/
