@@ -91,7 +91,9 @@ export default async function RunsPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </Td>
                 <Td>
-                  <span className="text-caption text-quaternary">Ch · FF · WK</span>
+                  {/* The config runs a single Chromium project; claiming three
+                      browsers was decoration. */}
+                  <span className="text-caption text-quaternary">Chromium</span>
                 </Td>
                 <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—"}</Td>
                 <Td>

@@ -13,5 +13,13 @@ export default async function HealingPage({ params }: { params: Promise<{ id: st
   if (!project) notFound();
 
   const { events, stats } = await listHealingEvents(userId, project.id);
-  return <HealingView id={id} events={events} stats={stats} />;
+  return (
+    <HealingView
+      id={id}
+      // Somewhere real to start from; the field stays editable.
+      defaultUrl={process.env.BASE_URL ?? "http://localhost:3000/demo/shopstack/checkout"}
+      events={events}
+      stats={stats}
+    />
+  );
 }

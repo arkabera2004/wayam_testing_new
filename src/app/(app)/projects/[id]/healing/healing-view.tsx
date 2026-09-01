@@ -9,14 +9,16 @@ import { Button, Card, Chip, PageHeader, StatCard } from "@/components/ui";
 import { Icon3D } from "@/components/ui/icon-3d";
 import { useToast } from "@/components/ui/toast";
 import type { HealingEventView } from "@/db/queries";
-import { relativeTime } from "@/lib/format";
+import { HealNow } from "@/components/heal-now";
 
 export function HealingView({
   id,
+  defaultUrl,
   events,
   stats,
 }: {
   id: string;
+  defaultUrl: string;
   events: HealingEventView[];
   stats: { healedThisMonth: number; healedToday: number; hoursSaved: number; pending: number };
 }) {
@@ -74,12 +76,16 @@ export function HealingView({
       </div>
 
       <div className="flex flex-col gap-3">
-        {events.map((event) => (
+        <div className="mb-5">
+        <HealNow projectSlug={id} defaultUrl={defaultUrl} />
+      </div>
+
+      {events.map((event) => (
           <Card key={event.id}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-heading-sm text-primary">{event.test}</p>
-                <p className="text-caption text-quaternary mt-1">{relativeTime(event.createdAt)}</p>
+                <p className="text-caption text-quaternary mt-1">{event.createdAtLabel}</p>
               </div>
               {event.status === "accepted" ? (
                 <Chip tone="success">

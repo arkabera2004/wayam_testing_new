@@ -82,7 +82,28 @@ async function stopRemoteSession(apiKey: string, id: string) {
  * default because it costs nothing; the remote session is used when a key is
  * present, or when BROWSER_USE_CDP_URL points at an already-running one.
  */
-async function openBrowser(): Promise<{
+/**
+ * Whether a rented browser could actually reach this URL.
+ *
+ * A cloud session has no route to the machine running the app, so healing a
+ * localhost page in a remote browser fails with ERR_CONNECTION_REFUSED and
+ * still bills for the session. Those URLs stay local regardless of the key.
+ */
+function isReachableFromCloud(url: string) {
+  try {
+    const { hostname } = new URL(url);
+    if (hostname === "localhost" || hostname.endsWith(".local")) return false;
+    if (/^127\./.test(hostname) || hostname === "::1") return false;
+    // RFC1918 private ranges.
+    if (/^10\./.test(hostname) || /^192\.168\./.test(hostname)) return false;
+    if (/^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function openBrowser(targetUrl: string): Promise<{
   browser: Browser;
   kind: "local" | "remote";
   release: () => Promise<void>;
@@ -93,7 +114,7 @@ async function openBrowser(): Promise<{
   }
 
   const apiKey = process.env.BROWSER_USE_API_KEY;
-  if (apiKey && process.env.HEAL_BROWSER !== "local") {
+  if (apiKey && process.env.HEAL_BROWSER !== "local" && isReachableFromCloud(targetUrl)) {
     const session = await createRemoteSession(apiKey);
     return {
       browser: await chromium.connectOverCDP(session.cdpUrl),
@@ -169,7 +190,7 @@ async function collectCandidates(page: Page) {
  * stable strategy, preferring a test id or an accessible name over text.
  */
 export async function healSelector(url: string, brokenSelector: string): Promise<HealResult> {
-  const { browser, kind, release } = await openBrowser();
+  const { browser, kind, release } = await openBrowser(url);
   try {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 });

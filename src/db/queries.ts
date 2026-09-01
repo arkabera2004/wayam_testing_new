@@ -2,6 +2,19 @@ import "server-only";
 
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 
+/** Server-side copy of the relative-time format, so both sides agree. */
+function relativeLabel(value: Date | null): string {
+  if (!value) return "unknown";
+  const seconds = Math.max(0, Math.round((Date.now() - value.getTime()) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return days < 30 ? `${days}d ago` : `${Math.round(days / 30)}mo ago`;
+}
+
 import { getDb, schema } from "./index";
 
 /**
@@ -635,6 +648,12 @@ export async function listHealingEvents(userId: string, projectId: string) {
     // A healing event can outlive the case it repaired, so the title is
     // optional rather than assumed present.
     test: r.testTitle ?? "Test no longer present",
+    /**
+     * Formatted here rather than in the client component. Rendering "12m ago"
+     * on both sides let the clock tick between the server render and
+     * hydration, and the differing text failed hydration outright.
+     */
+    createdAtLabel: relativeLabel(r.event.createdAt),
   }));
 
   const now = Date.now();
@@ -758,4 +777,23 @@ export async function markNotificationsRead(userId: string) {
     .where(inArray(schema.notifications.projectId, projects.map((p) => p.id)))
     .returning({ id: schema.notifications.id });
   return rows.length;
+}
+
+/* ------------------------------------------------------------------ */
+/* Discovery, application map, notifications                           */
+/* ------------------------------------------------------------------ */
+
+/** Rolls the crawl up into the counts the discovery and map screens quote. */
+export async function discoverySummary(userId: string, projectId: string) {
+  const { pages, endpoints, journeys } = await listDiscovery(userId, projectId);
+  return {
+    pages,
+    endpoints,
+    stats: {
+      pages: pages.length,
+      journeys,
+      apis: endpoints.length,
+      gated: pages.filter((p) => p.gated).length,
+    },
+  };
 }
