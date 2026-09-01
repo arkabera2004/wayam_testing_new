@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Check, TriangleAlert, Wrench } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, PageHeader, cn } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { useNotifications } from "@/context/notifications-context";
 import { notifications, project, type Status } from "@/lib/demo-data";
 
 const ICONS: Record<string, { icon: typeof Check; tone: string }> = {
@@ -26,9 +26,8 @@ function hrefFor(type: Status) {
 
 export default function NotificationsPage() {
   const { toast } = useToast();
-  const [read, setRead] = useState(false);
   const days = Array.from(new Set(notifications.map((n) => n.day)));
-  const unread = read ? 0 : notifications.filter((n) => n.unread).length;
+  const { unread, isUnread, markAllRead } = useNotifications();
 
   return (
     <PageBody>
@@ -39,7 +38,7 @@ export default function NotificationsPage() {
           <Button
             disabled={unread === 0}
             onClick={() => {
-              setRead(true);
+              markAllRead();
               toast({ tone: "success", title: "All notifications marked read" });
             }}
           >
@@ -79,7 +78,7 @@ export default function NotificationsPage() {
                           </div>
 
                           <span className="text-caption text-quaternary shrink-0">{n.when}</span>
-                          {n.unread && !read ? (
+                          {isUnread(n.id) ? (
                             <span className="bg-info-icon mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />
                           ) : null}
                         </Link>

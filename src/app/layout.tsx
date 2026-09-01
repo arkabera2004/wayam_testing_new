@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
 
 import { ToastProvider } from "@/components/ui/toast";
+import { NotificationsProvider } from "@/context/notifications-context";
 import { ThemeProvider } from "@/context/theme-context";
 import { THEME_STORAGE_KEY, themeFromCookie } from "@/lib/theme";
 
@@ -59,7 +60,9 @@ export default async function RootLayout({
     >
       <body className="h-full">
         <ThemeProvider initialTheme={theme}>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <NotificationsProvider>{children}</NotificationsProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

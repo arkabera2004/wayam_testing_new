@@ -7,7 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button, cn } from "@/components/ui";
 import { AppIcon } from "@/components/ui/app-icon";
 import { icons } from "@/lib/icons";
-import { notifications, project } from "@/lib/demo-data";
+import { useNotifications } from "@/context/notifications-context";
+import { project } from "@/lib/demo-data";
 
 import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
@@ -49,7 +50,7 @@ export function Topbar() {
   const crumbs = useBreadcrumbs();
   const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const unread = notifications.filter((n) => n.unread).length;
+  const { unread } = useNotifications();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
