@@ -15,10 +15,19 @@ import {
 } from "lucide-react";
 
 import { Button, Card, Chip, EmptyState, Table, Td, Th, cn } from "@/components/ui";
-import { Icon3D } from "@/components/ui/icon-3d";
-import { apiEndpoints, discoveredPages } from "@/lib/demo-data";
+import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
+import { PageThumbnail } from "@/components/ui/page-thumbnail";
+import { apiEndpoints, discoveredPages, discoveryStats } from "@/lib/demo-data";
 
 const FILTERS = ["has forms", "auth-gated", "API-backed"];
+
+/** Headline numbers derived from the crawl, not hardcoded. */
+const STATS: { icon: Icon3DName; value: number; label: string }[] = [
+  { icon: "pages-found", value: discoveryStats.pages, label: "Pages found" },
+  { icon: "journey", value: discoveryStats.journeys, label: "Journeys mapped" },
+  { icon: "api-inventory", value: discoveryStats.apis, label: "API endpoints" },
+  { icon: "auth-gated", value: discoveredPages.filter((p) => p.gated).length, label: "Auth-gated" },
+];
 
 export default function ApplicationMapPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,6 +35,15 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
   const [selected, setSelected] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [zoom, setZoom] = useState(100);
+
+  /** Card width scales with zoom, so the grid reflows instead of clipping. */
+  const ZOOM_STEPS = [70, 85, 100, 125, 150];
+  const stepZoom = (dir: 1 | -1) =>
+    setZoom((z) => {
+      const i = ZOOM_STEPS.indexOf(z);
+      return ZOOM_STEPS[Math.min(ZOOM_STEPS.length - 1, Math.max(0, i + dir))] ?? z;
+    });
 
   const page = discoveredPages.find((p) => p.path === selected) ?? null;
 
@@ -89,11 +107,23 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
         </div>
 
         <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="sm" aria-label="Zoom out">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Zoom out"
+            disabled={zoom === ZOOM_STEPS[0]}
+            onClick={() => stepZoom(-1)}
+          >
             <Minus size={14} aria-hidden="true" />
           </Button>
-          <span className="text-label-sm text-tertiary tabular w-10 text-center">100%</span>
-          <Button variant="ghost" size="sm" aria-label="Zoom in">
+          <span className="text-label-sm text-tertiary tabular w-10 text-center">{zoom}%</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Zoom in"
+            disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+            onClick={() => stepZoom(1)}
+          >
             <Plus size={14} aria-hidden="true" />
           </Button>
         </div>
@@ -119,7 +149,29 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
             }
           />
         ) : tab === "graph" ? (
-          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          <div className="p-5">
+            {/* ---- Crawl summary ---- */}
+            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {STATS.map((s) => (
+                <div
+                  key={s.label}
+                  className="border-muted bg-container flex items-center gap-3 rounded-xl border p-3"
+                >
+                  <Icon3D name={s.icon} size={40} />
+                  <div className="min-w-0">
+                    <p className="font-display text-display-xs text-primary tabular">{s.value}</p>
+                    <p className="text-caption text-tertiary truncate">{s.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(auto-fill, minmax(${Math.round((zoom / 100) * 210)}px, 1fr))`,
+              }}
+            >
             {filtered.map((p) => (
               <button
                 key={p.path}
@@ -131,18 +183,7 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
                   selected === p.path && "border-active bg-raised",
                 )}
               >
-                {/* Screenshot placeholder */}
-                <div className="bg-raised border-muted flex aspect-video items-center justify-center rounded-lg border">
-                  <div className="w-3/4">
-                    <div className="bg-raised-2 h-1.5 w-1/2 rounded-full" />
-                    <div className="bg-raised-2 mt-1.5 h-1 w-full rounded-full opacity-60" />
-                    <div className="bg-raised-2 mt-1 h-1 w-4/5 rounded-full opacity-40" />
-                    <div className="mt-2.5 flex gap-1.5">
-                      <div className="bg-raised-2 h-4 flex-1 rounded" />
-                      <div className="bg-raised-2 h-4 flex-1 rounded opacity-60" />
-                    </div>
-                  </div>
-                </div>
+                <PageThumbnail path={p.path} gated={p.gated} />
 
                 <div className="mt-3 flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -160,6 +201,7 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
                 </div>
               </button>
             ))}
+            </div>
           </div>
         ) : (
           <div className="p-5">
@@ -213,7 +255,7 @@ export default function ApplicationMapPage({ params }: { params: Promise<{ id: s
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-            <div className="bg-raised border-muted aspect-video rounded-lg border" />
+            <PageThumbnail path={page.path} gated={page.gated} />
 
             <div className="flex flex-wrap gap-1.5">
               <Chip tone="warning">{page.risk}</Chip>
