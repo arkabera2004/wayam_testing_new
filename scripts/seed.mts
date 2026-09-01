@@ -11,19 +11,10 @@ import { getDb, schema } from "../src/db/index.js";
 import { generatedTests, journeys, project, runs, testPlan } from "../src/lib/demo-data.js";
 
 /**
- * The tenant to seed under. Required rather than defaulted: now that reads are
- * scoped to the signed-in Clerk user, a fallback id would quietly write rows
- * that no real account can ever see.
+ * Tenant to seed under. Matches the id the app runs as while authentication is
+ * out; override it to seed for a different owner.
  */
-const DEMO_USER = process.env.SEED_USER_ID;
-if (!DEMO_USER) {
-  console.error(
-    "SEED_USER_ID is required. Set it to your Clerk user id (user_...) so the\n" +
-      "seeded project belongs to the account you sign in with:\n\n" +
-      "  SEED_USER_ID=user_xxx npx dotenv -e .env.local -- npx tsx scripts/seed.mts\n",
-  );
-  process.exit(1);
-}
+const DEMO_USER = process.env.SEED_USER_ID ?? "demo-user";
 const db = getDb();
 
 const [existing] = await db
