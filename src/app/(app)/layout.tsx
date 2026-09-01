@@ -17,6 +17,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   return (
     <AppShell
       projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug }))}
+      projectSummaries={projects.map((p) => ({ name: p.name, slug: p.slug, tests: p.tests }))}
       activeProject={active ? { name: active.name, slug: active.slug, tests: active.tests } : null}
       user={{ name: "Local", email: "Signed-in user is stubbed", initials: "LO" }}
     >

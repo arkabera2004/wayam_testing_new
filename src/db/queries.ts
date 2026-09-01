@@ -339,3 +339,64 @@ export async function workspaceStats(userId: string) {
     runs: runs.length,
   };
 }
+
+/**
+ * Test cases with the run history the tests table shows.
+ *
+ * Journey comes from the owning suite, and status/history/average are derived
+ * from this case's results across recent runs — the table's sparkline is
+ * meant to be the last few outcomes, not decoration.
+ */
+export type TestCaseWithStats = Awaited<ReturnType<typeof listTestCasesWithStats>>[number];
+
+export async function listTestCasesWithStats(userId: string, projectId: string, historyLength = 7) {
+  const db = getDb();
+
+  const suites = await db
+    .select({ id: schema.testSuites.id, name: schema.testSuites.name })
+    .from(schema.testSuites)
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)))
+    .then((rows) => rows.map((r) => ({ id: r.id, name: r.name })));
+
+  if (suites.length === 0) return [];
+  const suiteName = new Map(suites.map((s) => [s.id, s.name ?? "Unassigned"]));
+
+  const cases = await db
+    .select()
+    .from(schema.testCases)
+    .where(inArray(schema.testCases.suiteId, suites.map((s) => s.id)))
+    .orderBy(desc(schema.testCases.createdAt));
+  if (cases.length === 0) return [];
+
+  // Newest first, so slicing gives the most recent outcomes.
+  const results = await db
+    .select({
+      testCaseId: schema.testRunResults.testCaseId,
+      status: schema.testRunResults.status,
+      durationMs: schema.testRunResults.durationMs,
+      startedAt: schema.testRuns.startedAt,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .where(inArray(schema.testRunResults.testCaseId, cases.map((c) => c.id)))
+    .orderBy(desc(schema.testRuns.startedAt));
+
+  return cases.map((c) => {
+    const mine = results.filter((r) => r.testCaseId === c.id);
+    const recent = mine.slice(0, historyLength);
+    const durations = mine.map((r) => r.durationMs ?? 0).filter(Boolean);
+    return {
+      id: c.id,
+      name: c.title,
+      journey: suiteName.get(c.suiteId) ?? "Unassigned",
+      /** What the filter chips match on. */
+      tags: [c.type, c.priority, c.automationStatus].filter(Boolean) as string[],
+      status: recent[0]?.status ?? null,
+      history: recent.map((r) => r.status),
+      avgMs: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null,
+      runCount: mine.length,
+      executable: Boolean(c.playwrightCode?.trim()),
+    };
+  });
+}

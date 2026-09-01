@@ -11,17 +11,25 @@ export function AppShell({
   children,
   projects = [],
   activeProject = null,
+  projectSummaries = [],
   user,
 }: {
   children: ReactNode;
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
+  /** Every project's counts, so the sidebar can follow the URL. */
+  projectSummaries?: ActiveProject[];
   /** Required: this shell only renders behind a session. */
   user: ShellUser;
 }) {
   return (
     <div className="bg-page text-primary flex h-screen w-screen overflow-hidden">
-      <Sidebar projects={projects} activeProject={activeProject} user={user} />
+      <Sidebar
+        projects={projects}
+        activeProject={activeProject}
+        projectSummaries={projectSummaries}
+        user={user}
+      />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>

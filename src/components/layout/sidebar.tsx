@@ -17,10 +17,12 @@ import { SidebarItem } from "./sidebar-item";
 export function Sidebar({
   projects = [],
   activeProject = null,
+  projectSummaries = [],
   user,
 }: {
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
+  projectSummaries?: ActiveProject[];
   /** Required: the sidebar only renders behind a session, so there is no
    *  fallback identity to show. It used to fall back to a demo person's name. */
   user: ShellUser;
@@ -35,15 +37,22 @@ export function Sidebar({
   // Route from the live project when there is one. With no projects yet the
   // project-scoped nav is hidden entirely rather than linking into a project
   // that does not exist.
-  const base = `/projects/${activeProject?.slug ?? project.id}`;
-  const hasProject = Boolean(activeProject);
+  // Follow the project in the URL rather than always the first one, which had
+  // the nav showing one project's name and test count while the page beside it
+  // rendered another's.
+  const slugInUrl = pathname.match(/^\/projects\/([^/]+)/)?.[1];
+  const current =
+    projectSummaries.find((p) => p.slug === slugInUrl) ?? activeProject ?? null;
+
+  const base = `/projects/${current?.slug ?? project.id}`;
+  const hasProject = Boolean(current);
 
   const primaryNav = [
     { icon: "dashboard" as const, label: "Overview", href: base },
     { icon: "applicationMap" as const, label: "Application Map", href: `${base}/map` },
     { icon: "testPlan" as const, label: "Test Plan", href: `${base}/plan` },
     { icon: "requirements" as const, label: "Requirements", href: `${base}/prd` },
-    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: activeProject?.tests ?? 0 },
+    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: current?.tests ?? 0 },
     { icon: "runs" as const, label: "Runs", href: `${base}/runs`, badge: undefined },
     { icon: "analytics" as const, label: "Analytics", href: `${base}/analytics` },
     { icon: "integrations" as const, label: "Integrations", href: `${base}/integrations` },
@@ -109,10 +118,10 @@ export function Sidebar({
               )}
             >
               <span className="bg-raised-2 text-label-sm text-secondary grid h-5 w-5 shrink-0 place-items-center rounded">
-                {(activeProject?.name ?? project.name).charAt(0)}
+                {(current?.name ?? project.name).charAt(0)}
               </span>
               <span className="text-label-md text-primary min-w-0 flex-1 truncate text-left">
-                {activeProject?.name ?? project.name}
+                {current?.name ?? project.name}
               </span>
               <AppIcon name="chevronDown" size="xs" className="icon-quaternary" />
             </button>
