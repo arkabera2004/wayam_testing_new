@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, RotateCcw } from "lucide-react";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
-import { apiEndpoints, discoveryFeed, project } from "@/lib/demo-data";
+import { apiEndpoints, discoveryFeed, discoveryStats, project } from "@/lib/demo-data";
 
 /** Fixed node layout so the graph builds the same way on every take. */
 const NODES = [
@@ -61,9 +61,9 @@ export default function DiscoveryPage({ params }: { params: Promise<{ id: string
 
   const counters = useMemo(
     () => [
-      { label: "Pages found", value: Math.round(progress * project.pages) },
-      { label: "Journeys", value: Math.round(progress * project.journeys) },
-      { label: "API endpoints", value: Math.round(progress * project.apis) },
+      { label: "Pages found", value: Math.round(progress * discoveryStats.pages) },
+      { label: "Journeys", value: Math.round(progress * discoveryStats.journeys) },
+      { label: "API endpoints", value: Math.round(progress * discoveryStats.apis) },
     ],
     [progress],
   );
@@ -181,7 +181,7 @@ export default function DiscoveryPage({ params }: { params: Promise<{ id: string
               <Card className="mx-auto max-w-md">
                 <p className="text-heading-sm text-primary">Discovery complete</p>
                 <p className="text-body-md text-tertiary mt-1">
-                  {project.pages} pages, {project.journeys} journeys and {project.apis} API
+                  {discoveryStats.pages} pages, {discoveryStats.journeys} journeys and {discoveryStats.apis} API
                   endpoints mapped in {elapsed} seconds.
                 </p>
                 <div className="mt-4 flex gap-2">

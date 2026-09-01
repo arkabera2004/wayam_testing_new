@@ -32,9 +32,6 @@ export const project = {
   repo: "acme/shopstack",
   branch: "main",
   environment: "production",
-  pages: 28,
-  journeys: 14,
-  apis: 9,
   tests: 42,
   runs: 137,
   coverage: 78,
@@ -128,6 +125,22 @@ export const journeys = [
   { id: "checkout", name: "Checkout", cases: 11, description: "Customer completes payment, including declined cards." },
   { id: "account", name: "Account settings", cases: 5, description: "Customer updates their profile and preferences." },
 ];
+
+/**
+ * Headline crawl figures — the single source for every screen that quotes them
+ * (Overview, Discovery, Application Map).
+ *
+ * These intentionally exceed the sample arrays above: the crawl found 28 pages
+ * and 14 journeys, while `discoveredPages`/`journeys` carry a representative
+ * subset for the UI to render. They previously lived as loose literals on
+ * `project`, which let the Map disagree with the Overview; keeping one exported
+ * object means a change lands everywhere at once.
+ */
+export const discoveryStats = {
+  pages: 28,
+  journeys: 14,
+  apis: apiEndpoints.length,
+};
 
 export type TestCase = {
   id: string;

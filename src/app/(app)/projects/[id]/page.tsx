@@ -17,6 +17,7 @@ import {
 import { Icon3D } from "@/components/ui/icon-3d";
 import {
   coverageTrend,
+  discoveryStats,
   healingStats,
   passRateTrend,
   project,
@@ -112,9 +113,9 @@ export default async function ProjectOverviewPage({
           <Card title="Discovery">
             <dl className="flex flex-col gap-3">
               {[
-                { label: "Pages found", value: project.pages },
-                { label: "Journeys mapped", value: project.journeys },
-                { label: "API endpoints", value: project.apis },
+                { label: "Pages found", value: discoveryStats.pages },
+                { label: "Journeys mapped", value: discoveryStats.journeys },
+                { label: "API endpoints", value: discoveryStats.apis },
               ].map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between">
                   <dt className="text-body-md text-tertiary">{row.label}</dt>
