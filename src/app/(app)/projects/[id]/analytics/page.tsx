@@ -5,15 +5,12 @@ import { ActionButton } from "@/components/ui/action-button";
 import { Button, Card, Chip, PageHeader, Sparkline, StatCard, cn } from "@/components/ui";
 import { notFound } from "next/navigation";
 
-import { discoveredPages, failureClusters } from "@/lib/demo-data";
-import { projectAnalytics, resolveProject } from "@/db/queries";
+import { failureClusters } from "@/lib/demo-data";
+import { coverageByPage, projectAnalytics, releaseGate, resolveProject } from "@/db/queries";
 import { currentUserId } from "@/lib/auth";
 
-/** Deterministic coverage per page so the heatmap is stable across renders. */
-function coverageFor(path: string) {
-  const seed = path.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return 30 + (seed % 71);
-}
+/** Confidence bands stand in for a percentage the snapshots do not record. */
+const CONFIDENCE_VALUE: Record<string, number> = { high: 90, medium: 60, low: 25 };
 
 function heatTone(value: number) {
   if (value >= 80) return "bg-success-surface text-success border-success-stroke/40";
@@ -29,6 +26,8 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   if (!project) notFound();
 
   const a = await projectAnalytics(userId, project.id);
+  const coverage = await coverageByPage(userId, project.id);
+  const gate = await releaseGate(userId, project.id);
 
   return (
     <PageBody>
@@ -104,16 +103,22 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
               <Check size={15} strokeWidth={2} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-heading-sm text-primary">Passing</p>
-              <p className="text-body-sm text-tertiary">Merges allowed</p>
+              <p className="text-heading-sm text-primary">
+                {gate.verdict === "GO" ? "Passing" : gate.verdict === "NO-GO" ? "Blocked" : "Conditional"}
+              </p>
+              <p className="text-body-sm text-tertiary">
+                {gate.verdict === "GO" ? "Merges allowed" : `${gate.conditions.length} condition(s) open`}
+              </p>
             </div>
           </div>
 
           <ul className="mt-4 flex flex-col gap-2">
+            {/* The rules are the checks the gate actually applies, reported
+                with their current state rather than as fixed policy text. */}
             {[
-              "Block merge if any smoke test fails",
-              "Block merge if pass rate drops below 95%",
-              "Quarantined tests never block",
+              `Latest run pass rate: ${gate.passRate === null ? "no runs" : `${gate.passRate}%`}`,
+              `${gate.stillQuarantined} test(s) quarantined and excluded`,
+              `${gate.awaitingReview} healed locator(s) awaiting review`,
             ].map((rule) => (
               <li key={rule} className="text-body-md text-secondary flex items-start gap-2">
                 <Check size={13} className="text-success mt-1 shrink-0" aria-hidden="true" />
@@ -124,16 +129,16 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         </Card>
       </div>
 
-      <Card title="Coverage heatmap" subtitle="Each tile is a discovered page">
+      <Card title="Coverage heatmap" subtitle="Each tile is a crawled page, shaded by coverage confidence">
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {discoveredPages.map((p) => {
-            const value = coverageFor(p.path);
+          {coverage.map((p) => {
+            const value = p.covered ? (CONFIDENCE_VALUE[p.confidence] ?? 25) : 0;
             return (
               <div
                 key={p.path}
                 className={cn("rounded-lg border px-3 py-2.5", heatTone(value))}
               >
-                <p className="text-label-md truncate">{p.title}</p>
+                <p className="text-label-md truncate">{p.covered ? `${p.mappedTests} test(s)` : "Uncovered"}</p>
                 <div className="mt-1 flex items-baseline justify-between gap-2">
                   <span className="text-caption truncate opacity-70">{p.path}</span>
                   <span className="text-label-sm tabular shrink-0">{value}%</span>

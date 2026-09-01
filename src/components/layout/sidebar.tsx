@@ -19,10 +19,12 @@ export function Sidebar({
   activeProject = null,
   projectSummaries = [],
   user,
+  testTimeMs = 0,
 }: {
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
   projectSummaries?: ActiveProject[];
+  testTimeMs?: number;
   /** Required: the sidebar only renders behind a session, so there is no
    *  fallback identity to show. It used to fall back to a demo person's name. */
   user: ShellUser;
@@ -85,7 +87,6 @@ export function Sidebar({
   const isActive = (href: string) =>
     href === base ? pathname === base : pathname.startsWith(href);
 
-  const usagePct = Math.round((workspace.minutesUsed / workspace.minutesTotal) * 100);
 
   return (
     <aside
@@ -231,14 +232,14 @@ export function Sidebar({
         {!collapsed && (
           <div className="mb-3">
             <div className="flex items-baseline justify-between">
-              <span className="text-label-sm text-tertiary">Test minutes</span>
+              <span className="text-label-sm text-tertiary">Test time</span>
               <span className="text-label-sm text-secondary tabular">
-                {workspace.minutesUsed.toLocaleString()} / {workspace.minutesTotal.toLocaleString()}
+                {testTimeMs >= 60_000
+                  ? `${Math.floor(testTimeMs / 60_000)}m ${Math.round((testTimeMs % 60_000) / 1000)}s`
+                  : `${(testTimeMs / 1000).toFixed(1)}s`}
               </span>
             </div>
-            <div className="bg-raised mt-1.5 h-1 w-full overflow-hidden rounded-full">
-              <div className="bg-action-primary h-full rounded-full" style={{ width: `${usagePct}%` }} />
-            </div>
+            <p className="text-caption text-quaternary mt-1">summed across every recorded run</p>
           </div>
         )}
 

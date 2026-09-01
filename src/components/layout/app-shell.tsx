@@ -13,12 +13,15 @@ export function AppShell({
   activeProject = null,
   projectSummaries = [],
   user,
+  testTimeMs = 0,
 }: {
   children: ReactNode;
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
   /** Every project's counts, so the sidebar can follow the URL. */
   projectSummaries?: ActiveProject[];
+  /** Total spec time actually executed, in milliseconds. */
+  testTimeMs?: number;
   /** Required: this shell only renders behind a session. */
   user: ShellUser;
 }) {
@@ -29,6 +32,7 @@ export function AppShell({
         activeProject={activeProject}
         projectSummaries={projectSummaries}
         user={user}
+        testTimeMs={testTimeMs}
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />

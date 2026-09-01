@@ -995,3 +995,54 @@ export async function rankedTests(userId: string, projectId: string) {
     })
     .sort((a, b) => b.priority - a.priority);
 }
+
+/** Coverage per page, from the snapshots the crawl recorded. */
+export async function coverageByPage(userId: string, projectId: string) {
+  const db = getDb();
+  const rows = await db
+    .select({ c: schema.coverageSnapshots })
+    .from(schema.coverageSnapshots)
+    .innerJoin(schema.projects, eq(schema.coverageSnapshots.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.coverageSnapshots.projectId, projectId)));
+
+  return rows.map((r) => ({
+    path: r.c.filePath,
+    covered: Boolean(r.c.isCovered),
+    // The snapshot records whether a page is covered and how confident that is,
+    // not a percentage. Confidence is mapped to a band so the heatmap has
+    // something honest to shade with.
+    confidence: r.c.estimatedConfidence ?? "low",
+    mappedTests: (r.c.mappedTestCaseIds ?? []).length,
+  }));
+}
+
+/** One recorded result, with its case and run. */
+export async function getResult(userId: string, runId: string, resultId: string) {
+  const db = getDb();
+  const [row] = await db
+    .select({ result: schema.testRunResults, testCase: schema.testCases, run: schema.testRuns })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testCases, eq(schema.testRunResults.testCaseId, schema.testCases.id))
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .innerJoin(schema.testSuites, eq(schema.testRuns.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(
+      and(
+        eq(schema.testRunResults.id, resultId),
+        eq(schema.testRunResults.runId, runId),
+        eq(schema.projects.userId, userId),
+      ),
+    )
+    .limit(1);
+  if (!row) return null;
+
+  return {
+    ...row.result,
+    title: row.testCase.title,
+    steps: Array.isArray(row.testCase.steps) ? (row.testCase.steps as string[]) : [],
+    expectedResult: row.testCase.expectedResult,
+    testCaseId: row.testCase.id,
+    playwrightCode: row.testCase.playwrightCode,
+    runStartedAt: row.run.startedAt,
+  };
+}

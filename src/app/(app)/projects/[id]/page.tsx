@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { currentUserId } from "@/lib/auth";
-import { listRunsWithCounts, projectStats, resolveProject } from "@/db/queries";
+import { discoverySummary, listHealingEvents, listRunsWithCounts, projectStats, resolveProject } from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
 import { ArrowRight, Globe } from "lucide-react";
 
@@ -21,9 +21,6 @@ import {
 } from "@/components/ui";
 import { Icon3D } from "@/components/ui/icon-3d";
 import {
-  coverageTrend,
-  discoveryStats,
-  healingStats,
   passRateTrend,
   project,
   runs,
@@ -41,9 +38,11 @@ export default async function ProjectOverviewPage({
   const userId = await currentUserId();
   const dbProject = await resolveProject(userId, id);
   if (!dbProject) notFound();
-  const [stats, recentRuns] = await Promise.all([
+  const [stats, recentRuns, discovery, healing] = await Promise.all([
     projectStats(userId, dbProject.id),
     listRunsWithCounts(userId, dbProject.id, 5),
+    discoverySummary(userId, dbProject.id),
+    listHealingEvents(userId, dbProject.id),
   ]);
   const latestRun = recentRuns[0] ?? null;
 
@@ -71,8 +70,9 @@ export default async function ProjectOverviewPage({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Tests" value={String(stats.tests)} delta="in the suite" />
         <StatCard label="Pass rate" value={`${stats.passRate}%`} delta={`${stats.runs} runs`} trend={passRateTrend} />
-        <StatCard label="Coverage" value={`${project.coverage}%`} delta="+4" deltaTone="success" trend={coverageTrend} />
-        <StatCard label="Locators healed" value={String(healingStats.healedThisMonth)} delta="this month" />
+        {/* No coverage percentage is measured; pages crawled is what exists. */}
+        <StatCard label="Pages crawled" value={String(discovery.stats.pages)} delta={`${discovery.stats.gated} auth-gated`} />
+        <StatCard label="Locators healed" value={String(healing.stats.healedThisMonth)} delta="this month" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -130,9 +130,9 @@ export default async function ProjectOverviewPage({
           <Card title="Discovery">
             <dl className="flex flex-col gap-3">
               {[
-                { label: "Pages found", value: discoveryStats.pages },
-                { label: "Journeys mapped", value: discoveryStats.journeys },
-                { label: "API endpoints", value: discoveryStats.apis },
+                { label: "Pages found", value: discovery.stats.pages },
+                { label: "Journeys mapped", value: discovery.stats.journeys },
+                { label: "API endpoints", value: discovery.stats.apis },
               ].map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between">
                   <dt className="text-body-md text-tertiary">{row.label}</dt>
@@ -150,10 +150,10 @@ export default async function ProjectOverviewPage({
               <Icon3D name="time-saved" size={56} />
               <div>
                 <p className="text-heading-sm text-primary">
-                  {healingStats.healedToday} locators healed today
+                  {healing.stats.healedToday} locators healed today
                 </p>
                 <p className="text-body-md text-tertiary mt-1">
-                  Roughly {healingStats.hoursSaved} hours of maintenance saved this month.
+                  Roughly {healing.stats.hoursSaved} hours of maintenance saved this month.
                 </p>
               </div>
             </div>
