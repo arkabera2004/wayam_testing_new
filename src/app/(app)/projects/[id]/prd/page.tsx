@@ -21,12 +21,12 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
   return (
     <PageBody>
       <PageHeader
-        title="PRD Analysis"
-        description="Drop in a product requirements document. Parikshan extracts the requirements, flags what cannot be tested as written, and proposes the test cases."
+        title="Requirements"
+        description="Upload an SRS, user stories, or Jira export. Parikshan extracts requirements, runs requirement intelligence, and proposes traced test scenarios — before or after the app exists."
         actions={
           <Link href={`/projects/${id}/prd/new`}>
             <Button variant="primary" icon={Plus}>
-              Analyse a PRD
+              Analyse requirements
             </Button>
           </Link>
         }
@@ -108,11 +108,13 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
         <div className="flex items-start gap-3">
           <Icon3D name="prd-traceability" size={64} />
           <div>
-            <p className="text-heading-sm text-primary">How PRD analysis differs from crawling</p>
+            <p className="text-heading-sm text-primary">
+              Requirements vs application — and the reconcile layer
+            </p>
             <p className="text-body-md text-tertiary mt-1.5 max-w-3xl">
-              Crawling discovers what your app <em>does</em> today. A PRD describes what it{" "}
-              <em>should</em> do next. Analysing both lets Parikshan write tests for a feature
-              before it ships, and tell you which requirements the built app does not yet satisfy.
+              Requirements describe what the application <em>should</em> do. Exploration discovers
+              what it <em>actually</em> does. Parikshan reconciles both: missing functionality,
+              uncovered requirements, incorrect behavior, and the tests still needed to close the gap.
             </p>
           </div>
         </div>

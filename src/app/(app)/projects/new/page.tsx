@@ -1,22 +1,37 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
 
-import { ProjectSourcePicker } from "@/components/project-source-picker";
+import {
+  ProjectEntryPicker,
+  type EntryPath,
+} from "@/components/project-entry-picker";
 import { Button } from "@/components/ui";
 import { project } from "@/lib/demo-data";
 
 /**
- * Fullscreen modal-style route. Reuses the onboarding source picker so the
- * two entry points cannot drift apart.
+ * Fullscreen modal-style route. Reuses the dual entry picker so onboarding
+ * and new-project cannot drift apart.
  */
 export default function NewProjectPage() {
+  const [entryPath, setEntryPath] = useState<EntryPath>("requirements");
+  const finishHref =
+    entryPath === "requirements"
+      ? `/projects/${project.id}/prd/new`
+      : `/projects/${project.id}/discovery`;
+  const finishLabel =
+    entryPath === "requirements" ? "Analyse requirements" : "Start exploration";
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-heading-lg text-primary">New project</h1>
           <p className="text-body-md text-tertiary mt-1.5">
-            Point Parikshan at an application and it will explore, plan and generate the suite.
+            Start from requirements before code ships, or from a GitHub repo / live URL for an
+            existing application.
           </p>
         </div>
         <Link
@@ -28,15 +43,19 @@ export default function NewProjectPage() {
         </Link>
       </div>
 
-      <ProjectSourcePicker showAdvanced />
+      <ProjectEntryPicker
+        initialPath={entryPath}
+        showAdvanced
+        onPathChange={setEntryPath}
+      />
 
       <div className="border-muted flex items-center justify-between border-t pt-5">
         <Link href="/projects">
           <Button variant="ghost">Cancel</Button>
         </Link>
-        <Link href={`/projects/${project.id}/discovery`}>
+        <Link href={finishHref}>
           <Button variant="primary" icon={ArrowRight}>
-            Start discovery
+            {finishLabel}
           </Button>
         </Link>
       </div>

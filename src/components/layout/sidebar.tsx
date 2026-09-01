@@ -44,7 +44,7 @@ export function Sidebar() {
     { icon: LayoutDashboard, label: "Overview", href: base },
     { icon: Map, label: "Application Map", href: `${base}/map` },
     { icon: ClipboardList, label: "Test Plan", href: `${base}/plan` },
-    { icon: FileText, label: "PRD Analysis", href: `${base}/prd` },
+    { icon: FileText, label: "Requirements", href: `${base}/prd` },
     { icon: FlaskConical, label: "Tests", href: `${base}/tests`, badge: project.tests },
     { icon: PlayCircle, label: "Runs", href: `${base}/runs`, badge: project.runs },
     { icon: BarChart3, label: "Analytics", href: `${base}/analytics` },

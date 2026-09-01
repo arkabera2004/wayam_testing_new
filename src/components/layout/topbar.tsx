@@ -27,7 +27,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   settings: "Settings",
   discovery: "Discovery",
   notifications: "Notifications",
-  prd: "PRD Analysis",
+  prd: "Requirements",
   "express-checkout": "Express Checkout",
   "loyalty-tiers": "Loyalty Tiers v2",
   [project.id]: project.name,

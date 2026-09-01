@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import { Wordmark } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { ProjectSourcePicker } from "@/components/project-source-picker";
+import {
+  ProjectEntryPicker,
+  type EntryPath,
+} from "@/components/project-entry-picker";
 import { Button, cn } from "@/components/ui";
 import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
 import { project } from "@/lib/demo-data";
 
-const STEPS = ["Workspace", "Project", "First discovery"];
+const STEPS = ["Workspace", "Entry point", "What happens next"];
 
 function Field({
   id,
@@ -54,13 +58,74 @@ function Select({ id, label, options }: { id: string; label: string; options: st
   );
 }
 
-export default function OnboardingPage() {
+const REQUIREMENTS_NEXT: Array<{ icon: Icon3DName; title: string; body: string }> = [
+  {
+    icon: "prd-extract",
+    title: "Extract atomic requirements",
+    body: "Split compound statements into testable units with clear ownership.",
+  },
+  {
+    icon: "prd-ambiguity",
+    title: "Run requirement intelligence",
+    body: "Flag ambiguity, duplicates, untestable wording, and missing edge cases.",
+  },
+  {
+    icon: "prd-generate",
+    title: "Propose scenarios with traceability",
+    body: "Every case links back to the requirement that justified it.",
+  },
+];
+
+const APPLICATION_NEXT: Array<{ icon: Icon3DName; title: string; body: string }> = [
+  {
+    icon: "crawl",
+    title: "Explore the application",
+    body: "Crawl pages, journeys, and authenticated areas like a real user.",
+  },
+  {
+    icon: "network-capture",
+    title: "Inventory APIs and structure",
+    body: "Network calls and routes become candidates for deeper coverage.",
+  },
+  {
+    icon: "prd-classify",
+    title: "Assess coverage gaps",
+    body: "See what exists today, then generate the missing tests.",
+  },
+];
+
+function OnboardingInner() {
+  const searchParams = useSearchParams();
+  const initialPath: EntryPath =
+    searchParams.get("path") === "application" ? "application" : "requirements";
+
   const [step, setStep] = useState(0);
+  const [entryPath, setEntryPath] = useState<EntryPath>(initialPath);
+
+  const nextItems = entryPath === "requirements" ? REQUIREMENTS_NEXT : APPLICATION_NEXT;
+  const finishHref =
+    entryPath === "requirements"
+      ? `/projects/${project.id}/prd/new`
+      : `/projects/${project.id}/discovery`;
+  const finishLabel =
+    entryPath === "requirements" ? "Analyse requirements" : "Start exploration";
+
+  const stepCopy = useMemo(() => {
+    if (entryPath === "requirements") {
+      return {
+        title: "Ready to analyse requirements",
+        body: "Here is what happens next. You can attach a GitHub repo or live URL later to reconcile should vs does.",
+      };
+    }
+    return {
+      title: "Ready to explore your application",
+      body: "Here is what happens next. You can add requirements anytime to close coverage gaps against the spec.",
+    };
+  }, [entryPath]);
 
   return (
     <div className="bg-page text-primary h-screen w-screen overflow-y-auto">
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-12">
-        {/* Stepper */}
         <header className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <Link href="/" aria-label="Parikshan home" className="flex items-center">
@@ -104,13 +169,12 @@ export default function OnboardingPage() {
           </ol>
         </header>
 
-        {/* Step body */}
         {step === 0 && (
           <section className="flex flex-col gap-5">
             <div>
               <h1 className="text-heading-lg text-primary">Set up your workspace</h1>
               <p className="text-body-md text-tertiary mt-1.5">
-                This is where your projects, runs and team live.
+                This is where your projects, requirements, runs and team live.
               </p>
             </div>
             <Field id="ws-name" label="Workspace name" defaultValue="Acme Inc" />
@@ -128,31 +192,29 @@ export default function OnboardingPage() {
         {step === 1 && (
           <section className="flex flex-col gap-5">
             <div>
-              <h1 className="text-heading-lg text-primary">Point Parikshan at your app</h1>
+              <h1 className="text-heading-lg text-primary">How do you want to start?</h1>
               <p className="text-body-md text-tertiary mt-1.5">
-                Connect a repository for deeper context, or paste a URL to start immediately.
+                Requirements-first for pre-development, or application-first for what already
+                exists. You can combine both later.
               </p>
             </div>
-            <ProjectSourcePicker />
+            <ProjectEntryPicker initialPath={entryPath} onPathChange={setEntryPath} />
           </section>
         )}
 
         {step === 2 && (
           <section className="flex flex-col gap-5">
             <div>
-              <h1 className="text-heading-lg text-primary">Ready to explore</h1>
-              <p className="text-body-md text-tertiary mt-1.5">
-                Here is what happens next. It takes about two minutes.
-              </p>
+              <h1 className="text-heading-lg text-primary">{stepCopy.title}</h1>
+              <p className="text-body-md text-tertiary mt-1.5">{stepCopy.body}</p>
             </div>
 
             <ul className="flex flex-col gap-3">
-              {([
-                { icon: "crawl", title: "Crawl up to 100 pages", body: "Following links, forms and navigation like a real user." },
-                { icon: "network-capture", title: "Capture network calls", body: "Every request becomes a candidate for API-level tests." },
-                { icon: "journey", title: "Build your application map", body: "Pages, journeys and endpoints, ready for planning." },
-              ] as Array<{ icon: Icon3DName; title: string; body: string }>).map((item) => (
-                <li key={item.title} className="border-muted bg-container flex items-center gap-3.5 rounded-xl border p-4">
+              {nextItems.map((item) => (
+                <li
+                  key={item.title}
+                  className="border-muted bg-container flex items-center gap-3.5 rounded-xl border p-4"
+                >
                   <Icon3D name={item.icon} size={52} />
                   <div>
                     <p className="text-heading-sm text-primary">{item.title}</p>
@@ -164,7 +226,6 @@ export default function OnboardingPage() {
           </section>
         )}
 
-        {/* Footer nav */}
         <footer className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -180,14 +241,28 @@ export default function OnboardingPage() {
               Continue
             </Button>
           ) : (
-            <Link href={`/projects/${project.id}/discovery`}>
+            <Link href={finishHref}>
               <Button variant="primary" icon={ArrowRight}>
-                Start discovery
+                {finishLabel}
               </Button>
             </Link>
           )}
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-page text-primary grid h-screen w-screen place-items-center">
+          <p className="text-body-md text-tertiary">Loading onboarding…</p>
+        </div>
+      }
+    >
+      <OnboardingInner />
+    </Suspense>
   );
 }

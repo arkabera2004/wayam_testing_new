@@ -76,7 +76,7 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
 
     return (
       <PageBody>
-        <PageHeader title="Analysing your PRD" description="This usually takes under a minute." />
+        <PageHeader title="Analysing requirements" description="This usually takes under a minute." />
 
         <Card>
           <div className="flex items-center gap-3.5">
@@ -146,8 +146,8 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
   return (
     <PageBody>
       <PageHeader
-        title="Analyse a PRD"
-        description="Parikshan reads the document, extracts atomic requirements, flags what is not testable as written, and proposes test cases traced back to each requirement."
+        title="Analyse requirements"
+        description="Parikshan reads the document, extracts atomic requirements, runs requirement intelligence, and proposes test scenarios traced back to each requirement."
       />
 
       <Card padded={false}>
@@ -177,10 +177,10 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label htmlFor="prd-text" className="text-label-md text-secondary">
-                  Paste your requirements document
+                  Paste your SRS, user stories, or acceptance criteria
                 </label>
                 <Button size="sm" onClick={() => setText(samplePrd)}>
-                  Use the sample PRD
+                  Use sample requirements
                 </Button>
               </div>
 

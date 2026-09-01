@@ -58,7 +58,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           <div>
             <Wordmark height={30} />
             <p className="text-body-sm text-tertiary mt-3 max-w-xs">
-              AI that explores your app, proposes tests you approve, and keeps the suite green.
+              From requirements to Playwright — before or after you ship. Traceable tests you own.
             </p>
             <p className="text-label-sm text-secondary mt-4">A Wayam AI product</p>
           </div>

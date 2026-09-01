@@ -1,31 +1,112 @@
 import Link from "next/link";
-import { ArrowRight, Check, Github, Play, X } from "lucide-react";
+import { ArrowRight, Check, FileText, Github, Globe, Play, X } from "lucide-react";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
 import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
 
 const HOW_IT_WORKS: Array<{ icon: Icon3DName; title: string; body: string }> = [
-  { icon: "connect", title: "Connect", body: "Paste a URL or connect a GitHub repository." },
-  { icon: "explore", title: "AI explores", body: "Parikshan crawls pages, journeys and network calls." },
-  { icon: "review-plan", title: "Review the plan", body: "Approve tests in plain language before any code." },
-  { icon: "self-heal", title: "Run and self-heal", body: "Cloud runs on every PR; broken locators heal themselves." },
+  {
+    icon: "prd-extract",
+    title: "Requirements in",
+    body: "Upload an SRS, user stories, or Jira tickets — or start from a live app.",
+  },
+  {
+    icon: "prd-ambiguity",
+    title: "Requirement intelligence",
+    body: "Flag ambiguous, duplicate, untestable, and missing edge-case requirements.",
+  },
+  {
+    icon: "prd-traceability",
+    title: "Scenarios & traceability",
+    body: "Requirements become test scenarios with a living requirement ↔ test link.",
+  },
+  {
+    icon: "ingestion",
+    title: "Application input",
+    body: "Connect GitHub or a live URL. Authenticated areas included.",
+  },
+  {
+    icon: "explore",
+    title: "Application exploration",
+    body: "Pages, user flows, APIs, and structure — mapped like a real user.",
+  },
+  {
+    icon: "prd-classify",
+    title: "Reconcile should vs does",
+    body: "Find missing functionality, uncovered requirements, and incorrect behavior.",
+  },
+  {
+    icon: "readable-code",
+    title: "Playwright you own",
+    body: "Reviewable TypeScript in your repo. Diff it, edit it, keep it.",
+  },
+  {
+    icon: "self-heal",
+    title: "Execute & change intelligence",
+    body: "Multi-browser evidence, locator healing, and targeted regression on change.",
+  },
 ];
 
 const FEATURES: Array<{ icon: Icon3DName; title: string; body: string }> = [
-  { icon: "ingestion", title: "Repo or URL ingestion", body: "No config files, no framework setup. Authenticated flows included." },
-  { icon: "human-approval", title: "Human-in-the-loop plans", body: "Every scenario is proposed in plain language and approved by you." },
-  { icon: "readable-code", title: "Readable Playwright output", body: "Real TypeScript that lives in your repo. Diff it, edit it, own it." },
-  { icon: "parallel-runs", title: "Cloud parallel runs", body: "Chromium, Firefox and WebKit in parallel shards, minutes not hours." },
-  { icon: "healing-locators", title: "Self-healing locators", body: "Interface changed? The selector updates itself and the suite stays green." },
-  { icon: "quarantine", title: "Flaky quarantine", body: "Unstable tests are detected and isolated before they block a release." },
+  {
+    icon: "prd-extract",
+    title: "Requirements-first entry",
+    body: "Test before code exists. SRS, stories, and Jira are first-class inputs — not an afterthought.",
+  },
+  {
+    icon: "prd-ambiguity",
+    title: "Requirement intelligence",
+    body: "Ambiguity, duplicates, untestable wording, missing boundaries, and dependencies — surfaced early.",
+  },
+  {
+    icon: "prd-traceability",
+    title: "Requirement ↔ test traceability",
+    body: "Every generated case points back to the requirement that justified it.",
+  },
+  {
+    icon: "ingestion",
+    title: "Repo or live URL",
+    body: "Explore existing apps with GitHub context or a URL. Auth credentials when you need them.",
+  },
+  {
+    icon: "readable-code",
+    title: "Readable Playwright output",
+    body: "Real TypeScript that lives in your repo. Customer-owned, reviewable, modifiable.",
+  },
+  {
+    icon: "healing-locators",
+    title: "Execution + change intelligence",
+    body: "Chromium, Firefox, WebKit with evidence. When requirements or code change, only the right tests run.",
+  },
 ];
 
 const COMPARISON = [
-  { label: "Time to first suite", ours: "Minutes", theirs: "Weeks" },
+  { label: "Start before code exists", ours: "Requirements → scenarios → tests", theirs: "Wait until the UI ships" },
+  { label: "Entry points", ours: "SRS / stories / Jira or GitHub / URL", theirs: "Recorder against a live page" },
   { label: "Generated code", ours: "Editable Playwright in your repo", theirs: "Black-box recorder" },
-  { label: "Maintenance", ours: "Locators self-heal", theirs: "Manual selector fixes" },
-  { label: "Pricing", ours: "Usage-based", theirs: "Per seat" },
-  { label: "Review before generation", ours: "Plain-language plan you approve", theirs: "None" },
+  { label: "Requirements ↔ app", ours: "Reconcile should vs does", theirs: "None" },
+  { label: "Maintenance", ours: "Healing + change-aware regression", theirs: "Manual selector fixes" },
+];
+
+const ENTRY_PATHS = [
+  {
+    href: "/onboarding?path=requirements",
+    icon: FileText,
+    title: "Start from requirements",
+    body: "Upload SRS, user stories, or Jira. Analyse ambiguity, generate scenarios, and keep traceability — even before development.",
+    cta: "Upload requirements",
+    pathLabel: "Path A · Pre-development",
+    primary: true,
+  },
+  {
+    href: "/onboarding?path=application",
+    icon: Globe,
+    title: "Start from your application",
+    body: "Connect GitHub or paste a live URL. Explore pages and APIs, assess coverage, and generate the tests that are still missing.",
+    cta: "Connect your app",
+    pathLabel: "Path B · Existing app",
+    primary: false,
+  },
 ];
 
 export default function LandingPage() {
@@ -39,51 +120,68 @@ export default function LandingPage() {
           </Chip>
 
           <h1 className="font-display text-display-page text-primary mt-6 text-balance">
-            Paste a URL or repo. Get a runnable test suite in minutes.
+            From requirements to Playwright tests — before or after you ship.
           </h1>
 
           <p className="text-body-lg text-secondary mx-auto mt-5 max-w-2xl text-pretty">
-            Parikshan&rsquo;s AI explores your app, proposes tests in plain language, and generates
-            Playwright code you own.
+            Parikshan analyses what the application <em>should</em> do and what it{" "}
+            <em>actually</em> does, then generates reviewable Playwright tests you own —
+            with requirement ↔ test traceability and change intelligence.
           </p>
+        </div>
 
-          {/* UrlInput */}
-          <form className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row">
-            <label htmlFor="hero-url" className="sr-only">
-              Your application URL
-            </label>
-            <input
-              id="hero-url"
-              type="url"
-              defaultValue="https://shopstack.demo"
-              placeholder="https://your-app.com"
+        {/* Dual entry cards */}
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
+          {ENTRY_PATHS.map((path) => (
+            <Link
+              key={path.href}
+              href={path.href}
               className={cn(
-                "border-muted bg-container text-body-lg text-primary placeholder:text-quaternary",
-                "h-11 min-w-0 flex-1 rounded-lg border px-3.5",
-                "focus-visible:border-active focus-visible:outline-none",
+                "border-muted bg-container group flex flex-col rounded-2xl border p-6 text-left",
+                "transition-[border-color,background-color] duration-[170ms] hover:bg-raised",
+                path.primary && "border-active",
               )}
-            />
-            <Link href="/onboarding" className="shrink-0">
-              <Button variant="primary" icon={ArrowRight} className="h-11 w-full px-5 sm:w-auto">
-                Generate tests
-              </Button>
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-full",
+                    path.primary ? "bg-action-primary icon-on-color" : "bg-raised-2 icon-tertiary",
+                  )}
+                >
+                  <path.icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                <span className="text-caption text-quaternary">{path.pathLabel}</span>
+              </div>
+              <p className="text-heading-sm text-primary mt-4">{path.title}</p>
+              <p className="text-body-md text-tertiary mt-2 flex-1">{path.body}</p>
+              <span
+                className={cn(
+                  "text-label-md mt-5 inline-flex items-center gap-1.5",
+                  path.primary ? "text-primary" : "text-secondary",
+                )}
+              >
+                {path.cta}
+                <ArrowRight
+                  size={14}
+                  className="transition-transform duration-[170ms] group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </span>
             </Link>
-          </form>
+          ))}
+        </div>
 
-          <p className="text-body-sm text-tertiary mt-3">
-            or{" "}
-            <Link href="/onboarding" className="text-secondary hover:text-primary underline underline-offset-4">
-              connect GitHub
-            </Link>
-          </p>
+        <p className="text-body-sm text-tertiary mt-5 text-center">
+          Scope a whole application, a single file, one requirement, or a particular code change.
+        </p>
 
-          <div className="text-caption text-quaternary mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <span>Playwright-native</span>
-            <span aria-hidden="true">·</span>
-            <span>SOC 2 roadmap</span>
-            <span aria-hidden="true">·</span>
-            <span>Free tier</span>
-          </div>
+        <div className="text-caption text-quaternary mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <span>Playwright-native</span>
+          <span aria-hidden="true">·</span>
+          <span>Requirements ↔ tests</span>
+          <span aria-hidden="true">·</span>
+          <span>Free tier</span>
         </div>
 
         {/* DemoVideoEmbed */}
@@ -103,7 +201,7 @@ export default function LandingPage() {
               <span className="bg-action-primary icon-on-color grid h-12 w-12 place-items-center rounded-full">
                 <Play size={20} strokeWidth={2} aria-hidden="true" />
               </span>
-              <p className="text-label-md text-tertiary">Watch the 3-minute product demo</p>
+              <p className="text-label-md text-tertiary">Watch the product demo</p>
             </div>
           </div>
         </div>
@@ -112,8 +210,14 @@ export default function LandingPage() {
       {/* ---------------- How it works ---------------- */}
       <section id="how-it-works" className="border-muted border-t">
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <h2 className="text-heading-lg text-primary">How it works</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <div className="max-w-2xl">
+            <h2 className="text-heading-lg text-primary">The Parikshan flow</h2>
+            <p className="text-body-md text-tertiary mt-2">
+              Requirements are the first-class entry point. Application exploration joins when
+              you have a repo or URL — and the intelligence layer reconciles both.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {HOW_IT_WORKS.map((step, i) => (
               <div key={step.title} className="border-muted bg-container rounded-xl border p-5">
                 <div className="flex items-center justify-between gap-2.5">
@@ -133,7 +237,7 @@ export default function LandingPage() {
       {/* ---------------- Features ---------------- */}
       <section id="features" className="border-muted border-t">
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <h2 className="text-heading-lg text-primary">Everything the suite needs</h2>
+          <h2 className="text-heading-lg text-primary">Built for entire apps and single changes</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div key={f.title} className="border-muted bg-container rounded-xl border p-5">
@@ -204,8 +308,9 @@ export default function LandingPage() {
 
           <Card className="mx-auto mt-10 max-w-2xl">
             <blockquote className="text-body-lg text-secondary text-pretty">
-              &ldquo;We replaced three weeks of Selenium maintenance with a suite that fixes its own
-              selectors. The plan review is what made the team trust it.&rdquo;
+              &ldquo;We started from the SRS before the feature shipped. By the time checkout
+              landed, the suite already knew which requirements were covered — and which the
+              build still missed.&rdquo;
             </blockquote>
             <div className="mt-4 flex items-center gap-2.5">
               <span className="bg-raised-2 text-secondary text-label-sm grid h-7 w-7 place-items-center rounded-full">
@@ -224,20 +329,27 @@ export default function LandingPage() {
       <section className="border-muted border-t">
         <div className="mx-auto max-w-4xl px-6 py-20 text-center">
           <h2 className="font-display text-display-page text-primary text-balance">
-            From repository to reliable tests in under ten minutes.
+            Requirements in. Reliable Playwright out.
           </h2>
+          <p className="text-body-lg text-secondary mx-auto mt-4 max-w-2xl">
+            Start from what the product should do — or from the app you already have.
+          </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-2 sm:flex-row">
-            <Link href="/signup">
+            <Link href="/onboarding?path=requirements">
               <Button variant="primary" icon={ArrowRight} className="h-11 px-5">
-                Start free
+                Start from requirements
               </Button>
             </Link>
-            <Link href="/onboarding">
+            <Link href="/onboarding?path=application">
               <Button icon={Github} className="h-11 px-5">
-                Connect GitHub
+                Connect your app
               </Button>
             </Link>
           </div>
+          <p className="text-body-sm text-tertiary mx-auto mt-5 max-w-xl text-pretty">
+            Your data stays on your system. Prefer fully local? Run with open-source LLMs so
+            nothing leaves your environment.
+          </p>
         </div>
       </section>
     </>
