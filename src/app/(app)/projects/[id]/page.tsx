@@ -22,6 +22,7 @@ import {
   passRateTrend,
   project,
   runs,
+  suiteSize,
 } from "@/lib/demo-data";
 
 export default async function ProjectOverviewPage({
@@ -54,7 +55,7 @@ export default async function ProjectOverviewPage({
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Tests" value={String(project.tests)} delta="+6" deltaTone="success" />
+        <StatCard label="Tests" value={String(suiteSize)} delta="+6" deltaTone="success" />
         <StatCard label="Pass rate (30d)" value={`${project.passRate}%`} delta="+1.2" deltaTone="success" trend={passRateTrend} />
         <StatCard label="Coverage" value={`${project.coverage}%`} delta="+4" deltaTone="success" trend={coverageTrend} />
         <StatCard label="Locators healed" value={String(healingStats.healedThisMonth)} delta="this month" />

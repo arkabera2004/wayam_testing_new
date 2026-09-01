@@ -34,7 +34,7 @@ import {
 import { Icon3D } from "@/components/ui/icon-3d";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
-import { generatedTests, project } from "@/lib/demo-data";
+import { generatedTests, project, suiteSize } from "@/lib/demo-data";
 
 const FILTERS = ["smoke", "auth", "negative", "edge-case", "happy-path", "quarantined"];
 
@@ -100,7 +100,7 @@ export default function TestsPage({ params }: { params: Promise<{ id: string }> 
     <PageBody>
       <PageHeader
         title="Tests"
-        description={`${project.tests} Playwright specs generated from your approved plan.`}
+        description={`${suiteSize} Playwright specs generated from your approved plan.`}
         actions={
           <>
             <Button
@@ -109,7 +109,7 @@ export default function TestsPage({ params }: { params: Promise<{ id: string }> 
                 toast({
                   tone: "success",
                   title: "Export started",
-                  body: `${project.tests} specs pushed to ${project.repo}`,
+                  body: `${suiteSize} specs pushed to ${project.repo}`,
                 })
               }
             >
@@ -169,7 +169,7 @@ export default function TestsPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           <span className="text-body-sm text-quaternary ml-auto tabular">
-            {visible.length} of {generatedTests.length} shown
+            Showing {visible.length} of {suiteSize}
           </span>
         </div>
 

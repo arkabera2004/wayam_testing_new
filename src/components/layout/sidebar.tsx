@@ -8,7 +8,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
-import { healingStats, project, projects, quarantined, users, workspace } from "@/lib/demo-data";
+import { healingStats, project, projects, quarantined, suiteSize, users, workspace } from "@/lib/demo-data";
 
 import { Logo, Wordmark } from "./logo";
 import { SidebarItem } from "./sidebar-item";
@@ -28,7 +28,7 @@ export function Sidebar() {
     { icon: "applicationMap" as const, label: "Application Map", href: `${base}/map` },
     { icon: "testPlan" as const, label: "Test Plan", href: `${base}/plan` },
     { icon: "requirements" as const, label: "Requirements", href: `${base}/prd` },
-    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: project.tests },
+    { icon: "tests" as const, label: "Tests", href: `${base}/tests`, badge: suiteSize },
     { icon: "runs" as const, label: "Runs", href: `${base}/runs`, badge: project.runs },
     { icon: "analytics" as const, label: "Analytics", href: `${base}/analytics` },
     { icon: "integrations" as const, label: "Integrations", href: `${base}/integrations` },

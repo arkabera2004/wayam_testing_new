@@ -32,7 +32,6 @@ export const project = {
   repo: "acme/shopstack",
   branch: "main",
   environment: "production",
-  tests: 42,
   runs: 137,
   coverage: 78,
   passRate: 97.6,
@@ -136,6 +135,14 @@ export const journeys = [
  * `project`, which let the Map disagree with the Overview; keeping one exported
  * object means a change lands everywhere at once.
  */
+/**
+ * Size of the generated suite. `generatedTests` carries a representative
+ * sample for the table to render, so this is the number to quote whenever the
+ * UI talks about the suite as a whole — the sidebar badge, the Tests header
+ * and the run records all refer to it.
+ */
+export const suiteSize = 42;
+
 export const discoveryStats = {
   pages: 28,
   journeys: 14,
