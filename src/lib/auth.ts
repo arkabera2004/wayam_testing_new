@@ -1,18 +1,23 @@
 import "server-only";
 
-/**
- * Identity for scoping database reads.
- *
- * Authentication is deliberately out of the app right now — the focus is on
- * the testing pipeline, so every request runs as one local tenant and the
- * seeded project is reachable without signing in.
- *
- * Every query already takes this value and scopes by it, so restoring real
- * sessions is a change to this function rather than to any caller. Do not
- * deploy this publicly as-is: it makes all data readable to anyone.
- */
-export const LOCAL_TENANT = "demo-user";
+import { auth } from "@clerk/nextjs/server";
 
+/**
+ * The signed-in user's id, used to scope every database read.
+ *
+ * Throws rather than falling back to a shared tenant: middleware already
+ * guarantees a session on every protected route, so no session here means a
+ * routing mistake, and silently returning a default id would serve one user's
+ * data to another.
+ */
 export async function currentUserId(): Promise<string> {
-  return process.env.SEED_USER_ID ?? LOCAL_TENANT;
+  const { userId } = await auth();
+  if (!userId) throw new Error("No active session");
+  return userId;
+}
+
+/** Null instead of throwing, for the few places that render either way. */
+export async function optionalUserId(): Promise<string | null> {
+  const { userId } = await auth();
+  return userId ?? null;
 }

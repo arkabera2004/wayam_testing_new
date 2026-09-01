@@ -1,10 +1,10 @@
 /**
- * Re-points the seeded demo project at a real Clerk user.
+ * Re-points seeded demo data at a real Clerk user.
  *
- * The seed originally landed under the literal tenant "demo-user", which no
- * Clerk account can ever match, so those rows became unreachable once reads
- * were scoped to the session. This moves the project (and with it the suites,
- * cases, runs and results that hang off it) to a real user id.
+ * The seed lands under the literal tenant "demo-user", which no Clerk account
+ * can match, so those rows become unreachable once reads are scoped to the
+ * session. This moves the projects — and with them the suites, cases, runs and
+ * results that hang off them — to a real user id.
  *
  *   npx dotenv -e .env.local -- npx tsx scripts/reassign-seed.mts user_xxx [--from demo-user]
  */
@@ -32,7 +32,7 @@ if (owned.length === 0) {
   process.exit(0);
 }
 
-// Guard against colliding with a project the target already has by that name.
+// Refuse rather than collide with a project the target already has by name.
 for (const p of owned) {
   const [clash] = await db
     .select({ id: schema.projects.id })
@@ -52,6 +52,4 @@ const moved = await db
   .returning({ id: schema.projects.id, name: schema.projects.name });
 
 for (const p of moved) console.log(`moved ${p.name} (${p.id}) -> ${target}`);
-console.log(
-  `\nSuites, cases, runs and results follow the project, so ${moved.length} project(s) are now visible to that account.`,
-);
+console.log(`\n${moved.length} project(s) now visible to that account.`);

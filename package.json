@@ -14,6 +14,7 @@
     "db:seed:shopstack-code": "dotenv -e .env.local -- tsx scripts/seed-shopstack-code.mts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.8.3",
     "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.469.0",
