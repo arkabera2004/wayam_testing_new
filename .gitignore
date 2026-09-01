@@ -12,3 +12,6 @@ Video/raw/
 Video/out/
 Video/assets/
 Video/server.log
+
+# video pipeline (not published)
+Video/
