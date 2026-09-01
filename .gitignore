@@ -15,3 +15,12 @@ Video/server.log
 
 # video pipeline (not published)
 Video/
+.vercel
+
+# Neon integration agent skills (machine-local tooling)
+.agents/
+.claude/
+skills-lock.json
+
+# drizzle-kit journal only; no migrations generated yet
+drizzle/
