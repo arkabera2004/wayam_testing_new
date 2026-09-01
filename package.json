@@ -22,7 +22,6 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@clerk/types": "^4.101.26",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22",
     "@types/react": "^19",

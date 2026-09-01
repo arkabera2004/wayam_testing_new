@@ -11,12 +11,13 @@ export function AppShell({
   children,
   projects = [],
   activeProject = null,
-  user = null,
+  user,
 }: {
   children: ReactNode;
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
-  user?: ShellUser | null;
+  /** Required: this shell only renders behind a session. */
+  user: ShellUser;
 }) {
   return (
     <div className="bg-page text-primary flex h-screen w-screen overflow-hidden">

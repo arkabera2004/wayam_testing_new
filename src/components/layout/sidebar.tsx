@@ -8,7 +8,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
-import { healingStats, project, quarantined, users, workspace } from "@/lib/demo-data";
+import { healingStats, project, quarantined, workspace } from "@/lib/demo-data";
 import type { ActiveProject, ShellProject, ShellUser } from "./app-shell";
 
 import { Logo, Wordmark } from "./logo";
@@ -17,11 +17,13 @@ import { SidebarItem } from "./sidebar-item";
 export function Sidebar({
   projects = [],
   activeProject = null,
-  user = null,
+  user,
 }: {
   projects?: ShellProject[];
   activeProject?: ActiveProject | null;
-  user?: ShellUser | null;
+  /** Required: the sidebar only renders behind a session, so there is no
+   *  fallback identity to show. It used to fall back to a demo person's name. */
+  user: ShellUser;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -239,16 +241,16 @@ export function Sidebar({
               "hover:bg-action-tertiary-hover transition-colors duration-[170ms]",
               collapsed && "flex-none justify-center px-0",
             )}
-            title={collapsed ? (user?.name ?? users[0].name) : undefined}
+            title={collapsed ? user.name : undefined}
           >
             <span className="bg-raised-2 text-secondary text-label-sm grid h-6 w-6 shrink-0 place-items-center rounded-full">
-              {user?.initials ?? users[0].initials}
+              {user.initials}
             </span>
             {!collapsed && (
               <span className="min-w-0 flex-1">
-                <span className="text-label-md text-primary block truncate">{user?.name ?? users[0].name}</span>
+                <span className="text-label-md text-primary block truncate">{user.name}</span>
                 <span className="text-caption text-quaternary block truncate">
-                  {user?.email || `${workspace.name} · Wayam AI`}
+                  {user.email || workspace.name}
                 </span>
               </span>
             )}

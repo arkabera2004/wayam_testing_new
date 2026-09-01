@@ -1,5 +1,3 @@
-import type { Appearance } from "@clerk/types";
-
 /**
  * Maps Clerk's widget onto Parikshan's design system.
  *
@@ -8,7 +6,13 @@ import type { Appearance } from "@clerk/types";
  * semantic tokens, so the widget follows the theme toggle like the rest of the
  * app rather than needing a light and a dark copy.
  */
-export const clerkAppearance: Appearance = {
+/*
+ * Deliberately untyped here: Clerk's `Appearance` type lived in @clerk/types,
+ * which Core 3 deprecated and which is not even a transitive dependency any
+ * more. The object is still checked where it matters — passing it to
+ * <SignIn appearance={...} /> validates every key against the SDK's own type.
+ */
+export const clerkAppearance = {
   variables: {
     colorBackground: "var(--surface-container)",
     colorPrimary: "var(--action-primary-default)",
