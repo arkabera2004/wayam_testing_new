@@ -14,6 +14,7 @@ import {
 
 import { Button, Card, Chip, ProgressBar, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
+import { useToast } from "@/components/ui/toast";
 import { journeys, planStats, testPlan, type TestCase } from "@/lib/demo-data";
 
 function TagTone(tag: string) {
@@ -26,9 +27,13 @@ function TagTone(tag: string) {
 function TestCaseCard({
   testCase,
   onToggleApprove,
+  onRegenerate,
+  onDelete,
 }: {
   testCase: TestCase;
   onToggleApprove: () => void;
+  onRegenerate: () => void;
+  onDelete: () => void;
 }) {
   const [stepsOpen, setStepsOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -142,6 +147,7 @@ function TestCaseCard({
           </button>
           <button
             type="button"
+            onClick={onRegenerate}
             aria-label="Regenerate test case"
             className="icon-quaternary hover:icon-secondary hover:bg-raised grid h-7 w-7 place-items-center rounded-lg transition-colors duration-[170ms]"
           >
@@ -149,6 +155,7 @@ function TestCaseCard({
           </button>
           <button
             type="button"
+            onClick={onDelete}
             aria-label="Delete test case"
             className="icon-quaternary hover:text-error hover:bg-raised grid h-7 w-7 place-items-center rounded-lg transition-colors duration-[170ms]"
           >
@@ -163,6 +170,7 @@ function TestCaseCard({
 export default function TestPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [cases, setCases] = useState(testPlan);
+  const { toast } = useToast();
   const [openJourneys, setOpenJourneys] = useState<string[]>(["checkout", "cart"]);
 
   const toggleApprove = (caseId: string) =>
@@ -250,6 +258,17 @@ export default function TestPlanPage({ params }: { params: Promise<{ id: string 
                         key={c.id}
                         testCase={c}
                         onToggleApprove={() => toggleApprove(c.id)}
+                        onRegenerate={() =>
+                          toast({
+                            tone: "info",
+                            title: "Regenerating scenario",
+                            body: `Parikshan is rewriting "${c.title}".`,
+                          })
+                        }
+                        onDelete={() => {
+                          setCases((prev) => prev.filter((x) => x.id !== c.id));
+                          toast({ tone: "warning", title: "Scenario removed", body: c.title });
+                        }}
                       />
                     ))}
                   </div>

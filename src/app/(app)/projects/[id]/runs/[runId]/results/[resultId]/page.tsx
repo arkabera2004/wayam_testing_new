@@ -199,7 +199,7 @@ export default function TriagePage({
               <div className="flex flex-col gap-2">
                 {failure.networkLog.map((r) => (
                   <div
-                    key={r.path}
+                    key={`${r.method} ${r.path}`}
                     className="border-muted bg-container flex items-center gap-3 rounded-lg border px-3 py-2"
                   >
                     <Chip tone={r.method === "GET" ? "info" : "success"}>{r.method}</Chip>
