@@ -588,3 +588,153 @@ export const invoices = [
   { id: "INV-0041", date: "01 Jul 2026", amount: "$212.00", status: "Paid" },
   { id: "INV-0040", date: "01 Jun 2026", amount: "$196.00", status: "Paid" },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Release Gate                                                        */
+/* Ported from AIDLC-Azure: a composite readiness score built from CI  */
+/* results, open bugs and security findings, resolved to a go/no-go.   */
+/* ------------------------------------------------------------------ */
+
+export type GateVerdict = "GO" | "NO-GO" | "CONDITIONAL";
+
+export const releaseGate = {
+  version: "v2.14.0",
+  verdict: "CONDITIONAL" as GateVerdict,
+  /** 0-100 composite. Below 50 is a no-go, 75+ clears without conditions. */
+  score: 68,
+  confidence: 0.82,
+  recommendation:
+    "The suite is green and coverage is trending up, but one critical bug and two unresolved security findings are still open against this tag. Ship once both are closed or explicitly waived.",
+  primaryBlocker: "SHOP-412 — expired card at checkout returns a 500 instead of a decline message.",
+  conditions: [
+    "Close SHOP-412 or downgrade it below critical with sign-off.",
+    "Resolve the two open security findings on /api/auth/login.",
+    "Re-run the suite on the release tag; the last full run was on main.",
+  ],
+  signals: {
+    testPassRate: 97.6,
+    recentEvaluated: 12,
+    openCriticalBugs: [
+      { key: "SHOP-412", summary: "Expired card returns 500 at checkout" },
+      { key: "SHOP-406", summary: "Cart badge stale after removing last item" },
+    ],
+    unresolvedSecurityFindings: 2,
+  },
+  warnings: ["Jira project not linked, so bug counts come from the last export."],
+};
+
+/* ------------------------------------------------------------------ */
+/* Code Reviewer                                                       */
+/* Ported from AIDLC-Azure: AI review of a commit, with severity,      */
+/* per-category findings and a security-flag list.                     */
+/* ------------------------------------------------------------------ */
+
+export type ReviewSeverity = "critical" | "high" | "medium" | "low";
+export type ReviewCategory =
+  | "security"
+  | "bug"
+  | "performance"
+  | "style"
+  | "test-coverage"
+  | "maintainability";
+export type ReviewRecommendation = "APPROVE" | "REQUEST_CHANGES" | "COMMENT" | "CONDITIONAL";
+
+export type ReviewComment = {
+  id: string;
+  file: string;
+  line: number;
+  severity: ReviewSeverity;
+  category: ReviewCategory;
+  title: string;
+  body: string;
+  suggestion?: string;
+};
+
+export const codeReviews = [
+  {
+    sha: "a1b2c3d",
+    message: "Rename pay button and tighten checkout validation",
+    author: "Aarav Mehta",
+    when: "2m ago",
+    recommendation: "REQUEST_CHANGES" as ReviewRecommendation,
+    summary:
+      "The rename is safe, but the new validation path lets an expired card through to the order endpoint and the added query runs inside a loop.",
+    securityFlags: [
+      "Card expiry is validated client-side only; /api/orders accepts an expired card.",
+      "Login route logs the full request body, including the password field.",
+    ],
+    comments: [
+      {
+        id: "c1",
+        file: "src/checkout/pay.tsx",
+        line: 84,
+        severity: "critical" as ReviewSeverity,
+        category: "security" as ReviewCategory,
+        title: "Expiry check never reaches the server",
+        body: "`validateCard` runs in the browser and its result is discarded before the POST. A crafted request can submit an expired card and the order is created.",
+        suggestion: "Re-validate expiry inside the /api/orders handler before writing the order.",
+      },
+      {
+        id: "c2",
+        file: "src/api/auth/login.ts",
+        line: 23,
+        severity: "high" as ReviewSeverity,
+        category: "security" as ReviewCategory,
+        title: "Password reaches the log sink",
+        body: "`logger.info(req.body)` serialises the whole payload. The password lands in plaintext in the log store.",
+        suggestion: "Redact `password` before logging, or log only the fields you need.",
+      },
+      {
+        id: "c3",
+        file: "src/cart/totals.ts",
+        line: 41,
+        severity: "medium" as ReviewSeverity,
+        category: "performance" as ReviewCategory,
+        title: "Query inside a loop",
+        body: "`getPrice` is awaited once per line item, so a ten-item cart makes ten round trips.",
+        suggestion: "Fetch the prices in one batched call before the loop.",
+      },
+      {
+        id: "c4",
+        file: "src/checkout/pay.tsx",
+        line: 12,
+        severity: "low" as ReviewSeverity,
+        category: "test-coverage" as ReviewCategory,
+        title: "New branch is untested",
+        body: "The decline path added here has no covering scenario in the approved plan.",
+        suggestion: "Add a negative scenario under the Checkout journey.",
+      },
+      {
+        id: "c5",
+        file: "src/cart/totals.ts",
+        line: 8,
+        severity: "low" as ReviewSeverity,
+        category: "maintainability" as ReviewCategory,
+        title: "Duplicated rounding helper",
+        body: "`roundMoney` is defined here and again in src/checkout/pay.tsx with a different rule.",
+        suggestion: "Move it to a shared module so both paths round identically.",
+      },
+    ] as ReviewComment[],
+  },
+  {
+    sha: "e4f5g6h",
+    message: "Add newsletter signup to footer",
+    author: "Priya Nair",
+    when: "3h ago",
+    recommendation: "APPROVE" as ReviewRecommendation,
+    summary: "Small, self-contained and covered by an existing scenario. Nothing blocking.",
+    securityFlags: [] as string[],
+    comments: [
+      {
+        id: "c6",
+        file: "src/footer/newsletter.tsx",
+        line: 30,
+        severity: "low" as ReviewSeverity,
+        category: "style" as ReviewCategory,
+        title: "Inline styles on the submit button",
+        body: "The button sets colours inline rather than using the design tokens.",
+        suggestion: "Use the existing button variant.",
+      },
+    ] as ReviewComment[],
+  },
+];

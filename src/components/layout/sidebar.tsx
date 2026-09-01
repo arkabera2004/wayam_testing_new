@@ -35,6 +35,12 @@ export function Sidebar() {
     { icon: "settings" as const, label: "Settings", href: `${base}/settings` },
   ];
 
+  /* Ported from AIDLC-Azure's "Testing & Quality" section. */
+  const qualityNav = [
+    { icon: "shield" as const, label: "Release Gate", href: `${base}/release-gate` },
+    { icon: "codeReview" as const, label: "Code Reviewer", href: `${base}/code-review` },
+  ];
+
   const secondaryNav = [
     {
       icon: "maintenance" as const,
@@ -137,6 +143,22 @@ export function Sidebar() {
                 label={item.label}
                 href={item.href}
                 badge={item.badge}
+                collapsed={collapsed}
+                active={isActive(item.href)}
+              />
+            </li>
+          ))}
+        </ul>
+
+        <div className={cn("border-muted my-3 border-t", collapsed && "w-9")} />
+
+        <ul className={cn("flex flex-col gap-1", collapsed && "items-center")}>
+          {qualityNav.map((item) => (
+            <li key={item.label} className={collapsed ? undefined : "w-full"}>
+              <SidebarItem
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
                 collapsed={collapsed}
                 active={isActive(item.href)}
               />
