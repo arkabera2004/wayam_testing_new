@@ -867,3 +867,114 @@ export const rootCause = {
     },
   ],
 };
+
+/* ------------------------------------------------------------------ */
+/* Repo Test Baseline                                                  */
+/* Scans a repository for the Playwright specs that already exist and  */
+/* breaks each one down into steps, so you can see what is covered     */
+/* before generating anything new.                                     */
+/* ------------------------------------------------------------------ */
+
+export type BaselineStep = {
+  action: string;
+  target: string;
+  value?: string;
+  assertion?: string;
+};
+
+export type BaselineTest = {
+  id: string;
+  name: string;
+  file: string;
+  suite: string;
+  steps: BaselineStep[];
+};
+
+export const repoBaseline = {
+  repo: "acme/shopstack",
+  branch: "main",
+  scannedAt: "4m ago",
+  specFiles: 6,
+  suites: 5,
+  framework: "Playwright",
+  /** Journeys the crawl found but the existing specs never touch. */
+  gaps: [
+    { journey: "Account settings", reason: "Three forms discovered, no spec references /account/settings." },
+    { journey: "Product search", reason: "Search page is crawled but no assertion covers the empty state." },
+  ],
+  tests: [
+    {
+      id: "bt1",
+      name: "user completes checkout with a valid card",
+      file: "tests/checkout.spec.ts",
+      suite: "Checkout",
+      steps: [
+        { action: "goto", target: "/products/wireless-mouse" },
+        { action: "click", target: "button 'Add to cart'" },
+        { action: "goto", target: "/checkout" },
+        { action: "fill", target: "Card number", value: "4242424242424242" },
+        { action: "click", target: "button 'Place order'", assertion: "URL is /checkout/success" },
+      ],
+    },
+    {
+      id: "bt2",
+      name: "login fails with an incorrect password",
+      file: "tests/auth.spec.ts",
+      suite: "Login",
+      steps: [
+        { action: "goto", target: "/login" },
+        { action: "fill", target: "Email", value: "demo@shopstack.demo" },
+        { action: "fill", target: "Password", value: "wrong-password" },
+        { action: "click", target: "button 'Sign in'", assertion: "Alert reads 'Incorrect email or password'" },
+      ],
+    },
+    {
+      id: "bt3",
+      name: "user updates the quantity of a cart item",
+      file: "tests/cart.spec.ts",
+      suite: "Cart",
+      steps: [
+        { action: "goto", target: "/cart" },
+        { action: "fill", target: "Quantity", value: "3" },
+        { action: "expect", target: "Line total", assertion: "Line total and cart total both recalculate" },
+      ],
+    },
+    {
+      id: "bt4",
+      name: "visitor subscribes to the newsletter",
+      file: "tests/footer.spec.ts",
+      suite: "Sign up",
+      steps: [
+        { action: "goto", target: "/" },
+        { action: "fill", target: "Email", value: "someone@example.com" },
+        { action: "click", target: "button 'Subscribe'", assertion: "Success toast appears" },
+      ],
+    },
+  ] as BaselineTest[],
+};
+
+/* ------------------------------------------------------------------ */
+/* Doc-Driven Tests                                                    */
+/* Upload a spec, extract scenarios, generate specs from them.         */
+/* ------------------------------------------------------------------ */
+
+export type DocScenario = {
+  id: string;
+  title: string;
+  expectation: string;
+  source: string;
+  tag: "happy-path" | "edge-case" | "negative";
+  selected: boolean;
+};
+
+export const docTests = {
+  accepted: [".md", ".txt", ".pdf", ".docx", ".json", ".yaml", ".csv"],
+  document: { name: "checkout-spec-v3.md", size: "18 KB", parsedAt: "1m ago", sections: 7 },
+  scenarios: [
+    { id: "d1", title: "Express checkout completes in under three taps", expectation: "Order is created and the confirmation shows the order id.", source: "§2.1 Express checkout", tag: "happy-path", selected: true },
+    { id: "d2", title: "Saved card with no saved address falls back to the address form", expectation: "The address form appears pre-filled with the billing address.", source: "§2.4 Fallbacks", tag: "edge-case", selected: true },
+    { id: "d3", title: "Expired saved card is rejected before order creation", expectation: "A decline message is shown and no order is written.", source: "§3.2 Card validation", tag: "negative", selected: true },
+    { id: "d4", title: "Declined payment leaves the cart intact", expectation: "The cart still holds every line item after a decline.", source: "§3.3 Failure handling", tag: "negative", selected: true },
+    { id: "d5", title: "Checkout is reachable from the cart badge", expectation: "The badge links straight to /checkout.", source: "§1.2 Entry points", tag: "happy-path", selected: false },
+  ] as DocScenario[],
+};

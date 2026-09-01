@@ -43,6 +43,8 @@ export function Sidebar() {
     { icon: "trend" as const, label: "Risk Ranking", href: `${base}/prioritization` },
     { icon: "quarantine" as const, label: "Defect Prediction", href: `${base}/defect-prediction` },
     { icon: "sparkle" as const, label: "Root Cause", href: `${base}/root-cause` },
+    { icon: "search" as const, label: "Repo Baseline", href: `${base}/repo-baseline` },
+    { icon: "docs" as const, label: "Doc-Driven Tests", href: `${base}/doc-tests` },
   ];
 
   const secondaryNav = [
