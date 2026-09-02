@@ -1,7 +1,7 @@
 /**
  * Seeds the tables behind Code Review, Doc Tests, Test Selection, PRD and API
  * keys. Content mirrors what those screens used to hardcode, so the pages look
- * the same — the difference is that it now lives in Postgres and the coverage
+ * the same - the difference is that it now lives in Postgres and the coverage
  * numbers are derived from the real suite rather than typed in.
  */
 import { and, eq } from "drizzle-orm";

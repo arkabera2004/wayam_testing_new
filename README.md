@@ -85,7 +85,7 @@ alone is enough.
 
 > Do not run `npm run build` while `npm run dev` is running. They share
 > `.next/`, and the build will leave the dev server serving a half-written
-> manifest — which shows up as unexplained 500s.
+> manifest - which shows up as unexplained 500s.
 
 ---
 
@@ -103,7 +103,7 @@ alone is enough.
 `HEAL_BROWSER=local` forces local Chromium even when a cloud key is present.
 
 Rotating `TOKEN_ENCRYPTION_KEY` makes existing stored GitHub tokens
-undecryptable — users have to reconnect.
+undecryptable - users have to reconnect.
 
 ---
 
@@ -153,8 +153,8 @@ results for tests it did not ask for.
 When a locator stops matching, `src/lib/healer.ts` opens a browser, looks at
 the live DOM, and proposes a replacement.
 
-Candidates are ranked by strategy — test id (3) beats label (2) beats
-role+name (1) beats text (0) — and every candidate is gated on `impliedRole`,
+Candidates are ranked by strategy - test id (3) beats label (2) beats
+role+name (1) beats text (0) - and every candidate is gated on `impliedRole`,
 so a search *button* is never healed to a nav link or to the input's label.
 Anything scoring below 30 confidence is discarded rather than guessed at.
 
@@ -163,7 +163,7 @@ Chromium. A cloud browser cannot reach your laptop, and letting it try burns a
 billable session to arrive at `ERR_CONNECTION_REFUSED`.
 
 Cloud sessions are stopped with `PATCH /browsers/{id}` and `{action:"stop"}`.
-There is no `POST /stop` — it 404s, and a swallowed 404 leaves the session
+There is no `POST /stop` - it 404s, and a swallowed 404 leaves the session
 billing.
 
 ---
@@ -198,7 +198,7 @@ would collide get the case id appended. It requires both a connection and a
 product pages, search, cart, checkout, login, signup, account settings.
 
 The cart persists to `localStorage` behind a `hydrated` gate. This is not
-incidental — with cart state in React only, it was lost on every navigation and
+incidental - with cart state in React only, it was lost on every navigation and
 four specs timed out. The checkout page's empty-cart redirect is gated on the
 same flag, because otherwise it fires before hydration and bounces a customer
 who does have items.
@@ -261,7 +261,7 @@ nothing here reads as working when it is still demo data.
 
 Status codes are meaningful: `404` unknown or not yours, `409` conflict (a run
 is already going, or GitHub is not connected), `422` the request is valid but
-cannot be satisfied (nothing runnable), `502` an upstream — GitHub — failed.
+cannot be satisfied (nothing runnable), `502` an upstream - GitHub - failed.
 
 Every project-scoped route resolves through `resolveProject`, which is
 tenant-scoped. A foreign project id is a 404, not an empty 200.
@@ -287,7 +287,7 @@ Schema notes worth knowing before you change something:
   is set by `$defaultFn`. Without that, seeded runs get a null start and the UI
   reports "No runs yet" for runs that plainly exist.
 - `src/db/index.ts` initialises lazily via a plain function, deliberately
-  **not** a `Proxy` — proxies break libraries that introspect the adapter.
+  **not** a `Proxy` - proxies break libraries that introspect the adapter.
 - Aggregates are computed in SQL. `workspaceStats` previously selected every
   run, then every result row for those runs, and reduced them in JavaScript;
   the query grew one bind parameter per run until it timed out. Analytics is
@@ -295,7 +295,7 @@ Schema notes worth knowing before you change something:
 - Neon is reached over HTTP, so a stalled connection is a hung `fetch`.
   Requests are bounded per attempt rather than inheriting undici's five-minute
   header timeout. Retries are limited to failures where the connection never
-  established — retrying a timed-out write could insert a row twice.
+  established - retrying a timed-out write could insert a row twice.
 
 ---
 
@@ -304,7 +304,7 @@ Schema notes worth knowing before you change something:
 Two tiers. `src/styles/reference-tokens.css` holds raw values;
 `semantic-tokens.css` maps them to intent (`--surface-raised`,
 `--action-primary`, `--stroke-muted`); Tailwind exposes them through
-`@theme inline`. Components reference semantic tokens only — a hardcoded hex or
+`@theme inline`. Components reference semantic tokens only - a hardcoded hex or
 a `bg-white/70` in a component is a bug, because theming keys off
 `data-theme` and a literal will not follow.
 
@@ -342,7 +342,7 @@ Two deliberate limits, both counted rather than hidden:
 
 `regress.sh` checks every route returns 200, asserts that malformed run ids
 (`137`, `not-a-uuid`, `../etc`) never produce a 500, and runs the real suite.
-Run it several times — it is looking for flakiness, not just breakage.
+Run it several times - it is looking for flakiness, not just breakage.
 
 ---
 
@@ -364,13 +364,13 @@ Stated plainly so nothing here reads as working when it is not.
 - **Auto-heal on failure** is not wired. Healing is proposed and applied
   through the Self-Healing screen.
 - **Requirement extraction is not wired.** Pasting a PRD stores the document
-  and it appears in the list, but nothing parses requirements out of it — the
+  and it appears in the list, but nothing parses requirements out of it - the
   document is saved with status `analyzing` rather than claiming an analysis
   that did not run. Requirements seeded by `db:seed:screens` do get real
   coverage, derived from the suites linked to them.
 - **No billing provider**, so there is no plan, quota or invoice anywhere.
   The Billing tabs show the execution time that is actually measured.
-- **Members lists show one identity** — the tenant everything runs as, because
+- **Members lists show one identity** - the tenant everything runs as, because
   authentication is off. There are no real colleagues to list.
 - **Every screen now reads from Postgres.** What remains from the demo module
   is presentation only: shared TypeScript types, the GitHub Actions workflow

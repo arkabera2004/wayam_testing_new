@@ -38,7 +38,7 @@ export function TestDetail({ id, test }: { id: string; test: TestCaseDetail }) {
     toast({
       tone: "error",
       title: "Could not copy",
-      body: "Your browser blocked clipboard access — select the text and copy manually.",
+      body: "Your browser blocked clipboard access - select the text and copy manually.",
     });
   };
 

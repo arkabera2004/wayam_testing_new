@@ -2,7 +2,7 @@
  * Drizzle schema for Parikshan.
  *
  * These tables already existed in the provisioned Neon database, so this file
- * mirrors the live shape rather than inventing a new one — no destructive
+ * mirrors the live shape rather than inventing a new one - no destructive
  * migration is needed to adopt it. `user_id` is a Clerk subject id (text, not
  * a uuid), which is why it is not a foreign key.
  */

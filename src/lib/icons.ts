@@ -1,5 +1,5 @@
 /**
- * TIER 1 — ICON REGISTRY
+ * TIER 1 - ICON REGISTRY
  *
  * The single place where a semantic concept binds to a glyph. Components ask
  * for meaning ("maintenance"), never for a specific icon, so one concept can
@@ -7,7 +7,7 @@
  *
  * Glyphs currently come from lucide-react: it is already the app's only icon
  * dependency and matches the weight of the shipped UI. Swapping the whole app
- * to another family (Font Awesome included) is a change to this file alone —
+ * to another family (Font Awesome included) is a change to this file alone -
  * every consumer goes through `IconName`.
  *
  * Imports are named, so the bundler keeps tree-shaking. Never `import *`.

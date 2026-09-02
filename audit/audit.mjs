@@ -6,7 +6,7 @@ const SKIP = /delete|remove|sign out|log out|disconnect|revoke|reset|clear all|d
 // Every "Run …" control spawns a real Playwright process. Clicking them on all
 // 8 projects x 21 pages would fan out into ~168 concurrent browser suites, so
 // they are exercised in full on the first project and skipped after that. Every
-// such skip is counted and reported — nothing is silently dropped.
+// such skip is counted and reported - nothing is silently dropped.
 const RUN_CONTROL = /^(run|re-?run)\b/i;
 
 const PAGES = " /analytics /code-review /defect-prediction /discovery /doc-tests /healing /integrations /map /plan /prd /prioritization /quarantine /release-gate /repo-baseline /root-cause /runs /settings /test-selection /tests".trim().split(/\s+/);
@@ -81,7 +81,7 @@ const run = async () => {
             await page.waitForTimeout(150);
             break;
           }
-        } catch { /* control detached or covered — not an app defect */ }
+        } catch { /* control detached or covered - not an app defect */ }
       }
     } catch (e) {
       problems.push({ kind: "crash", page: u, detail: String(e).slice(0, 200) });

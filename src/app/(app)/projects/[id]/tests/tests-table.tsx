@@ -351,7 +351,7 @@ export function TestsTable({
                     <RunDots history={t.history.map(toUiStatus)} />
                   </Td>
                   <Td className="tabular text-right">
-                    {t.avgMs ? `${(t.avgMs / 1000).toFixed(1)}s` : "—"}
+                    {t.avgMs ? `${(t.avgMs / 1000).toFixed(1)}s` : "-"}
                   </Td>
                   <Td>
                     <Menu

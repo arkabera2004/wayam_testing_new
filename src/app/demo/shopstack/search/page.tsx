@@ -52,7 +52,7 @@ export default function SearchPage() {
         <ul className="mt-6 flex flex-col gap-2">
           {results.map((p) => (
             <li key={p.slug}>
-              {p.name} — {money(p.price)}
+              {p.name} - {money(p.price)}
             </li>
           ))}
         </ul>

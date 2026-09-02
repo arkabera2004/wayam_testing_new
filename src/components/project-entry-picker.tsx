@@ -195,8 +195,8 @@ export function ProjectEntryPicker({
                       id="jira-project"
                       className="border-muted bg-raised text-body-md text-primary focus-visible:border-active h-9 rounded-lg border px-2.5 focus-visible:outline-none"
                     >
-                      <option>SHOP — ShopStack</option>
-                      <option>PAY — Payments</option>
+                      <option>SHOP - ShopStack</option>
+                      <option>PAY - Payments</option>
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -224,7 +224,7 @@ export function ProjectEntryPicker({
         <div className="flex flex-col gap-3">
           <p className="text-body-sm text-tertiary flex items-center gap-2">
             <Github size={14} className="shrink-0" aria-hidden="true" />
-            Repository for structure, or a live URL for exploration — authenticated flows included.
+            Repository for structure, or a live URL for exploration - authenticated flows included.
           </p>
           <ProjectSourcePicker showAdvanced={showAdvanced} />
         </div>

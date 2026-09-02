@@ -3,7 +3,7 @@ import { ICON_SIZES, ICON_STROKE_WIDTH, icons, type IconName, type IconSize } fr
 
 type AppIconProps = {
   name: IconName;
-  /** Defaults to `md` (16px) — the standard interface size. */
+  /** Defaults to `md` (16px) - the standard interface size. */
   size?: IconSize;
   className?: string;
   /**

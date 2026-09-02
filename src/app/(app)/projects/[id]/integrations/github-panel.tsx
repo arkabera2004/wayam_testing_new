@@ -131,7 +131,7 @@ export function GithubPanel({
                 {linkedRepo} <ExternalLink size={11} className="inline" aria-hidden="true" />
               </a>
             ) : (
-              <span className="text-tertiary">none set — add a repository URL in project settings.</span>
+              <span className="text-tertiary">none set - add a repository URL in project settings.</span>
             )}
           </p>
 

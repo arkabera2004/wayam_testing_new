@@ -13,7 +13,7 @@ export type Priority = "P0" | "P1" | "P2";
 export type CoverageState = "covered" | "partial" | "gap";
 
 export const samplePrd = [
-  "# Express Checkout — Product Requirements",
+  "# Express Checkout - Product Requirements",
   "",
   "## Background",
   "",
@@ -414,7 +414,7 @@ export const prdDocuments = [
     requirements: 17,
     cases: 0,
     ambiguities: 0,
-    analysed: "—",
+    analysed: "-",
     status: "draft" as const,
   },
 ];

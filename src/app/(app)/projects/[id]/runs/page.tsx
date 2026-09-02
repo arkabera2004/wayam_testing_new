@@ -78,7 +78,7 @@ export default async function RunsPage({ params }: { params: Promise<{ id: strin
                 <Td>
                   <Chip>{run.triggeredBy ?? "unknown"}</Chip>
                 </Td>
-                <Td className="whitespace-nowrap">{project.githubDefaultBranch ?? "—"}</Td>
+                <Td className="whitespace-nowrap">{project.githubDefaultBranch ?? "-"}</Td>
                 <Td>
                   <div className="flex items-center gap-2.5">
                     <StatusBadge status={toUiStatus(run.status)} />
@@ -95,7 +95,7 @@ export default async function RunsPage({ params }: { params: Promise<{ id: strin
                       browsers was decoration. */}
                   <span className="text-caption text-quaternary">Chromium</span>
                 </Td>
-                <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—"}</Td>
+                <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "-"}</Td>
                 <Td>
                   <Avatar initials={(run.triggeredBy ?? "?").slice(0, 2).toUpperCase()} />
                 </Td>

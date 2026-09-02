@@ -4,7 +4,7 @@ import { cn } from "./index";
  * A miniature of a discovered page.
  *
  * The crawler has no real screenshots to show yet, so every card used to draw
- * the same three grey bars — twelve identical tiles that told you nothing. A
+ * the same three grey bars - twelve identical tiles that told you nothing. A
  * thumbnail earns its space only if it distinguishes one page from another, so
  * the layout is chosen from the page's role: a listing looks like a grid, a
  * checkout looks like a form beside a summary, an auth page looks like a narrow
@@ -204,7 +204,7 @@ export function PageThumbnail({
         className,
       )}
     >
-      {/* Browser chrome — reads as a captured page rather than a loading skeleton. */}
+      {/* Browser chrome - reads as a captured page rather than a loading skeleton. */}
       <div className="border-muted flex shrink-0 items-center gap-1 border-b px-1.5 py-1">
         <span className="bg-raised-2 h-1 w-1 rounded-full" />
         <span className="bg-raised-2 h-1 w-1 rounded-full" />

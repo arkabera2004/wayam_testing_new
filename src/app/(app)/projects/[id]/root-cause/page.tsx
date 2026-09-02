@@ -69,7 +69,7 @@ export default async function RootCausePage({ params }: { params: Promise<{ id: 
               </div>
               <div className="bg-raised rounded-lg px-3 py-2">
                 <p className="text-body-sm text-secondary">
-                  <span className="text-success">Seen — </span>
+                  <span className="text-success">Seen - </span>
                   {a.occurrences} time{a.occurrences === 1 ? "" : "s"} across {a.tests.length} test
                   {a.tests.length === 1 ? "" : "s"}, most recently {relativeTime(a.latest.startedAt)}.
                 </p>

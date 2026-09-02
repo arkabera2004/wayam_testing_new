@@ -8,7 +8,7 @@ const HOW_IT_WORKS: Array<{ icon: Icon3DName; title: string; body: string }> = [
   {
     icon: "prd-extract",
     title: "Requirements in",
-    body: "Upload an SRS, user stories, or Jira tickets — or start from a live app.",
+    body: "Upload an SRS, user stories, or Jira tickets - or start from a live app.",
   },
   {
     icon: "prd-ambiguity",
@@ -28,7 +28,7 @@ const HOW_IT_WORKS: Array<{ icon: Icon3DName; title: string; body: string }> = [
   {
     icon: "explore",
     title: "Application exploration",
-    body: "Pages, user flows, APIs, and structure — mapped like a real user.",
+    body: "Pages, user flows, APIs, and structure - mapped like a real user.",
   },
   {
     icon: "prd-classify",
@@ -51,12 +51,12 @@ const FEATURES: Array<{ icon: Icon3DName; title: string; body: string }> = [
   {
     icon: "prd-extract",
     title: "Requirements-first entry",
-    body: "Test before code exists. SRS, stories, and Jira are first-class inputs — not an afterthought.",
+    body: "Test before code exists. SRS, stories, and Jira are first-class inputs - not an afterthought.",
   },
   {
     icon: "prd-ambiguity",
     title: "Requirement intelligence",
-    body: "Ambiguity, duplicates, untestable wording, missing boundaries, and dependencies — surfaced early.",
+    body: "Ambiguity, duplicates, untestable wording, missing boundaries, and dependencies - surfaced early.",
   },
   {
     icon: "prd-traceability",
@@ -93,7 +93,7 @@ const ENTRY_PATHS = [
     href: "/onboarding?path=requirements",
     icon: FileText,
     title: "Start from requirements",
-    body: "Upload SRS, user stories, or Jira. Analyse ambiguity, generate scenarios, and keep traceability — even before development.",
+    body: "Upload SRS, user stories, or Jira. Analyse ambiguity, generate scenarios, and keep traceability - even before development.",
     cta: "Upload requirements",
     pathLabel: "Path A · Pre-development",
     primary: true,
@@ -120,12 +120,12 @@ export default function LandingPage() {
           </Chip>
 
           <h1 className="font-display text-display-page text-primary mt-6 text-balance">
-            From requirements to Playwright tests — before or after you ship.
+            From requirements to Playwright tests - before or after you ship.
           </h1>
 
           <p className="text-body-lg text-secondary mx-auto mt-5 max-w-2xl text-pretty">
             Parikshan analyses what the application <em>should</em> do and what it{" "}
-            <em>actually</em> does, then generates reviewable Playwright tests you own —
+            <em>actually</em> does, then generates reviewable Playwright tests you own -
             with requirement ↔ test traceability and change intelligence.
           </p>
         </div>
@@ -214,7 +214,7 @@ export default function LandingPage() {
             <h2 className="text-heading-lg text-primary">The Parikshan flow</h2>
             <p className="text-body-md text-tertiary mt-2">
               Requirements are the first-class entry point. Application exploration joins when
-              you have a repo or URL — and the intelligence layer reconciles both.
+              you have a repo or URL - and the intelligence layer reconciles both.
             </p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -309,7 +309,7 @@ export default function LandingPage() {
           <Card className="mx-auto mt-10 max-w-2xl">
             <blockquote className="text-body-lg text-secondary text-pretty">
               &ldquo;We started from the SRS before the feature shipped. By the time checkout
-              landed, the suite already knew which requirements were covered — and which the
+              landed, the suite already knew which requirements were covered - and which the
               build still missed.&rdquo;
             </blockquote>
             <div className="mt-4 flex items-center gap-2.5">
@@ -332,7 +332,7 @@ export default function LandingPage() {
             Requirements in. Reliable Playwright out.
           </h2>
           <p className="text-body-lg text-secondary mx-auto mt-4 max-w-2xl">
-            Start from what the product should do — or from the app you already have.
+            Start from what the product should do - or from the app you already have.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Link href="/onboarding?path=requirements">

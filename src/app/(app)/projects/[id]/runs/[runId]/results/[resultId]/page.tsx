@@ -12,8 +12,8 @@ import { relativeTime, toUiStatus } from "@/lib/format";
  * One recorded result.
  *
  * The previous version offered video replay, a network trace and a console log
- * beside an AI root-cause panel. None of that is captured — the runner records
- * a status, a duration, the failure message and a screenshot — so the page
+ * beside an AI root-cause panel. None of that is captured - the runner records
+ * a status, a duration, the failure message and a screenshot - so the page
  * shows those rather than four tabs of invented evidence. Reinstating the
  * others is a matter of persisting Playwright's trace, not of UI.
  */

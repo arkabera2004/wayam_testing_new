@@ -77,7 +77,7 @@ export async function getRepo(token: string, fullName: string): Promise<GithubRe
   };
 }
 
-/** Recent Actions runs for the linked repo — real CI signal for the release gate. */
+/** Recent Actions runs for the linked repo - real CI signal for the release gate. */
 export async function listWorkflowRuns(token: string, fullName: string, limit = 10): Promise<GithubWorkflowRun[]> {
   const d = await gh<{
     workflow_runs: Array<{

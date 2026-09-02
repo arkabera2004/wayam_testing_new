@@ -68,7 +68,7 @@ export function Topbar() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { unread } = useNotifications();
   const slugMatch = usePathname().match(/^\/projects\/([^/]+)/)?.[1] ?? null;
-  // "/projects/new" is the create form, not a project — running a suite there
+  // "/projects/new" is the create form, not a project - running a suite there
   // would POST to an id that does not exist.
   const slugInUrl = slugMatch === "new" ? null : slugMatch;
 

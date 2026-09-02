@@ -24,7 +24,7 @@ type ThemeContextValue = {
  * A non-null default matters: during a partial RSC render the root layout is
  * not re-executed, so a consumer like ThemeToggle can be server-rendered with
  * the provider absent from that subtree. With a null default the hook threw
- * and took the whole page down with a 500. The fallback is inert — in the
+ * and took the whole page down with a 500. The fallback is inert - in the
  * browser the provider is always an ancestor, so these no-ops never run.
  */
 const FALLBACK_THEME: ThemeContextValue = {

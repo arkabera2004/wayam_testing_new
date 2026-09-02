@@ -68,7 +68,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         <StatCard label="Runs" value={String(a.totalRuns)} delta="recorded" />
         <StatCard
           label="Average run"
-          value={a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s` : "—"}
+          value={a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s` : "-"}
           delta="summed spec time"
           trend={a.durationTrend}
         />
@@ -88,7 +88,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
               <div className="flex items-baseline justify-between">
                 <span className="text-label-sm text-tertiary">Pass rate per run</span>
                 <span className="text-label-sm text-success tabular">
-                  {a.passRate === null ? "—" : `${a.passRate}%`}
+                  {a.passRate === null ? "-" : `${a.passRate}%`}
                 </span>
               </div>
               <Sparkline values={a.passRateTrend} tone="success" className="mt-1.5 h-16" />
@@ -97,7 +97,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
               <div className="flex items-baseline justify-between">
                 <span className="text-label-sm text-tertiary">Run duration (s)</span>
                 <span className="text-label-sm text-secondary tabular">
-                  {a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s avg` : "—"}
+                  {a.avgDurationMs ? `${(a.avgDurationMs / 1000).toFixed(1)}s avg` : "-"}
                 </span>
               </div>
               <Sparkline values={a.durationTrend} className="mt-1.5 h-16" />

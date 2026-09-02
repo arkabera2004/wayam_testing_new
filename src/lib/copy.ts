@@ -3,7 +3,7 @@
  *
  * `navigator.clipboard` only exists in a secure context. The dev server
  * advertises a LAN address alongside localhost, and anyone opening the app
- * that way loses the API entirely — the call sites used to swallow the
+ * that way loses the API entirely - the call sites used to swallow the
  * rejection, so the copy buttons went quiet with no explanation.
  *
  * Returns whether the text made it to the clipboard, so callers can report

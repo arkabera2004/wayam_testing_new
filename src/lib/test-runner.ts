@@ -31,7 +31,7 @@ const RUN_TIMEOUT_MS = 120_000;
  * Screenshots outlive the run directory.
  *
  * Playwright writes them beside the generated specs, which are deleted once
- * results are recorded — so the evidence for a failure was being thrown away
+ * results are recorded - so the evidence for a failure was being thrown away
  * with them. They are copied here first and served by
  * /api/runs/[runId]/artifacts/[file].
  *
@@ -180,7 +180,7 @@ async function executeSuite(
       );
       const kill = setTimeout(() => child.kill("SIGKILL"), RUN_TIMEOUT_MS);
       // A non-zero exit only means some tests failed, which is a normal
-      // outcome here — the report is the source of truth, not the exit code.
+      // outcome here - the report is the source of truth, not the exit code.
       child.on("close", () => { clearTimeout(kill); resolve(); });
       child.on("error", () => { clearTimeout(kill); resolve(); });
     });

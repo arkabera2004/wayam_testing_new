@@ -16,7 +16,7 @@ export default function CheckoutPage() {
   const [declined, setDeclined] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
-  // Checkout is not reachable with nothing to buy — but only once the stored
+  // Checkout is not reachable with nothing to buy - but only once the stored
   // cart has been read back. Redirecting on the pre-hydration state bounced
   // shoppers with a full cart straight to the empty-cart page.
   useEffect(() => {

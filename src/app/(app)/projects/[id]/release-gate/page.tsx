@@ -191,7 +191,7 @@ export default async function ReleaseGatePage({ params }: { params: Promise<{ id
           <Signal
             icon="check"
             label="CI pass rate"
-            value={g.passRate === null ? "—" : `${g.passRate}%`}
+            value={g.passRate === null ? "-" : `${g.passRate}%`}
             hint="latest run"
             tone="text-success"
           />

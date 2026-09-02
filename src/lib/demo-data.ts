@@ -126,7 +126,7 @@ export const journeys = [
 ];
 
 /**
- * Headline crawl figures — the single source for every screen that quotes them
+ * Headline crawl figures - the single source for every screen that quotes them
  * (Overview, Discovery, Application Map).
  *
  * These intentionally exceed the sample arrays above: the crawl found 28 pages
@@ -138,7 +138,7 @@ export const journeys = [
 /**
  * Size of the generated suite. `generatedTests` carries a representative
  * sample for the table to render, so this is the number to quote whenever the
- * UI talks about the suite as a whole — the sidebar badge, the Tests header
+ * UI talks about the suite as a whole - the sidebar badge, the Tests header
  * and the run records all refer to it.
  */
 export const suiteSize = 42;
@@ -550,7 +550,7 @@ export const notifications = [
   { id: 1, type: "failed" as Status, title: "Run #137 failed", body: "1 of 42 tests failed on Chromium.", when: "2m ago", day: "Today", unread: true },
   { id: 2, type: "healing" as Status, title: "Locator healed automatically", body: "'Pay now' is now 'Place order' across 2 tests.", when: "2m ago", day: "Today", unread: true },
   { id: 3, type: "flaky" as Status, title: "Test quarantined", body: "Newsletter signup fails 1 in 5 on WebKit.", when: "4h ago", day: "Today", unread: true },
-  { id: 4, type: "passed" as Status, title: "Quality gate passed", body: "PR #479 — 42 of 42 tests passed.", when: "9h ago", day: "Yesterday", unread: false },
+  { id: 4, type: "passed" as Status, title: "Quality gate passed", body: "PR #479 - 42 of 42 tests passed.", when: "9h ago", day: "Yesterday", unread: false },
   { id: 5, type: "passed" as Status, title: "Scheduled run completed", body: "Run #136 finished in 1m 08s.", when: "1d ago", day: "Yesterday", unread: false },
 ];
 
@@ -605,7 +605,7 @@ export const releaseGate = {
   confidence: 0.82,
   recommendation:
     "The suite is green and coverage is trending up, but one critical bug and two unresolved security findings are still open against this tag. Ship once both are closed or explicitly waived.",
-  primaryBlocker: "SHOP-412 — expired card at checkout returns a 500 instead of a decline message.",
+  primaryBlocker: "SHOP-412 - expired card at checkout returns a 500 instead of a decline message.",
   conditions: [
     "Close SHOP-412 or downgrade it below critical with sign-off.",
     "Resolve the two open security findings on /api/auth/login.",

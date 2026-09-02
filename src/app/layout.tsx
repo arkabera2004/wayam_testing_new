@@ -9,7 +9,7 @@ import { THEME_STORAGE_KEY, themeFromCookie } from "@/lib/theme";
 
 import "./globals.css";
 
-/** Functional product UI typeface — the interface default. */
+/** Functional product UI typeface - the interface default. */
 const geist = Geist({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],

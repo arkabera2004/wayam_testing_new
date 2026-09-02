@@ -3,7 +3,7 @@
 @import "../styles/semantic-tokens.css";
 
 /* ============================================================
-   TIER 3 — TAILWIND SURFACE
+   TIER 3 - TAILWIND SURFACE
    Semantic tokens exposed as readable utilities.
 
    `@theme inline` is used for anything that must re-resolve when
@@ -103,7 +103,7 @@
      components never pick raw sizes.
      ============================================================ */
 
-  /* Michroma — display / telemetry */
+  /* Michroma - display / telemetry */
   --text-display-page: var(--ref-display-3xl-size);
   --text-display-page--line-height: var(--ref-display-3xl-line);
   --text-display-page--font-weight: 400;
@@ -129,7 +129,7 @@
   --text-display-xs--font-weight: 400;
   --text-display-xs--letter-spacing: var(--ref-tracking-display-loose);
 
-  /* Geist — functional UI */
+  /* Geist - functional UI */
   --text-heading-lg: var(--ref-text-2xl-size);
   --text-heading-lg--line-height: var(--ref-text-2xl-line);
   --text-heading-lg--font-weight: 600;

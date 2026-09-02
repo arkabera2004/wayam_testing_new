@@ -34,7 +34,7 @@ export function IntegrationsClient({
     toast({
       tone: "error",
       title: "Could not copy",
-      body: "Your browser blocked clipboard access — select the text and copy manually.",
+      body: "Your browser blocked clipboard access - select the text and copy manually.",
     });
   };
 
@@ -70,7 +70,7 @@ export function IntegrationsClient({
 
       {/* Slack detail */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Slack" subtitle="Not implemented — these controls are inert" actions={<Chip>Coming soon</Chip>}>
+        <Card title="Slack" subtitle="Not implemented - these controls are inert" actions={<Chip>Coming soon</Chip>}>
           <div className="flex flex-col gap-3">
             {[
               { label: "Test failures", on: true },
@@ -86,7 +86,7 @@ export function IntegrationsClient({
           </div>
         </Card>
 
-        <Card title="Jira" subtitle="Not implemented — these controls are inert" actions={<Chip>Coming soon</Chip>}>
+        <Card title="Jira" subtitle="Not implemented - these controls are inert" actions={<Chip>Coming soon</Chip>}>
           <div className="flex flex-col gap-3">
             <label className="flex items-center justify-between gap-4">
               <span className="text-body-md text-secondary">Auto-file bugs on failure</span>
@@ -114,7 +114,7 @@ export function IntegrationsClient({
       <div>
         <h2 className="text-label-sm text-tertiary mb-3">
           Quality gate on a pull request{" "}
-          <span className="text-quaternary">— illustration, not live data</span>
+          <span className="text-quaternary">- illustration, not live data</span>
         </h2>
         <BrowserFrame url="github.com/acme/shopstack/pull/482">
           <div className="p-5">

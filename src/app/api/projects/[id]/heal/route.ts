@@ -9,7 +9,7 @@ import { healSelector } from "@/lib/healer";
 /**
  * Heals a broken selector against a live page and records the result.
  *
- * The event is written whether or not a replacement was found — a heal that
+ * The event is written whether or not a replacement was found - a heal that
  * failed is worth seeing, since it means the test needs a human.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

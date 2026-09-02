@@ -123,7 +123,7 @@ export default async function ProjectOverviewPage({
                       </span>
                     </span>
                   </Td>
-                  <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—"}</Td>
+                  <Td className="tabular text-right">{run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "-"}</Td>
                 </tr>
               ))}
             </tbody>

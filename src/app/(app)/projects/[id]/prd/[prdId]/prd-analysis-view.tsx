@@ -161,7 +161,7 @@ export function PrdAnalysisView({
               />
             </div>
 
-            {/* Ambiguity findings — the credibility moment */}
+            {/* Ambiguity findings - the credibility moment */}
             <Card
               title={
                 <span className="flex items-center gap-2">

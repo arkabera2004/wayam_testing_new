@@ -13,7 +13,7 @@ type RiskLevel = "critical" | "high" | "medium" | "low";
  * likelihood from change frequency, bug-fix association and churn.
  *
  * The original drew a Recharts treemap. This uses a flex layout weighted by
- * churn — same encoding (area = churn, colour = risk) without adding a
+ * churn - same encoding (area = churn, colour = risk) without adding a
  * charting dependency for one view.
  */
 /**
@@ -73,7 +73,7 @@ export default async function DefectPredictionPage({ params }: { params: Promise
           {d.files.map((f) => (
             <div
               key={f.filename}
-              title={`${f.filename} — risk ${f.riskScore}, churn ${f.churn}`}
+              title={`${f.filename} - risk ${f.riskScore}, churn ${f.churn}`}
               style={{ flexGrow: f.churn / totalChurn, backgroundColor: RISK[f.riskLevel].fill }}
               className="relative min-w-0 rounded-md p-2"
             >

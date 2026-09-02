@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Identity for scoping database reads.
  *
- * Authentication is deliberately out of the app right now — the focus is on
+ * Authentication is deliberately out of the app right now - the focus is on
  * the testing pipeline, so every request runs as one local tenant and the
  * seeded project is reachable without signing in.
  *

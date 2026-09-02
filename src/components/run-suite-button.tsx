@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
  *
  * The request stays open for the duration of the suite, which is fine while a
  * run takes seconds. If suites grow past the request budget this is the place
- * that changes — the endpoint would return a queued run id and the page would
+ * that changes - the endpoint would return a queued run id and the page would
  * poll for it.
  */
 export function RunSuiteButton({

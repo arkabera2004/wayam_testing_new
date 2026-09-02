@@ -66,7 +66,7 @@ const RECOMMENDATION: Record<
   },
   COMMENT: {
     label: "Commented",
-    description: "Suggestions provided — not blocking, but worth reading.",
+    description: "Suggestions provided - not blocking, but worth reading.",
     text: "text-warning",
     surface: "bg-warning-surface",
     icon: "info",
@@ -229,7 +229,7 @@ export function CodeReviewView({ reviews }: { reviews: Review[] }) {
                           <p className="text-body-md text-secondary mt-1">{c.body}</p>
                           {c.suggestion && (
                             <p className="text-body-sm text-tertiary bg-raised mt-2 rounded-lg px-3 py-2">
-                              <span className="text-success">Suggested fix — </span>
+                              <span className="text-success">Suggested fix - </span>
                               {c.suggestion}
                             </p>
                           )}

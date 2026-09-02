@@ -32,7 +32,7 @@ const BROWSER_USE_API = "https://api.browser-use.com/api/v2";
  * Rents a cloud browser and returns its CDP endpoint.
  *
  * Billing runs from creation until the session is stopped, so the caller must
- * stop it in a finally — a thrown error mid-heal would otherwise leave a
+ * stop it in a finally - a thrown error mid-heal would otherwise leave a
  * session running until its timeout.
  */
 async function createRemoteSession(apiKey: string) {
@@ -54,7 +54,7 @@ async function createRemoteSession(apiKey: string) {
 /**
  * Ends a rented session.
  *
- * Stopping is PATCH with an action, not POST /stop — that path 404s, and
+ * Stopping is PATCH with an action, not POST /stop - that path 404s, and
  * because the failure was being swallowed the session stayed billable until
  * its own timeout. A failure here is logged rather than ignored: a silent
  * leak costs money.
@@ -130,7 +130,7 @@ async function openBrowser(targetUrl: string): Promise<{
  * Element kind implied by the broken selector.
  *
  * "#pay-btn" and "#search-btn" name buttons, and without this the ranker
- * happily proposed a nav link with the same words — a locator that matches
+ * happily proposed a nav link with the same words - a locator that matches
  * something real and wrong, which is worse than not healing at all.
  */
 function impliedRole(selector: string): string | null {
@@ -184,7 +184,7 @@ async function collectCandidates(page: Page) {
 /**
  * Attempts to heal one selector against a live page.
  *
- * The broken selector is used as the search text — "#pay-btn" still carries
+ * The broken selector is used as the search text - "#pay-btn" still carries
  * the word "pay", which is usually enough to find the control that replaced
  * it. Candidates are ranked and the best is returned; ties keep the most
  * stable strategy, preferring a test id or an accessible name over text.

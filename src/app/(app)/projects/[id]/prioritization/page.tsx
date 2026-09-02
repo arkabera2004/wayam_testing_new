@@ -65,7 +65,7 @@ export default async function PrioritizationPage({ params }: { params: Promise<{
       {known.length > 0 && (
         <Card
           title="Known failures pending resolution"
-          subtitle="Already failing or quarantined — these rank highest regardless of score"
+          subtitle="Already failing or quarantined - these rank highest regardless of score"
           padded={false}
         >
           <ul className="divide-muted flex flex-col divide-y">

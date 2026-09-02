@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 /**
- * ShopStack — a deliberately small storefront that exists to be tested.
+ * ShopStack - a deliberately small storefront that exists to be tested.
  *
  * Parikshan's demo project describes cart, checkout, auth and search
  * behaviour, but pointed at shopstack.demo, which does not resolve, so none of
@@ -54,7 +54,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /**
    * The cart has to survive a page load.
    *
-   * Held only in React state it was emptied by every navigation — add an item,
+   * Held only in React state it was emptied by every navigation - add an item,
    * open /cart, and the cart was empty again. Reading happens after mount
    * rather than during render so the server and client agree on the first
    * paint; `hydrated` then gates writes so that first empty render cannot

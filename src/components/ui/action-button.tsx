@@ -11,7 +11,7 @@ import { icons } from "@/lib/icons";
  * A button for an action this build cannot really perform yet.
  *
  * Parikshan has no backend, so controls like "Export" or "Re-run" had no
- * handler at all — clicking them did nothing, which reads as a broken app
+ * handler at all - clicking them did nothing, which reads as a broken app
  * rather than an unfinished one. Eight screens already answered that problem
  * with a toast, so this wraps the same pattern in one place and keeps the
  * server components that use it from having to go client-side wholesale.

@@ -28,7 +28,7 @@ const db = getDb();
 
 const owned = await db.select().from(schema.projects).where(eq(schema.projects.userId, from));
 if (owned.length === 0) {
-  console.log(`Nothing owned by "${from}" — nothing to move.`);
+  console.log(`Nothing owned by "${from}" - nothing to move.`);
   process.exit(0);
 }
 

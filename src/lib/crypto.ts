@@ -24,7 +24,7 @@ export function encryptToken(plain: string): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key(), iv);
   const body = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
-  // iv:tag:ciphertext — self-describing, so no separate columns are needed.
+  // iv:tag:ciphertext - self-describing, so no separate columns are needed.
   return [iv.toString("base64"), cipher.getAuthTag().toString("base64"), body.toString("base64")].join(":");
 }
 

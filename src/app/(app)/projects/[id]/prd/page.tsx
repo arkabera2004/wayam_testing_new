@@ -46,7 +46,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
     <PageBody>
       <PageHeader
         title="Requirements"
-        description="Upload an SRS, user stories, or Jira export. Parikshan extracts requirements, runs requirement intelligence, and proposes traced test scenarios — before or after the app exists."
+        description="Upload an SRS, user stories, or Jira export. Parikshan extracts requirements, runs requirement intelligence, and proposes traced test scenarios - before or after the app exists."
         actions={
           <Link href={`/projects/${id}/prd/new`}>
             <Button variant="primary" icon={Plus}>
@@ -106,7 +106,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
                   {doc.status === "analysed" ? (
                     doc.cases
                   ) : (
-                    <span className="text-quaternary">—</span>
+                    <span className="text-quaternary">-</span>
                   )}
                 </Td>
                 <Td>
@@ -133,7 +133,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
           <Icon3D name="prd-traceability" size={64} />
           <div>
             <p className="text-heading-sm text-primary">
-              Requirements vs application — and the reconcile layer
+              Requirements vs application - and the reconcile layer
             </p>
             <p className="text-body-md text-tertiary mt-1.5 max-w-3xl">
               Requirements describe what the application <em>should</em> do. Exploration discovers

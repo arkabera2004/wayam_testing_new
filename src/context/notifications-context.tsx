@@ -10,7 +10,7 @@ import { notifications } from "@/lib/demo-data";
  * The unread count is rendered in two places that never spoke to each other:
  * the topbar bell and the notifications page. With the page holding the state
  * locally, "Mark all read" emptied the list and disabled its own button while
- * the bell kept its red dot — the app contradicting itself on one screen.
+ * the bell kept its red dot - the app contradicting itself on one screen.
  * Hoisting the state here keeps both readers on one value.
  */
 type NotificationsContextValue = {

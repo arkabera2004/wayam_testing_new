@@ -102,7 +102,7 @@ export function WorkspaceSettingsView({
         ...prev,
       ]);
       setNewKeyName("");
-      toast({ tone: "success", title: "Key created", body: "Copy it now — it is not shown again." });
+      toast({ tone: "success", title: "Key created", body: "Copy it now - it is not shown again." });
     } finally {
       setBusy(false);
     }
@@ -240,7 +240,7 @@ export function WorkspaceSettingsView({
             >
               {freshSecret && (
                 <div className="border-muted bg-raised m-4 rounded-lg border p-3">
-                  <p className="text-label-md text-primary">Copy this now — it is not shown again.</p>
+                  <p className="text-label-md text-primary">Copy this now - it is not shown again.</p>
                   <code className="text-body-sm text-secondary mt-1.5 block break-all">{freshSecret}</code>
                 </div>
               )}

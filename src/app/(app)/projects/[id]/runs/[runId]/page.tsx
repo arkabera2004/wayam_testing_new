@@ -32,7 +32,7 @@ export default async function RunDetailPage({
   const durationMs =
     run.finishedAt && run.startedAt ? run.finishedAt.getTime() - run.startedAt.getTime() : null;
 
-  // Failures first — the reason anyone opens this page.
+  // Failures first - the reason anyone opens this page.
   const ordered = [...results].sort((a, b) =>
     a.result.status === "pass" ? (b.result.status === "pass" ? 0 : 1) : -1,
   );
@@ -51,7 +51,7 @@ export default async function RunDetailPage({
         <StatCard label="Failed" value={String(failed)} deltaTone={failed ? "error" : undefined} />
         <StatCard
           label="Duration"
-          value={durationMs ? `${(durationMs / 1000).toFixed(1)}s` : "—"}
+          value={durationMs ? `${(durationMs / 1000).toFixed(1)}s` : "-"}
         />
       </div>
 

@@ -449,7 +449,7 @@ export function Td({ children, className }: { children?: ReactNode; className?: 
 /* ------------------------------------------------------------------ */
 
 /**
- * Token-based Playwright/YAML highlighter. Deliberately tiny — it colours
+ * Token-based Playwright/YAML highlighter. Deliberately tiny - it colours
  * strings, comments, keywords and calls, which is all the demo needs, and
  * every colour comes from the feedback/text token groups.
  */

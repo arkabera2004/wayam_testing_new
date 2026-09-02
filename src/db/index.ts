@@ -5,7 +5,7 @@
  * Next.js evaluates top-level module code during `next build`, so a
  * module-scope client would break any build run before the env is present.
  *
- * Deliberately a plain function rather than a Proxy wrapper — Proxies around
+ * Deliberately a plain function rather than a Proxy wrapper - Proxies around
  * the client break libraries that introspect the adapter object.
  */
 import { neon, neonConfig } from "@neondatabase/serverless";

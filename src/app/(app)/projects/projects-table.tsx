@@ -79,7 +79,7 @@ export function ProjectsTable({
         />
         <StatCard
           label="Test time"
-          value={stats.testMs ? `${(stats.testMs / 1000).toFixed(1)}s` : "—"}
+          value={stats.testMs ? `${(stats.testMs / 1000).toFixed(1)}s` : "-"}
           delta="summed spec time"
         />
       </div>
@@ -114,7 +114,7 @@ export function ProjectsTable({
                     ) : (
                       <Globe size={13} className="shrink-0" aria-hidden="true" />
                     )}
-                    {p.githubRepoUrl?.replace("https://github.com/", "") ?? p.description ?? "—"}
+                    {p.githubRepoUrl?.replace("https://github.com/", "") ?? p.description ?? "-"}
                   </span>
                 </Td>
                 <Td className="tabular text-right">{p.tests}</Td>

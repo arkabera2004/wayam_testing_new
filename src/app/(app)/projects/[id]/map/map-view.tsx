@@ -26,7 +26,7 @@ type Stats = { pages: number; journeys: number; apis: number; gated: number };
 
 /** Seconds into the crawl, shown as mm:ss the way the capture log reads. */
 function formatFirstSeen(sec: number | null) {
-  if (sec == null) return "—";
+  if (sec == null) return "-";
   return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 }
 

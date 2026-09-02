@@ -11,7 +11,7 @@ import { currentUserId } from "@/lib/auth";
 /**
  * Ported from AIDLC-Azure's Repo Test Baseline: scan a repository for the
  * Playwright specs that already exist, break each into its steps, and name the
- * journeys nothing covers yet — so generation starts from what is missing
+ * journeys nothing covers yet - so generation starts from what is missing
  * rather than duplicating what is there.
  */
 export default async function RepoBaselinePage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,7 +28,7 @@ export default async function RepoBaselinePage({ params }: { params: Promise<{ i
 
   /**
    * The baseline is what this project already has automated. A coverage gap is
-   * a journey where no scenario carries executable code — a real signal, unlike
+   * a journey where no scenario carries executable code - a real signal, unlike
    * the crawled-but-untested list the fixture invented.
    */
   const b = {

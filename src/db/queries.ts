@@ -36,7 +36,7 @@ export async function listProjects(userId: string) {
 
 /**
  * URL slug for a project. The table has no slug column, so it is derived from
- * the name — "ShopStack" ↔ /projects/shopstack. Keeps the existing routes
+ * the name - "ShopStack" ↔ /projects/shopstack. Keeps the existing routes
  * working without a migration.
  */
 export function projectSlug(name: string) {
@@ -101,7 +101,7 @@ export async function deleteProject(userId: string, projectId: string) {
   return rows.length > 0;
 }
 
-/** Suite ids the user owns — the guard every downward query funnels through. */
+/** Suite ids the user owns - the guard every downward query funnels through. */
 async function ownedSuiteIds(userId: string, projectId?: string) {
   const db = getDb();
   const rows = await db
@@ -309,8 +309,8 @@ export async function listRunsWithCounts(userId: string, projectId: string, limi
 /**
  * Workspace totals for the projects screen.
  *
- * These four cards previously showed fixed demo numbers — "Total projects 3"
- * sat above a table listing seven — so they are computed from the same rows
+ * These four cards previously showed fixed demo numbers - "Total projects 3"
+ * sat above a table listing seven - so they are computed from the same rows
  * the table renders. Pass rate is measured per result rather than per run,
  * which is the honest denominator when a run can be partially green.
  */
@@ -334,7 +334,7 @@ export async function workspaceStats(userId: string) {
   }
 
   // Aggregate in SQL. This used to select every run id, then every result row
-  // for those runs, and reduce them in JS — so the query grew one bind
+  // for those runs, and reduce them in JS - so the query grew one bind
   // parameter per run and eventually timed out once the history was long
   // enough. These return a single row no matter how much history exists.
   const [[tests], [runCount], [totals]] = await Promise.all([
@@ -364,7 +364,7 @@ export async function workspaceStats(userId: string) {
  * Test cases with the run history the tests table shows.
  *
  * Journey comes from the owning suite, and status/history/average are derived
- * from this case's results across recent runs — the table's sparkline is
+ * from this case's results across recent runs - the table's sparkline is
  * meant to be the last few outcomes, not decoration.
  */
 export type TestCaseWithStats = Awaited<ReturnType<typeof listTestCasesWithStats>>[number];
@@ -429,7 +429,7 @@ export async function listTestCasesWithStats(userId: string, projectId: string, 
  * turned into a spec.
  *
  * The demo grouped scenarios as happy-path / edge-case / negative. The schema
- * has no such column — its CHECK constraint limits type to unit/api/ui — so
+ * has no such column - its CHECK constraint limits type to unit/api/ui - so
  * the breakdown is by priority, which is real, rather than inventing a
  * classification the rows do not carry.
  */
@@ -551,8 +551,8 @@ export async function getTestCase(userId: string, caseId: string) {
 /**
  * Analytics for a project, computed from its runs.
  *
- * Pass rate is measured per result rather than per run — a run that is half
- * green is not a binary pass — and the trend is one point per run, oldest
+ * Pass rate is measured per result rather than per run - a run that is half
+ * green is not a binary pass - and the trend is one point per run, oldest
  * first, so the sparkline traces real history rather than a fixed curve.
  *
  * Coverage has no table yet, so it is reported as null and the screen says so
@@ -1123,7 +1123,7 @@ export async function listExecutableCases(userId: string, projectId: string) {
 /**
  * Per-project counts for the sidebar badges. These were hardcoded from the
  * demo dataset, so every project claimed the same "3 today" healed and the
- * same quarantine count — the nav contradicting the page beside it.
+ * same quarantine count - the nav contradicting the page beside it.
  *
  * Grouped in SQL and returned as a map, so the layout does not issue one
  * query per project.
@@ -1285,7 +1285,7 @@ export async function testSelectionForLatestDiff(userId: string, projectId: stri
     if (hit) {
       selected.push({ id: c.id, name: c.title, priority: c.priority, why: `Exercises ${c.filePathHint}, which changed.` });
     } else if (c.priority === "critical") {
-      selected.push({ id: c.id, name: c.title, priority: c.priority, why: "Critical path — always run, whatever the diff touches." });
+      selected.push({ id: c.id, name: c.title, priority: c.priority, why: "Critical path - always run, whatever the diff touches." });
     } else {
       skipped.push({ id: c.id, name: c.title, why: "No changed file reaches this test." });
     }
@@ -1525,7 +1525,7 @@ export async function createPrdDocument(
 }
 
 /**
- * Pass rate per recent run, oldest first — the sparkline on the stat cards.
+ * Pass rate per recent run, oldest first - the sparkline on the stat cards.
  * Bounded and aggregated in SQL so it stays cheap as history grows, and
  * scoped to one project when projectId is given, the whole workspace when not.
  */
