@@ -4,7 +4,14 @@ import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
 export type ShellProject = { id: string; name: string; slug: string };
-export type ActiveProject = { name: string; slug: string; tests: number };
+export type ActiveProject = {
+  name: string;
+  slug: string;
+  tests: number;
+  /** Real per-project badge counts; the nav used to show demo numbers. */
+  pendingHeals?: number;
+  quarantined?: number;
+};
 export type ShellUser = { name: string; email: string; initials: string };
 
 export function AppShell({

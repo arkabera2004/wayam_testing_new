@@ -8,7 +8,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
 
 import { ThemeToggle } from "./theme-toggle";
-import { healingStats, project, quarantined, workspace } from "@/lib/demo-data";
+import { project, workspace } from "@/lib/demo-data";
 import type { ActiveProject, ShellProject, ShellUser } from "./app-shell";
 
 import { Logo, Wordmark } from "./logo";
@@ -78,9 +78,14 @@ export function Sidebar({
       icon: "maintenance" as const,
       label: "Self-Healing",
       href: `${base}/healing`,
-      badge: `${healingStats.healedToday} today`,
+      badge: current?.pendingHeals ? `${current.pendingHeals} pending` : undefined,
     },
-    { icon: "quarantine" as const, label: "Quarantine", href: `${base}/quarantine`, badge: quarantined.length },
+    {
+      icon: "quarantine" as const,
+      label: "Quarantine",
+      href: `${base}/quarantine`,
+      badge: current?.quarantined || undefined,
+    },
     { icon: "notification" as const, label: "Notifications", href: "/notifications" },
   ];
 

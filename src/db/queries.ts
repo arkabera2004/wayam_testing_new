@@ -1119,3 +1119,44 @@ export async function listExecutableCases(userId: string, projectId: string) {
     .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)))
     .then((rows) => rows.filter((r) => r.code?.trim()));
 }
+
+/**
+ * Per-project counts for the sidebar badges. These were hardcoded from the
+ * demo dataset, so every project claimed the same "3 today" healed and the
+ * same quarantine count — the nav contradicting the page beside it.
+ *
+ * Grouped in SQL and returned as a map, so the layout does not issue one
+ * query per project.
+ */
+export async function sidebarBadgeCounts(userId: string) {
+  const db = getDb();
+
+  const owned = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(eq(schema.projects.userId, userId));
+  const ids = owned.map((p) => p.id);
+
+  const empty = new Map<string, { pendingHeals: number; quarantined: number }>();
+  if (ids.length === 0) return empty;
+
+  const [heals, quarantines] = await Promise.all([
+    db
+      .select({ projectId: schema.healingEvents.projectId, n: count() })
+      .from(schema.healingEvents)
+      .where(and(inArray(schema.healingEvents.projectId, ids), eq(schema.healingEvents.status, "pending")))
+      .groupBy(schema.healingEvents.projectId),
+    db
+      .select({ projectId: schema.quarantinedTests.projectId, n: count() })
+      .from(schema.quarantinedTests)
+      .where(
+        and(inArray(schema.quarantinedTests.projectId, ids), eq(schema.quarantinedTests.status, "quarantined")),
+      )
+      .groupBy(schema.quarantinedTests.projectId),
+  ]);
+
+  for (const id of ids) empty.set(id, { pendingHeals: 0, quarantined: 0 });
+  for (const row of heals) empty.get(row.projectId)!.pendingHeals = row.n;
+  for (const row of quarantines) empty.get(row.projectId)!.quarantined = row.n;
+  return empty;
+}

@@ -125,10 +125,10 @@ export function Topbar() {
           <kbd className="bg-raised-2 text-caption text-tertiary rounded px-1.5 py-0.5">⌘K</kbd>
         </button>
 
-        {/* Environment */}
-        <span className="border-muted bg-container text-label-sm text-tertiary hidden rounded-full border px-2.5 py-1 lg:inline-flex">
-          {project.environment}
-        </span>
+        {/* An environment chip used to live here, hardcoded to "production"
+            from the demo dataset, so every project claimed to be in prod.
+            There is no environment column to read, so rather than invent one
+            the chip is gone until projects actually record it. */}
 
         <ThemeToggle />
 

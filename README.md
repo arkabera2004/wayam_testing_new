@@ -207,35 +207,37 @@ who does have items.
 
 ## Screens
 
-All of these read from Postgres.
+Not every screen is database-backed yet. The column says which is which, so
+nothing here reads as working when it is still demo data.
 
-| Route | Screen |
-|---|---|
-| `/projects` | All projects with live counts |
-| `/projects/[id]` | Project overview |
-| `/projects/[id]/plan` | Test plan; approve or reject proposed scenarios |
-| `/projects/[id]/tests` | Generated specs, run/export actions |
-| `/projects/[id]/tests/[testId]` | One spec and its code |
-| `/projects/[id]/runs` | Run history |
-| `/projects/[id]/runs/[runId]` | One run and its results |
-| `/projects/[id]/runs/[runId]/results/[resultId]` | One result, with screenshot |
-| `/projects/[id]/analytics` | Trends over a recent window of runs |
-| `/projects/[id]/healing` | Proposed and applied locator repairs |
-| `/projects/[id]/quarantine` | Quarantined tests |
-| `/projects/[id]/discovery` | Crawled pages and API endpoints |
-| `/projects/[id]/map` | Application map |
-| `/projects/[id]/root-cause` | Failure clustering |
-| `/projects/[id]/prioritization` | Risk-ranked tests |
-| `/projects/[id]/test-selection` | What to run for a change |
-| `/projects/[id]/defect-prediction` | Predicted defect hotspots |
-| `/projects/[id]/release-gate` | Go / no-go readiness |
-| `/projects/[id]/repo-baseline` | Repository scan baseline |
-| `/projects/[id]/code-review` | Review surface |
-| `/projects/[id]/prd` | Requirements, and `/prd/new` |
-| `/projects/[id]/doc-tests` | Tests derived from docs |
-| `/projects/[id]/integrations` | GitHub connection |
-| `/projects/[id]/settings` | Project settings |
-| `/notifications`, `/settings` | Workspace-level |
+| Route | Data | Screen |
+|---|---|---|
+| `/projects` | Postgres (pass-rate sparkline is still demo) | All projects with live counts |
+| `/projects/[id]` | Partly demo (`runs`, `suiteSize`, trend) | Project overview |
+| `/projects/[id]/plan` | Postgres | Test plan; approve or reject scenarios |
+| `/projects/[id]/tests` | Postgres | Generated specs, run/export actions |
+| `/projects/[id]/tests/[testId]` | Postgres | One spec and its code |
+| `/projects/[id]/runs` | Postgres | Run history |
+| `/projects/[id]/runs/[runId]` | Postgres | One run and its results |
+| `/projects/[id]/runs/[runId]/results/[resultId]` | Postgres | One result, with screenshot |
+| `/projects/[id]/analytics` | Postgres (failure clusters are demo) | Trends over recent runs |
+| `/projects/[id]/healing` | Postgres | Proposed and applied locator repairs |
+| `/projects/[id]/quarantine` | Postgres | Quarantined tests |
+| `/projects/[id]/discovery` | Postgres | Crawled pages and API endpoints |
+| `/projects/[id]/map` | Postgres | Application map |
+| `/projects/[id]/root-cause` | Postgres | Failure clustering |
+| `/projects/[id]/prioritization` | Postgres | Risk-ranked tests |
+| `/projects/[id]/test-selection` | **Demo data** | What to run for a change |
+| `/projects/[id]/defect-prediction` | Postgres | Predicted defect hotspots |
+| `/projects/[id]/release-gate` | Postgres | Go / no-go readiness |
+| `/projects/[id]/repo-baseline` | Postgres | Repository scan baseline |
+| `/projects/[id]/code-review` | **Demo data** | Review surface |
+| `/projects/[id]/prd`, `/prd/new`, `/prd/[prdId]` | **Demo data** | Requirements |
+| `/projects/[id]/doc-tests` | **Demo data** | Tests derived from docs |
+| `/projects/[id]/integrations` | Postgres (GitHub is real) | Slack/Jira inert |
+| `/projects/[id]/settings` | Partly demo (billing) | Project settings |
+| `/notifications` | Postgres | Notifications |
+| `/settings` | **Demo data** | Workspace, users, API keys, invoices |
 
 ---
 
@@ -361,3 +363,9 @@ Stated plainly so nothing here reads as working when it is not.
   which is what the `jobs` table anticipates.
 - **Auto-heal on failure** is not wired. Healing is proposed and applied
   through the Self-Healing screen.
+- **Six screens still render demo data**, marked in the Screens table:
+  Code Review, Doc Tests, Test Selection, the PRD screens, and workspace
+  Settings. Project overview, Analytics and project Settings are partly demo
+  (recent-runs summary, failure clusters, billing). The tables behind most of
+  these do not exist yet, so wiring them means designing schema, not just
+  swapping an import.
