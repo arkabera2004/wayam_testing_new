@@ -1523,3 +1523,55 @@ export async function createPrdDocument(
     .returning();
   return row;
 }
+
+/**
+ * Pass rate per recent run, oldest first — the sparkline on the stat cards.
+ * Bounded and aggregated in SQL so it stays cheap as history grows, and
+ * scoped to one project when projectId is given, the whole workspace when not.
+ */
+export async function passRateTrend(userId: string, projectId: string | null, limit = 12) {
+  const db = getDb();
+
+  const suiteRows = projectId
+    ? await db
+        .select({ id: schema.testSuites.id })
+        .from(schema.testSuites)
+        .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+        .where(and(eq(schema.projects.userId, userId), eq(schema.testSuites.projectId, projectId)))
+    : await db
+        .select({ id: schema.testSuites.id })
+        .from(schema.testSuites)
+        .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+        .where(eq(schema.projects.userId, userId));
+
+  const ids = suiteRows.map((s) => s.id);
+  if (ids.length === 0) return [];
+
+  const recent = await db
+    .select({ id: schema.testRuns.id })
+    .from(schema.testRuns)
+    .where(inArray(schema.testRuns.suiteId, ids))
+    .orderBy(desc(schema.testRuns.startedAt))
+    .limit(limit);
+  if (recent.length === 0) return [];
+
+  const perRun = await db
+    .select({
+      runId: schema.testRunResults.runId,
+      total: count(),
+      passed: sql<number>`count(*) filter (where ${schema.testRunResults.status} = 'pass')`.mapWith(Number),
+    })
+    .from(schema.testRunResults)
+    .where(inArray(schema.testRunResults.runId, recent.map((r) => r.id)))
+    .groupBy(schema.testRunResults.runId);
+
+  // Oldest first, so the sparkline reads left to right.
+  return recent
+    .slice()
+    .reverse()
+    .map((r) => {
+      const row = perRun.find((p) => p.runId === r.id);
+      return row && row.total ? Math.round((row.passed / row.total) * 100) : 0;
+    })
+    .filter((_, i, all) => all.length > 1 || i === 0);
+}

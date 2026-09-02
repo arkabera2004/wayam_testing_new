@@ -2,7 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { currentUserId } from "@/lib/auth";
-import { discoverySummary, listHealingEvents, listRunsWithCounts, projectStats, resolveProject } from "@/db/queries";
+import {
+  discoverySummary,
+  listHealingEvents,
+  listRunsWithCounts,
+  passRateTrend,
+  projectStats,
+  resolveProject,
+} from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
 import { ArrowRight, Globe } from "lucide-react";
 
@@ -20,12 +27,7 @@ import {
   Th,
 } from "@/components/ui";
 import { Icon3D } from "@/components/ui/icon-3d";
-import {
-  passRateTrend,
-  project,
-  runs,
-  suiteSize,
-} from "@/lib/demo-data";
+
 
 export default async function ProjectOverviewPage({
   params,
@@ -38,11 +40,13 @@ export default async function ProjectOverviewPage({
   const userId = await currentUserId();
   const dbProject = await resolveProject(userId, id);
   if (!dbProject) notFound();
-  const [stats, recentRuns, discovery, healing] = await Promise.all([
+  const [stats, recentRuns, discovery, healing, trend] = await Promise.all([
     projectStats(userId, dbProject.id),
     listRunsWithCounts(userId, dbProject.id, 5),
     discoverySummary(userId, dbProject.id),
     listHealingEvents(userId, dbProject.id),
+    // The sparkline used to be a fixed demo curve, identical on every project.
+    passRateTrend(userId, dbProject.id),
   ]);
   const latestRun = recentRuns[0] ?? null;
 
@@ -69,7 +73,7 @@ export default async function ProjectOverviewPage({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Tests" value={String(stats.tests)} delta="in the suite" />
-        <StatCard label="Pass rate" value={`${stats.passRate}%`} delta={`${stats.runs} runs`} trend={passRateTrend} />
+        <StatCard label="Pass rate" value={`${stats.passRate}%`} delta={`${stats.runs} runs`} trend={trend} />
         {/* No coverage percentage is measured; pages crawled is what exists. */}
         <StatCard label="Pages crawled" value={String(discovery.stats.pages)} delta={`${discovery.stats.gated} auth-gated`} />
         <StatCard label="Locators healed" value={String(healing.stats.healedThisMonth)} delta="this month" />

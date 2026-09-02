@@ -20,16 +20,19 @@ import {
 import { Icon3D } from "@/components/ui/icon-3d";
 import { Menu } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
-import { passRateTrend } from "@/lib/demo-data";
+
 import type { ProjectSummary, WorkspaceStats } from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
 
 export function ProjectsTable({
   projects,
   stats,
+  trend,
 }: {
   projects: ProjectSummary[];
   stats: WorkspaceStats;
+  /** Pass rate per recent run across the workspace, oldest first. */
+  trend: number[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -72,7 +75,7 @@ export function ProjectsTable({
           value={stats.passRate === null ? "No runs yet" : `${stats.passRate}%`}
           delta={stats.runs ? `${stats.runs} runs` : undefined}
           deltaTone={stats.passRate !== null && stats.passRate >= 95 ? "success" : undefined}
-          trend={passRateTrend}
+          trend={trend}
         />
         <StatCard
           label="Test time"

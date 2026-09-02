@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
 
@@ -9,20 +12,51 @@ import {
   type EntryPath,
 } from "@/components/project-entry-picker";
 import { Button } from "@/components/ui";
-import { project } from "@/lib/demo-data";
 
 /**
  * Fullscreen modal-style route. Reuses the dual entry picker so onboarding
  * and new-project cannot drift apart.
  */
 export default function NewProjectPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [entryPath, setEntryPath] = useState<EntryPath>("requirements");
-  const finishHref =
-    entryPath === "requirements"
-      ? `/projects/${project.id}/prd/new`
-      : `/projects/${project.id}/discovery`;
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+
   const finishLabel =
     entryPath === "requirements" ? "Analyse requirements" : "Start exploration";
+
+  /**
+   * Creates the project, then continues into it. This used to be a plain link
+   * into the demo project's id, so "New project" created nothing and dropped
+   * you into ShopStack whatever you typed.
+   */
+  async function createAndContinue() {
+    if (!name.trim()) {
+      toast({ tone: "error", title: "Name required", body: "Give the project a name." });
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ tone: "error", title: "Could not create project", body: data.error });
+        return;
+      }
+      const next = entryPath === "requirements" ? "prd/new" : "discovery";
+      router.push(`/projects/${data.project.id}/${next}`);
+    } catch {
+      toast({ tone: "error", title: "Could not create project", body: "The request failed." });
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-8">
@@ -43,6 +77,19 @@ export default function NewProjectPage() {
         </Link>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="project-name" className="text-label-md text-secondary">
+          Project name
+        </label>
+        <input
+          id="project-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. ShopStack"
+          className="border-muted bg-raised text-body-md text-primary focus-visible:border-active h-9 rounded-lg border px-3 focus-visible:outline-none"
+        />
+      </div>
+
       <ProjectEntryPicker
         initialPath={entryPath}
         showAdvanced
@@ -53,11 +100,14 @@ export default function NewProjectPage() {
         <Link href="/projects">
           <Button variant="ghost">Cancel</Button>
         </Link>
-        <Link href={finishHref}>
-          <Button variant="primary" icon={ArrowRight}>
-            {finishLabel}
-          </Button>
-        </Link>
+        <Button
+          variant="primary"
+          icon={ArrowRight}
+          disabled={creating}
+          onClick={() => void createAndContinue()}
+        >
+          {creating ? "Creating…" : finishLabel}
+        </Button>
       </div>
     </div>
   );

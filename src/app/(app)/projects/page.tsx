@@ -1,5 +1,5 @@
 import { currentUserId } from "@/lib/auth";
-import { listProjectsWithStats, workspaceStats } from "@/db/queries";
+import { listProjectsWithStats, passRateTrend, workspaceStats } from "@/db/queries";
 
 import { ProjectsTable } from "./projects-table";
 
@@ -10,9 +10,11 @@ import { ProjectsTable } from "./projects-table";
  */
 export default async function ProjectsPage() {
   const userId = await currentUserId();
-  const [projects, stats] = await Promise.all([
+  const [projects, stats, trend] = await Promise.all([
     listProjectsWithStats(userId),
     workspaceStats(userId),
+    // Workspace-wide: null project means every suite the user owns.
+    passRateTrend(userId, null),
   ]);
-  return <ProjectsTable projects={projects} stats={stats} />;
+  return <ProjectsTable projects={projects} stats={stats} trend={trend} />;
 }

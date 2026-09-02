@@ -5,8 +5,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { Button, Card, Chip, PageHeader, Sparkline, StatCard, cn } from "@/components/ui";
 import { notFound } from "next/navigation";
 
-import { failureClusters } from "@/lib/demo-data";
-import { coverageByPage, projectAnalytics, releaseGate, resolveProject } from "@/db/queries";
+import { coverageByPage, projectAnalytics, releaseGate, resolveProject, rootCauseAnalysis } from "@/db/queries";
 import { currentUserId } from "@/lib/auth";
 
 /** Confidence bands stand in for a percentage the snapshots do not record. */
@@ -28,6 +27,15 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
   const a = await projectAnalytics(userId, project.id);
   const coverage = await coverageByPage(userId, project.id);
   const gate = await releaseGate(userId, project.id);
+
+  // Clusters come from the same grouping the Root Cause screen uses, so the
+  // two screens cannot disagree about why things are failing.
+  const { groups } = await rootCauseAnalysis(userId, project.id);
+  const failureClusters = groups.map((g) => ({
+    name: g.category,
+    tests: g.tests.length,
+    cause: (g.latest.errorMessage ?? "No error message recorded.").split("\n")[0].slice(0, 160),
+  }));
 
   return (
     <PageBody>
@@ -159,6 +167,11 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         subtitle="Failures grouped by shared root cause"
       >
         <div className="flex flex-col gap-3">
+          {failureClusters.length === 0 && (
+            <p className="text-body-md text-tertiary">
+              No failures recorded, so there is nothing to group.
+            </p>
+          )}
           {failureClusters.map((cluster) => (
             <div
               key={cluster.name}

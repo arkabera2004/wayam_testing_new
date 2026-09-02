@@ -212,15 +212,15 @@ nothing here reads as working when it is still demo data.
 
 | Route | Data | Screen |
 |---|---|---|
-| `/projects` | Postgres (pass-rate sparkline is still demo) | All projects with live counts |
-| `/projects/[id]` | Partly demo (`runs`, `suiteSize`, trend) | Project overview |
+| `/projects` | Postgres | All projects with live counts |
+| `/projects/[id]` | Postgres | Project overview |
 | `/projects/[id]/plan` | Postgres | Test plan; approve or reject scenarios |
 | `/projects/[id]/tests` | Postgres | Generated specs, run/export actions |
 | `/projects/[id]/tests/[testId]` | Postgres | One spec and its code |
 | `/projects/[id]/runs` | Postgres | Run history |
 | `/projects/[id]/runs/[runId]` | Postgres | One run and its results |
 | `/projects/[id]/runs/[runId]/results/[resultId]` | Postgres | One result, with screenshot |
-| `/projects/[id]/analytics` | Postgres (failure clusters are demo) | Trends over recent runs |
+| `/projects/[id]/analytics` | Postgres | Trends over recent runs |
 | `/projects/[id]/healing` | Postgres | Proposed and applied locator repairs |
 | `/projects/[id]/quarantine` | Postgres | Quarantined tests |
 | `/projects/[id]/discovery` | Postgres | Crawled pages and API endpoints |
@@ -372,5 +372,7 @@ Stated plainly so nothing here reads as working when it is not.
   The Billing tabs show the execution time that is actually measured.
 - **Members lists show one identity** — the tenant everything runs as, because
   authentication is off. There are no real colleagues to list.
-- **Project overview and Analytics are still partly demo**: the overview's
-  recent-runs summary and pass-rate trend, and Analytics' failure clusters.
+- **Every screen now reads from Postgres.** What remains from the demo module
+  is presentation only: shared TypeScript types, the GitHub Actions workflow
+  template, the analysis-stage labels on the PRD upload flow, and the sample
+  text behind its "load an example" button.
