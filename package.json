@@ -11,7 +11,8 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:seed": "dotenv -e .env.local -- tsx scripts/seed.mts",
     "db:seed:selftest": "dotenv -e .env.local -- tsx scripts/seed-selftest.mts",
-    "db:seed:shopstack-code": "dotenv -e .env.local -- tsx scripts/seed-shopstack-code.mts"
+    "db:seed:shopstack-code": "dotenv -e .env.local -- tsx scripts/seed-shopstack-code.mts",
+    "db:seed:screens": "dotenv -e .env.local -- tsx scripts/seed-screens.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

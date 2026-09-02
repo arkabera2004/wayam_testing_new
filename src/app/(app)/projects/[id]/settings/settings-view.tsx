@@ -16,7 +16,7 @@ import {
 } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import type { Project } from "@/db/schema";
-import { invoices, workspace } from "@/lib/demo-data";
+
 
 const TABS = ["General", "Environments", "Test generation", "Notifications", "Billing"] as const;
 
@@ -46,9 +46,18 @@ function Field({
   );
 }
 
-export function ProjectSettingsView({ id, project }: { id: string; project: Project }) {
+export function ProjectSettingsView({
+  id,
+  project,
+  testMinutes,
+  runCount,
+}: {
+  id: string;
+  project: Project;
+  testMinutes: number;
+  runCount: number;
+}) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("General");
-  const usagePct = Math.round((workspace.minutesUsed / workspace.minutesTotal) * 100);
 
   return (
     <div className="flex h-full flex-col">
@@ -218,56 +227,28 @@ export function ProjectSettingsView({ id, project }: { id: string; project: Proj
           )}
 
           {tab === "Billing" && (
-            <>
-              <Card title="Current plan">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="font-display text-display-sm text-primary">{workspace.plan}</p>
-                    <p className="text-body-md text-tertiary mt-1">
-                      Usage-based. Unlimited seats.
-                    </p>
-                  </div>
-                  <ActionButton variant="primary" title="Billing portal unavailable" body="Plan changes need a billing provider.">Upgrade</ActionButton>
+            <Card title="Usage">
+              <p className="text-body-md text-tertiary">
+                No billing provider is connected, so there is no plan, quota or invoice for this
+                project. What follows is the execution time actually recorded.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-8">
+                <div>
+                  <p className="font-display text-display-sm text-primary tabular">
+                    {testMinutes.toLocaleString()}
+                  </p>
+                  <p className="text-label-md text-secondary mt-1">Test minutes executed</p>
                 </div>
-
-                <div className="mt-5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-label-md text-secondary">Test minutes</span>
-                    <span className="text-label-sm text-tertiary tabular">
-                      {workspace.minutesUsed.toLocaleString()} /{" "}
-                      {workspace.minutesTotal.toLocaleString()}
-                    </span>
-                  </div>
-                  <ProgressBar value={usagePct} className="mt-2" />
+                <div>
+                  <p className="font-display text-display-sm text-primary tabular">
+                    {runCount.toLocaleString()}
+                  </p>
+                  <p className="text-label-md text-secondary mt-1">Runs recorded</p>
                 </div>
-              </Card>
-
-              <Card title="Invoices" padded={false}>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Invoice</Th>
-                      <Th>Date</Th>
-                      <Th className="text-right">Amount</Th>
-                      <Th>Status</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.map((inv) => (
-                      <tr key={inv.id}>
-                        <Td className="text-primary tabular">{inv.id}</Td>
-                        <Td>{inv.date}</Td>
-                        <Td className="tabular text-right">{inv.amount}</Td>
-                        <Td>
-                          <Chip tone="success">{inv.status}</Chip>
-                        </Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Card>
-            </>
+              </div>
+            </Card>
           )}
+
         </PageBody>
       </div>
     </div>

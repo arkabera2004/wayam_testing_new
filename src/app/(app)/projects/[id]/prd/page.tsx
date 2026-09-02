@@ -13,10 +13,34 @@ import {
   Th,
 } from "@/components/ui";
 import { Icon3D } from "@/components/ui/icon-3d";
-import { prdDocuments } from "@/lib/prd-data";
+import { notFound } from "next/navigation";
+
+import { currentUserId } from "@/lib/auth";
+import { relativeTime } from "@/lib/format";
+import { listPrdDocuments, resolveProject } from "@/db/queries";
 
 export default async function PrdListPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const userId = await currentUserId();
+
+  const project = await resolveProject(userId, id);
+  if (!project) notFound();
+
+  const rows = await listPrdDocuments(userId, project.id);
+
+  // The table was written against a demo shape; map once here rather than
+  // rewriting every cell. "analysed" is the spelling the markup checks.
+  const prdDocuments = rows.map((d) => ({
+    id: d.id,
+    title: d.name,
+    source: d.body ? "Pasted" : "Uploaded",
+    words: d.words,
+    requirements: d.requirements,
+    cases: d.cases,
+    ambiguities: d.ambiguities,
+    analysed: d.uploadedAt ? relativeTime(d.uploadedAt) : "",
+    status: d.status === "analyzed" ? ("analysed" as const) : (d.status ?? "analyzing"),
+  }));
 
   return (
     <PageBody>

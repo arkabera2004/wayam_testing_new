@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { resolveProject } from "@/db/queries";
+import { projectUsage, resolveProject } from "@/db/queries";
 import { currentUserId } from "@/lib/auth";
 
 import { ProjectSettingsView } from "./settings-view";
@@ -12,5 +12,14 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
   const project = await resolveProject(userId, id);
   if (!project) notFound();
 
-  return <ProjectSettingsView id={id} project={project} />;
+  const usage = await projectUsage(userId, project.id);
+
+  return (
+    <ProjectSettingsView
+      id={id}
+      project={project}
+      testMinutes={Math.round(usage.testMs / 60000)}
+      runCount={usage.runs}
+    />
+  );
 }

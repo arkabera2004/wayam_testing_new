@@ -46,13 +46,115 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+export const REQUIREMENT_KIND = ["functional", "non-functional", "security", "accessibility"] as const;
+export const REQUIREMENT_PRIORITY = ["P0", "P1", "P2"] as const;
+
 export const requirements = pgTable("requirements", {
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: uuid("project_id").notNull(),
+  /** The PRD this was extracted from, when it came from one. */
+  prdId: uuid("prd_id"),
   title: text("title").notNull(),
   body: text("body").notNull(),
+  kind: text("kind").$type<(typeof REQUIREMENT_KIND)[number]>(),
+  priority: text("priority").$type<(typeof REQUIREMENT_PRIORITY)[number]>(),
+  /** Set when the requirement cannot be tested as written. */
+  ambiguity: text("ambiguity"),
   source: text("source").$type<(typeof REQUIREMENT_SOURCE)[number]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const PRD_STATUS = ["analyzing", "analyzed", "failed"] as const;
+
+export const prdDocuments = pgTable("prd_documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  name: text("name").notNull(),
+  body: text("body"),
+  status: text("status").$type<(typeof PRD_STATUS)[number]>().default("analyzed"),
+  sizeBytes: integer("size_bytes"),
+  sections: integer("sections"),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+/* ---- Code review ---- */
+
+export const REVIEW_RECOMMENDATION = ["APPROVE", "REQUEST_CHANGES", "COMMENT"] as const;
+export const REVIEW_SEVERITY = ["critical", "high", "medium", "low"] as const;
+export const REVIEW_CATEGORY = ["security", "bug", "performance", "style", "test-coverage", "maintainability"] as const;
+
+export const codeReviews = pgTable("code_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  sha: text("sha").notNull(),
+  message: text("message").notNull(),
+  author: text("author"),
+  recommendation: text("recommendation").$type<(typeof REVIEW_RECOMMENDATION)[number]>(),
+  summary: text("summary"),
+  /** Free-text findings that are not anchored to a line. */
+  securityFlags: jsonb("security_flags").$type<string[]>().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+export const codeReviewComments = pgTable("code_review_comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reviewId: uuid("review_id").notNull(),
+  file: text("file").notNull(),
+  line: integer("line"),
+  severity: text("severity").$type<(typeof REVIEW_SEVERITY)[number]>(),
+  category: text("category").$type<(typeof REVIEW_CATEGORY)[number]>(),
+  title: text("title").notNull(),
+  body: text("body"),
+  suggestion: text("suggestion"),
+});
+
+/* ---- Tests derived from documents ---- */
+
+export const DOC_SCENARIO_TAG = ["happy-path", "edge-case", "negative"] as const;
+
+export const docSources = pgTable("doc_sources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  name: text("name").notNull(),
+  sizeBytes: integer("size_bytes"),
+  sections: integer("sections"),
+  parsedAt: timestamp("parsed_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+export const docScenarios = pgTable("doc_scenarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  docId: uuid("doc_id").notNull(),
+  title: text("title").notNull(),
+  expectation: text("expectation"),
+  /** Where in the document this came from, e.g. "§2.1 Express checkout". */
+  source: text("source"),
+  tag: text("tag").$type<(typeof DOC_SCENARIO_TAG)[number]>(),
+  selected: boolean("selected").default(true),
+});
+
+/* ---- Test selection for a diff ---- */
+
+export const testSelections = pgTable("test_selections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  oldSha: text("old_sha"),
+  newSha: text("new_sha"),
+  changedFiles: jsonb("changed_files").$type<string[]>().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+/* ---- API keys ---- */
+
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  /** Shown in the UI. The secret itself is only ever stored hashed. */
+  prefix: text("prefix").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
 });
 
 export const testSuites = pgTable("test_suites", {

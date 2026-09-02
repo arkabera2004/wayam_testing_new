@@ -51,15 +51,41 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
     if (!analysing) return;
 
     if (stage >= analysisStages.length) {
-      const t = setTimeout(() => {
-        toast({
-          tone: "success",
-          title: "Analysis complete",
-          body: "10 requirements extracted, 13 test cases proposed.",
-        });
-        router.push(`/projects/${id}/prd/express-checkout`);
-      }, 500);
-      return () => clearTimeout(t);
+      // Persist the document and go to the row that was actually created.
+      // This used to navigate to a hardcoded demo id, which is not a uuid and
+      // so could only ever 404.
+      let cancelled = false;
+      void (async () => {
+        try {
+          const res = await fetch(`/api/projects/${id}/prd`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: fileName ?? "Pasted PRD", body: text }),
+          });
+          const data = await res.json();
+          if (cancelled) return;
+          if (!res.ok) {
+            toast({ tone: "error", title: "Could not save", body: data.error });
+            setAnalysing(false);
+            setStage(0);
+            return;
+          }
+          toast({
+            tone: "success",
+            title: "Document saved",
+            body: "Requirement extraction is not wired yet, so it is stored without requirements.",
+          });
+          router.push(`/projects/${id}/prd/${data.id}`);
+        } catch {
+          if (cancelled) return;
+          toast({ tone: "error", title: "Could not save", body: "The request failed." });
+          setAnalysing(false);
+          setStage(0);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
 
     const t = setTimeout(() => setStage((s) => s + 1), STAGE_MS);

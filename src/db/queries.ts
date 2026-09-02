@@ -1160,3 +1160,366 @@ export async function sidebarBadgeCounts(userId: string) {
   for (const row of quarantines) empty.get(row.projectId)!.quarantined = row.n;
   return empty;
 }
+
+/* ================================================================== */
+/* Code review                                                         */
+/* ================================================================== */
+
+export async function listCodeReviews(userId: string, projectId: string) {
+  const db = getDb();
+
+  const reviews = await db
+    .select({ r: schema.codeReviews })
+    .from(schema.codeReviews)
+    .innerJoin(schema.projects, eq(schema.codeReviews.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.codeReviews.projectId, projectId)))
+    .orderBy(desc(schema.codeReviews.createdAt))
+    .then((rows) => rows.map((row) => row.r));
+
+  if (reviews.length === 0) return [];
+
+  const comments = await db
+    .select()
+    .from(schema.codeReviewComments)
+    .where(inArray(schema.codeReviewComments.reviewId, reviews.map((r) => r.id)));
+
+  return reviews.map((r) => ({
+    ...r,
+    securityFlags: r.securityFlags ?? [],
+    comments: comments.filter((c) => c.reviewId === r.id),
+  }));
+}
+
+/* ================================================================== */
+/* Tests derived from documents                                        */
+/* ================================================================== */
+
+export async function listDocTests(userId: string, projectId: string) {
+  const db = getDb();
+
+  const [doc] = await db
+    .select({ d: schema.docSources })
+    .from(schema.docSources)
+    .innerJoin(schema.projects, eq(schema.docSources.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.docSources.projectId, projectId)))
+    .orderBy(desc(schema.docSources.parsedAt))
+    .limit(1)
+    .then((rows) => rows.map((row) => row.d));
+
+  if (!doc) return { document: null, scenarios: [] };
+
+  const scenarios = await db
+    .select()
+    .from(schema.docScenarios)
+    .where(eq(schema.docScenarios.docId, doc.id));
+
+  return { document: doc, scenarios };
+}
+
+export async function setDocScenarioSelected(userId: string, scenarioId: string, selected: boolean) {
+  if (!UUID.test(scenarioId)) return null;
+  const db = getDb();
+
+  // Ownership runs through doc -> project, so one user cannot toggle another's.
+  const [owned] = await db
+    .select({ id: schema.docScenarios.id })
+    .from(schema.docScenarios)
+    .innerJoin(schema.docSources, eq(schema.docScenarios.docId, schema.docSources.id))
+    .innerJoin(schema.projects, eq(schema.docSources.projectId, schema.projects.id))
+    .where(and(eq(schema.docScenarios.id, scenarioId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .update(schema.docScenarios)
+    .set({ selected })
+    .where(eq(schema.docScenarios.id, scenarioId))
+    .returning();
+  return row;
+}
+
+/* ================================================================== */
+/* Test selection for a diff                                           */
+/* ================================================================== */
+
+/**
+ * Which tests to run for a change. The selection is derived, not stored per
+ * test: a case is selected when its file hint is one of the changed files, or
+ * when it is critical enough that skipping it is not worth the saved minutes.
+ * That way the reasons stay true as the suite changes.
+ */
+export async function testSelectionForLatestDiff(userId: string, projectId: string) {
+  const db = getDb();
+
+  const [selection] = await db
+    .select({ s: schema.testSelections })
+    .from(schema.testSelections)
+    .innerJoin(schema.projects, eq(schema.testSelections.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.testSelections.projectId, projectId)))
+    .orderBy(desc(schema.testSelections.createdAt))
+    .limit(1)
+    .then((rows) => rows.map((row) => row.s));
+
+  const cases = await db
+    .select({
+      id: schema.testCases.id,
+      title: schema.testCases.title,
+      priority: schema.testCases.priority,
+      filePathHint: schema.testCases.filePathHint,
+    })
+    .from(schema.testCases)
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)));
+
+  if (!selection) {
+    return { selection: null, selected: [], skipped: [], summary: null, changedFiles: [] };
+  }
+
+  const changedFiles = selection.changedFiles ?? [];
+  const selected: Array<{ id: string; name: string; priority: string | null; why: string }> = [];
+  const skipped: Array<{ id: string; name: string; why: string }> = [];
+
+  for (const c of cases) {
+    const hit = c.filePathHint && changedFiles.some((f) => f === c.filePathHint);
+    if (hit) {
+      selected.push({ id: c.id, name: c.title, priority: c.priority, why: `Exercises ${c.filePathHint}, which changed.` });
+    } else if (c.priority === "critical") {
+      selected.push({ id: c.id, name: c.title, priority: c.priority, why: "Critical path — always run, whatever the diff touches." });
+    } else {
+      skipped.push({ id: c.id, name: c.title, why: "No changed file reaches this test." });
+    }
+  }
+
+  const total = cases.length;
+  return {
+    selection,
+    changedFiles,
+    selected,
+    skipped,
+    summary: {
+      total,
+      selected: selected.length,
+      skipped: skipped.length,
+      savingsPct: total ? Math.round((skipped.length / total) * 100) : 0,
+    },
+  };
+}
+
+/* ================================================================== */
+/* PRD                                                                 */
+/* ================================================================== */
+
+export async function listPrdDocuments(userId: string, projectId: string) {
+  const db = getDb();
+
+  const docs = await db
+    .select({ d: schema.prdDocuments })
+    .from(schema.prdDocuments)
+    .innerJoin(schema.projects, eq(schema.prdDocuments.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.prdDocuments.projectId, projectId)))
+    .orderBy(desc(schema.prdDocuments.uploadedAt))
+    .then((rows) => rows.map((row) => row.d));
+
+  if (docs.length === 0) return [];
+
+  const prdIds = docs.map((d) => d.id);
+
+  // Every requirement for these documents, with the cases reachable through
+  // its suites. Counted here rather than one query per document.
+  const reqs = await db
+    .select({ id: schema.requirements.id, prdId: schema.requirements.prdId, ambiguity: schema.requirements.ambiguity })
+    .from(schema.requirements)
+    .where(inArray(schema.requirements.prdId, prdIds));
+
+  const caseCounts = reqs.length
+    ? await db
+        .select({ requirementId: schema.testSuites.requirementId, n: count(schema.testCases.id) })
+        .from(schema.testSuites)
+        .leftJoin(schema.testCases, eq(schema.testCases.suiteId, schema.testSuites.id))
+        .where(inArray(schema.testSuites.requirementId, reqs.map((r) => r.id)))
+        .groupBy(schema.testSuites.requirementId)
+    : [];
+
+  return docs.map((d) => {
+    const mine = reqs.filter((r) => r.prdId === d.id);
+    const cases = mine.reduce(
+      (n, r) => n + (caseCounts.find((c) => c.requirementId === r.id)?.n ?? 0),
+      0,
+    );
+    return {
+      ...d,
+      requirements: mine.length,
+      cases,
+      ambiguities: mine.filter((r) => r.ambiguity).length,
+      // Word count from the stored body, so it is the real document length.
+      words: d.body ? d.body.trim().split(/\s+/).filter(Boolean).length : 0,
+    };
+  });
+}
+
+/**
+ * One PRD with its requirements, each carrying real coverage.
+ *
+ * Coverage is derived from the suites linked to a requirement and the cases in
+ * them: no cases is a gap, cases but none automated is partial, otherwise
+ * covered. Nothing here is a stored guess.
+ */
+export async function getPrdDocument(userId: string, projectId: string, prdId: string) {
+  if (!UUID.test(prdId)) return null;
+  const db = getDb();
+
+  const [doc] = await db
+    .select({ d: schema.prdDocuments })
+    .from(schema.prdDocuments)
+    .innerJoin(schema.projects, eq(schema.prdDocuments.projectId, schema.projects.id))
+    .where(
+      and(
+        eq(schema.projects.userId, userId),
+        eq(schema.prdDocuments.projectId, projectId),
+        eq(schema.prdDocuments.id, prdId),
+      ),
+    )
+    .limit(1)
+    .then((rows) => rows.map((row) => row.d));
+  if (!doc) return null;
+
+  const reqs = await db
+    .select()
+    .from(schema.requirements)
+    .where(eq(schema.requirements.prdId, prdId));
+
+  const linked = reqs.length
+    ? await db
+        .select({
+          requirementId: schema.testSuites.requirementId,
+          caseId: schema.testCases.id,
+          title: schema.testCases.title,
+          description: schema.testCases.description,
+          expectedResult: schema.testCases.expectedResult,
+          steps: schema.testCases.steps,
+          type: schema.testCases.type,
+          automation: schema.testCases.automationStatus,
+          priority: schema.testCases.priority,
+        })
+        .from(schema.testSuites)
+        .leftJoin(schema.testCases, eq(schema.testCases.suiteId, schema.testSuites.id))
+        .where(inArray(schema.testSuites.requirementId, reqs.map((r) => r.id)))
+    : [];
+
+  const requirements = reqs.map((r) => {
+    const cases = linked.filter((l) => l.requirementId === r.id && l.caseId);
+    const automated = cases.filter((c) => c.automation === "automated").length;
+    const coverage = cases.length === 0 ? "gap" : automated === 0 ? "partial" : "covered";
+    return { ...r, cases: cases.length, coverage: coverage as "covered" | "partial" | "gap" };
+  });
+
+  const testable = requirements.filter((r) => !r.ambiguity).length;
+  const covered = requirements.filter((r) => r.coverage === "covered").length;
+
+  return {
+    document: doc,
+    requirements,
+    cases: linked.filter((l) => l.caseId),
+    stats: {
+      requirements: requirements.length,
+      testable,
+      cases: linked.filter((l) => l.caseId).length,
+      ambiguities: requirements.length - testable,
+      coverage: requirements.length ? Math.round((covered / requirements.length) * 100) : 0,
+    },
+  };
+}
+
+/* ================================================================== */
+/* API keys                                                            */
+/* ================================================================== */
+
+export async function listApiKeys(userId: string) {
+  const db = getDb();
+  return db
+    .select({
+      id: schema.apiKeys.id,
+      name: schema.apiKeys.name,
+      prefix: schema.apiKeys.prefix,
+      createdAt: schema.apiKeys.createdAt,
+      lastUsedAt: schema.apiKeys.lastUsedAt,
+      revokedAt: schema.apiKeys.revokedAt,
+    })
+    .from(schema.apiKeys)
+    .where(eq(schema.apiKeys.userId, userId))
+    .orderBy(desc(schema.apiKeys.createdAt));
+}
+
+export async function createApiKey(userId: string, name: string, prefix: string, tokenHash: string) {
+  const db = getDb();
+  const [row] = await db.insert(schema.apiKeys).values({ userId, name, prefix, tokenHash }).returning();
+  return row;
+}
+
+export async function revokeApiKey(userId: string, keyId: string) {
+  if (!UUID.test(keyId)) return null;
+  const db = getDb();
+  const [row] = await db
+    .update(schema.apiKeys)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(schema.apiKeys.id, keyId), eq(schema.apiKeys.userId, userId)))
+    .returning();
+  return row ?? null;
+}
+
+/** Execution time actually recorded for one project. Aggregated in SQL. */
+export async function projectUsage(userId: string, projectId: string) {
+  const db = getDb();
+
+  const suites = await db
+    .select({ id: schema.testSuites.id })
+    .from(schema.testSuites)
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.testSuites.projectId, projectId)));
+  const ids = suites.map((s) => s.id);
+  if (ids.length === 0) return { runs: 0, testMs: 0 };
+
+  const [[runs], [totals]] = await Promise.all([
+    db.select({ n: count() }).from(schema.testRuns).where(inArray(schema.testRuns.suiteId, ids)),
+    db
+      .select({ testMs: sql<number>`coalesce(sum(${schema.testRunResults.durationMs}), 0)`.mapWith(Number) })
+      .from(schema.testRunResults)
+      .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+      .where(inArray(schema.testRuns.suiteId, ids)),
+  ]);
+
+  return { runs: runs.n, testMs: totals.testMs };
+}
+
+export async function createPrdDocument(
+  userId: string,
+  projectId: string,
+  input: { name: string; body: string },
+) {
+  const db = getDb();
+
+  // Ownership check before the insert, so a foreign project id cannot seed
+  // documents into someone else's workspace.
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .insert(schema.prdDocuments)
+    .values({
+      projectId,
+      name: input.name,
+      body: input.body,
+      // Requirement extraction is not wired, so the document is stored as
+      // uploaded rather than claiming an analysis that did not run.
+      status: "analyzing",
+      sizeBytes: Buffer.byteLength(input.body, "utf8"),
+      sections: input.body.split(/^#{1,6}\s/m).length - 1,
+    })
+    .returning();
+  return row;
+}

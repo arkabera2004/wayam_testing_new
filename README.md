@@ -227,17 +227,17 @@ nothing here reads as working when it is still demo data.
 | `/projects/[id]/map` | Postgres | Application map |
 | `/projects/[id]/root-cause` | Postgres | Failure clustering |
 | `/projects/[id]/prioritization` | Postgres | Risk-ranked tests |
-| `/projects/[id]/test-selection` | **Demo data** | What to run for a change |
+| `/projects/[id]/test-selection` | Postgres (selection derived live) | What to run for a change |
 | `/projects/[id]/defect-prediction` | Postgres | Predicted defect hotspots |
 | `/projects/[id]/release-gate` | Postgres | Go / no-go readiness |
 | `/projects/[id]/repo-baseline` | Postgres | Repository scan baseline |
-| `/projects/[id]/code-review` | **Demo data** | Review surface |
-| `/projects/[id]/prd`, `/prd/new`, `/prd/[prdId]` | **Demo data** | Requirements |
-| `/projects/[id]/doc-tests` | **Demo data** | Tests derived from docs |
+| `/projects/[id]/code-review` | Postgres | Review findings per commit |
+| `/projects/[id]/prd`, `/prd/new`, `/prd/[prdId]` | Postgres | Requirements; coverage derived from the suite |
+| `/projects/[id]/doc-tests` | Postgres | Tests derived from docs |
 | `/projects/[id]/integrations` | Postgres (GitHub is real) | Slack/Jira inert |
-| `/projects/[id]/settings` | Partly demo (billing) | Project settings |
+| `/projects/[id]/settings` | Postgres | Project settings; usage is measured, no billing provider |
 | `/notifications` | Postgres | Notifications |
-| `/settings` | **Demo data** | Workspace, users, API keys, invoices |
+| `/settings` | Postgres | Workspace; API keys are real (create/revoke) |
 
 ---
 
@@ -363,9 +363,14 @@ Stated plainly so nothing here reads as working when it is not.
   which is what the `jobs` table anticipates.
 - **Auto-heal on failure** is not wired. Healing is proposed and applied
   through the Self-Healing screen.
-- **Six screens still render demo data**, marked in the Screens table:
-  Code Review, Doc Tests, Test Selection, the PRD screens, and workspace
-  Settings. Project overview, Analytics and project Settings are partly demo
-  (recent-runs summary, failure clusters, billing). The tables behind most of
-  these do not exist yet, so wiring them means designing schema, not just
-  swapping an import.
+- **Requirement extraction is not wired.** Pasting a PRD stores the document
+  and it appears in the list, but nothing parses requirements out of it — the
+  document is saved with status `analyzing` rather than claiming an analysis
+  that did not run. Requirements seeded by `db:seed:screens` do get real
+  coverage, derived from the suites linked to them.
+- **No billing provider**, so there is no plan, quota or invoice anywhere.
+  The Billing tabs show the execution time that is actually measured.
+- **Members lists show one identity** — the tenant everything runs as, because
+  authentication is off. There are no real colleagues to list.
+- **Project overview and Analytics are still partly demo**: the overview's
+  recent-runs summary and pass-rate trend, and Analytics' failure clusters.
