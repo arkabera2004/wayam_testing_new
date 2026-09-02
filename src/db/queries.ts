@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 
 /** Server-side copy of the relative-time format, so both sides agree. */
 function relativeLabel(value: Date | null): string {
@@ -56,6 +56,7 @@ export async function resolveProject(userId: string, idOrSlug: string) {
 }
 
 export async function getProject(userId: string, projectId: string) {
+  if (!UUID.test(projectId)) return null;
   const db = getDb();
   const [row] = await db
     .select()
@@ -149,6 +150,9 @@ export async function listRuns(userId: string, projectId: string, limit = 20) {
 }
 
 export async function getRunWithResults(userId: string, runId: string) {
+  // Postgres raises on a malformed uuid rather than returning no rows, so a
+  // stale link like /runs/137 became a 500 instead of a not-found.
+  if (!UUID.test(runId)) return null;
   const db = getDb();
   const [run] = await db
     .select({ run: schema.testRuns })
@@ -329,27 +333,30 @@ export async function workspaceStats(userId: string) {
     return { projects: projects.length, tests: 0, passRate: null, testMs: 0, runs: 0 };
   }
 
-  const [[tests], runs] = await Promise.all([
+  // Aggregate in SQL. This used to select every run id, then every result row
+  // for those runs, and reduce them in JS — so the query grew one bind
+  // parameter per run and eventually timed out once the history was long
+  // enough. These return a single row no matter how much history exists.
+  const [[tests], [runCount], [totals]] = await Promise.all([
     db.select({ n: count() }).from(schema.testCases).where(inArray(schema.testCases.suiteId, suiteIds)),
-    db.select({ id: schema.testRuns.id }).from(schema.testRuns).where(inArray(schema.testRuns.suiteId, suiteIds)),
+    db.select({ n: count() }).from(schema.testRuns).where(inArray(schema.testRuns.suiteId, suiteIds)),
+    db
+      .select({
+        total: count(),
+        passed: sql<number>`count(*) filter (where ${schema.testRunResults.status} = 'pass')`.mapWith(Number),
+        testMs: sql<number>`coalesce(sum(${schema.testRunResults.durationMs}), 0)`.mapWith(Number),
+      })
+      .from(schema.testRunResults)
+      .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+      .where(inArray(schema.testRuns.suiteId, suiteIds)),
   ]);
 
-  if (runs.length === 0) {
-    return { projects: projects.length, tests: tests.n, passRate: null, testMs: 0, runs: 0 };
-  }
-
-  const results = await db
-    .select({ status: schema.testRunResults.status, durationMs: schema.testRunResults.durationMs })
-    .from(schema.testRunResults)
-    .where(inArray(schema.testRunResults.runId, runs.map((r) => r.id)));
-
-  const passed = results.filter((r) => r.status === "pass").length;
   return {
     projects: projects.length,
     tests: tests.n,
-    passRate: results.length ? Math.round((passed / results.length) * 1000) / 10 : null,
-    testMs: results.reduce((n, r) => n + (r.durationMs ?? 0), 0),
-    runs: runs.length,
+    passRate: totals.total ? Math.round((totals.passed / totals.total) * 1000) / 10 : null,
+    testMs: totals.testMs,
+    runs: runCount.n,
   };
 }
 
@@ -505,6 +512,7 @@ export async function setCaseApproved(userId: string, caseId: string, approved: 
 export type TestCaseDetail = NonNullable<Awaited<ReturnType<typeof getTestCase>>>;
 
 export async function getTestCase(userId: string, caseId: string) {
+  if (!UUID.test(caseId)) return null;
   const db = getDb();
 
   const [row] = await db
@@ -552,6 +560,8 @@ export async function getTestCase(userId: string, caseId: string) {
  */
 export type ProjectAnalytics = Awaited<ReturnType<typeof projectAnalytics>>;
 
+const ANALYTICS_RUN_WINDOW = 50;
+
 export async function projectAnalytics(userId: string, projectId: string) {
   const db = getDb();
   const ids = await ownedSuiteIds(userId, projectId);
@@ -567,11 +577,17 @@ export async function projectAnalytics(userId: string, projectId: string) {
   };
   if (ids.length === 0) return empty;
 
-  const runs = await db
+  // Bounded to a recent window. Unbounded, this built one bind parameter per
+  // run for the results query below, which grew until the query timed out.
+  // The charts show a trend, so the newest runs are the ones that matter.
+  const recent = await db
     .select({ id: schema.testRuns.id, startedAt: schema.testRuns.startedAt })
     .from(schema.testRuns)
     .where(inArray(schema.testRuns.suiteId, ids))
-    .orderBy(schema.testRuns.startedAt);
+    .orderBy(desc(schema.testRuns.startedAt))
+    .limit(ANALYTICS_RUN_WINDOW);
+  // Back to oldest-first, which is the order the trend charts expect.
+  const runs = recent.reverse();
   if (runs.length === 0) return empty;
 
   const results = await db
@@ -1018,6 +1034,7 @@ export async function coverageByPage(userId: string, projectId: string) {
 
 /** One recorded result, with its case and run. */
 export async function getResult(userId: string, runId: string, resultId: string) {
+  if (!UUID.test(runId) || !UUID.test(resultId)) return null;
   const db = getDb();
   const [row] = await db
     .select({ result: schema.testRunResults, testCase: schema.testCases, run: schema.testRuns })
@@ -1045,4 +1062,60 @@ export async function getResult(userId: string, runId: string, resultId: string)
     playwrightCode: row.testCase.playwrightCode,
     runStartedAt: row.run.startedAt,
   };
+}
+
+/* ---- GitHub connection (one per user) ---- */
+
+export async function getGithubConnection(userId: string) {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(schema.githubConnections)
+    .where(eq(schema.githubConnections.userId, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Upsert by user: reconnecting replaces the stored token rather than piling up rows. */
+export async function saveGithubConnection(
+  userId: string,
+  accessTokenEncrypted: string,
+  githubUsername: string,
+) {
+  const db = getDb();
+  const existing = await getGithubConnection(userId);
+  if (existing) {
+    const [row] = await db
+      .update(schema.githubConnections)
+      .set({ accessTokenEncrypted, githubUsername, connectedAt: new Date() })
+      .where(eq(schema.githubConnections.id, existing.id))
+      .returning();
+    return row;
+  }
+  const [row] = await db
+    .insert(schema.githubConnections)
+    .values({ userId, accessTokenEncrypted, githubUsername })
+    .returning();
+  return row;
+}
+
+export async function deleteGithubConnection(userId: string) {
+  const db = getDb();
+  await db.delete(schema.githubConnections).where(eq(schema.githubConnections.userId, userId));
+}
+
+/** Test cases that carry executable code, for exporting specs to a repository. */
+export async function listExecutableCases(userId: string, projectId: string) {
+  const db = getDb();
+  return db
+    .select({
+      id: schema.testCases.id,
+      name: schema.testCases.title,
+      code: schema.testCases.playwrightCode,
+    })
+    .from(schema.testCases)
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)))
+    .then((rows) => rows.filter((r) => r.code?.trim()));
 }

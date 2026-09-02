@@ -18,7 +18,6 @@ export default async function TestsPage({ params }: { params: Promise<{ id: stri
     <TestsTable
       id={id}
       tests={tests}
-      repo={project.githubRepoUrl?.replace("https://github.com/", "") ?? project.name}
     />
   );
 }

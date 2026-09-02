@@ -19,7 +19,14 @@ type NotificationsContextValue = {
   markAllRead: () => void;
 };
 
-const NotificationsContext = createContext<NotificationsContextValue | null>(null);
+/** Inert default for the same partial-RSC-render reason as the theme context. */
+const FALLBACK_NOTIFICATIONS: NotificationsContextValue = {
+  unread: 0,
+  isUnread: () => false,
+  markAllRead: () => {},
+};
+
+const NotificationsContext = createContext<NotificationsContextValue>(FALLBACK_NOTIFICATIONS);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [readIds, setReadIds] = useState<Set<number>>(() => new Set());
@@ -51,7 +58,5 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 }
 
 export function useNotifications(): NotificationsContextValue {
-  const ctx = useContext(NotificationsContext);
-  if (!ctx) throw new Error("useNotifications must be used inside NotificationsProvider");
-  return ctx;
+  return useContext(NotificationsContext);
 }

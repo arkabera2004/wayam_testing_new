@@ -26,7 +26,8 @@ type ToastContextValue = {
   toast: (t: Omit<Toast, "id">) => void;
 };
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+/** Inert default for the same partial-RSC-render reason as the theme context. */
+const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 
 const TONES: Record<ToastTone, { icon: typeof Check; chip: string; border: string }> = {
   success: { icon: Check, chip: "bg-success-surface text-success", border: "border-success-stroke/50" },
@@ -114,7 +115,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export function useToast(): ToastContextValue {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
+  return useContext(ToastContext);
 }

@@ -18,7 +18,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const items = useMemo<Item[]>(
     () => [
-      { group: "Actions", label: "Run smoke suite", hint: "12 tests", href: `${base}/runs/137` },
+      { group: "Actions", label: "Open runs", hint: "execution history", href: `${base}/runs` },
       { group: "Actions", label: "New project", href: "/projects/new" },
       { group: "Actions", label: "Export tests to repo", href: `${base}/tests` },
       { group: "Pages", label: "Application Map", href: `${base}/map` },

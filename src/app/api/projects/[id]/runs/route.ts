@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { currentUserId } from "@/lib/auth";
 import { listRuns, resolveProject } from "@/db/queries";
-import { runSuite } from "@/lib/test-runner";
+import { RunInProgressError, runSuite } from "@/lib/test-runner";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,7 +30,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json().catch(() => ({}));
 
   try {
-    const outcome = await runSuite(project.id, { baseUrl: body?.baseUrl });
+    const caseIds = Array.isArray(body?.caseIds)
+      ? body.caseIds.filter((c: unknown): c is string => typeof c === "string")
+      : undefined;
+
+    const outcome = await runSuite(project.id, { baseUrl: body?.baseUrl, caseIds });
 
     // The runs table and overview are server-rendered, so a client-side
     // router.refresh() alone would re-request a still-cached payload and the
@@ -42,9 +46,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (err) {
     // A suite with nothing runnable is a normal state to be told about, not a
     // server fault, so it comes back as a 422 with the reason.
+    // 409 for "already running" so a client can distinguish a temporary
+    // conflict from a suite that can never run as configured.
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Run failed" },
-      { status: 422 },
+      { status: err instanceof RunInProgressError ? 409 : 422 },
     );
   }
 }

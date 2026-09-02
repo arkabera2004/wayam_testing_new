@@ -15,19 +15,35 @@ import { useToast } from "@/components/ui/toast";
  * that changes — the endpoint would return a queued run id and the page would
  * poll for it.
  */
-export function RunSuiteButton({ projectSlug }: { projectSlug: string }) {
+export function RunSuiteButton({
+  projectSlug,
+  caseIds,
+  label = "Run suite",
+  ...rest
+}: {
+  projectSlug: string;
+  /** Omit to run everything; pass ids to run only those cases. */
+  caseIds?: string[];
+  label?: string;
+  size?: "sm" | "md";
+  variant?: "primary" | "secondary";
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [running, setRunning] = useState(false);
 
   async function run() {
     setRunning(true);
-    toast({ tone: "info", title: "Running suite", body: "Executing specs in a real browser." });
+    toast({
+      tone: "info",
+      title: caseIds?.length ? `Running ${caseIds.length} test${caseIds.length === 1 ? "" : "s"}` : "Running suite",
+      body: "Executing specs in a real browser.",
+    });
     try {
       const res = await fetch(`/api/projects/${projectSlug}/runs`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: "{}",
+        body: JSON.stringify(caseIds?.length ? { caseIds } : {}),
       });
       const data = await res.json();
 
@@ -51,8 +67,8 @@ export function RunSuiteButton({ projectSlug }: { projectSlug: string }) {
   }
 
   return (
-    <Button variant="primary" icon={Play} onClick={run} disabled={running}>
-      {running ? "Running…" : "Run suite"}
+    <Button variant="primary" icon={Play} {...rest} onClick={run} disabled={running}>
+      {running ? "Running…" : label}
     </Button>
   );
 }

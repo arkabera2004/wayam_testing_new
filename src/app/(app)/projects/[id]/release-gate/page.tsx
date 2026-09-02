@@ -224,7 +224,7 @@ export default async function ReleaseGatePage({ params }: { params: Promise<{ id
         <Link href={`/projects/${id}/code-review`}>
           <Button icon={undefined}>Review the blocking commit</Button>
         </Link>
-        <Link href={`/projects/${id}/runs/137`}>
+        <Link href={g.latestRun ? `/projects/${id}/runs/${g.latestRun.id}` : `/projects/${id}/runs`}>
           <Button variant="ghost">Open the last run</Button>
         </Link>
       </div>

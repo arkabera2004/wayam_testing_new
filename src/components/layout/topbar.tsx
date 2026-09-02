@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { Button, cn } from "@/components/ui";
 import { AppIcon } from "@/components/ui/app-icon";
+import { RunSuiteButton } from "@/components/run-suite-button";
 import { icons } from "@/lib/icons";
 import { useNotifications } from "@/context/notifications-context";
 import { project } from "@/lib/demo-data";
@@ -64,9 +65,12 @@ function useBreadcrumbs() {
 
 export function Topbar() {
   const crumbs = useBreadcrumbs();
-  const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { unread } = useNotifications();
+  const slugMatch = usePathname().match(/^\/projects\/([^/]+)/)?.[1] ?? null;
+  // "/projects/new" is the create form, not a project — running a suite there
+  // would POST to an id that does not exist.
+  const slugInUrl = slugMatch === "new" ? null : slugMatch;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -128,13 +132,17 @@ export function Topbar() {
 
         <ThemeToggle />
 
-        <Button
-          variant="primary"
-          icon={icons.play}
-          onClick={() => router.push(`/projects/${project.id}/runs/137`)}
-        >
-          Run suite
-        </Button>
+        {/* Runs the suite for the project in the URL. It used to navigate to
+            a hardcoded run id, which is not a uuid and 500'd the run page. */}
+        {slugInUrl ? (
+          <RunSuiteButton projectSlug={slugInUrl} />
+        ) : (
+          <Link href="/projects">
+            <Button variant="primary" icon={icons.play}>
+              Run suite
+            </Button>
+          </Link>
+        )}
 
         <Link
           href="/notifications"

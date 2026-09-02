@@ -69,7 +69,49 @@ export type RunOutcome = {
   durationMs: number;
 };
 
-export async function runSuite(projectId: string, opts?: { baseUrl?: string }): Promise<RunOutcome> {
+/**
+ * One suite execution per project at a time. Each run spawns a Playwright
+ * process and a browser, so a double-clicked button (or an impatient user on
+ * two tabs) could otherwise fan out into several concurrent runs that thrash
+ * the machine and race each other writing results.
+ */
+const inFlight = new Map<string, { key: string; promise: Promise<RunOutcome> }>();
+
+/** Identifies "the same request", so a double-click dedupes but a different
+ *  selection is not silently handed another run's results. */
+function requestKey(opts?: { baseUrl?: string; caseIds?: string[] }) {
+  return JSON.stringify({ baseUrl: opts?.baseUrl ?? null, caseIds: [...(opts?.caseIds ?? [])].sort() });
+}
+
+export class RunInProgressError extends Error {
+  constructor() {
+    super("A run is already in progress for this project. Wait for it to finish.");
+    this.name = "RunInProgressError";
+  }
+}
+
+export function runSuite(
+  projectId: string,
+  opts?: { baseUrl?: string; caseIds?: string[] },
+): Promise<RunOutcome> {
+  const key = requestKey(opts);
+  const existing = inFlight.get(projectId);
+  if (existing) {
+    // Same request: return the run already underway. Different request: refuse,
+    // rather than answer with results for tests the caller did not ask for.
+    if (existing.key === key) return existing.promise;
+    return Promise.reject(new RunInProgressError());
+  }
+
+  const promise = executeSuite(projectId, opts).finally(() => inFlight.delete(projectId));
+  inFlight.set(projectId, { key, promise });
+  return promise;
+}
+
+async function executeSuite(
+  projectId: string,
+  opts?: { baseUrl?: string; caseIds?: string[] },
+): Promise<RunOutcome> {
   const db = getDb();
 
   const suites = await db
@@ -84,9 +126,20 @@ export async function runSuite(projectId: string, opts?: { baseUrl?: string }): 
     )
   ).flat();
 
-  const runnable = cases.filter((c) => c.playwrightCode?.trim());
+  // A caller can run a subset (row menu / "Run selected"); no list means the whole suite.
+  const wanted = opts?.caseIds?.length ? new Set(opts.caseIds) : null;
+  const scoped = wanted ? cases.filter((c) => wanted.has(c.id)) : cases;
+  if (wanted && scoped.length === 0) {
+    throw new Error("None of the selected tests belong to this project.");
+  }
+
+  const runnable = scoped.filter((c) => c.playwrightCode?.trim());
   if (runnable.length === 0) {
-    throw new Error("No test case has Playwright code yet, so there is nothing to execute.");
+    throw new Error(
+      wanted
+        ? "None of the selected tests have Playwright code yet, so there is nothing to execute."
+        : "No test case has Playwright code yet, so there is nothing to execute.",
+    );
   }
 
   const [run] = await db

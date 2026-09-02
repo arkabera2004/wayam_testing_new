@@ -42,11 +42,9 @@ const FILTERS = ["smoke", "auth", "negative", "edge-case", "happy-path", "quaran
 export function TestsTable({
   id,
   tests,
-  repo,
 }: {
   id: string;
   tests: TestCaseWithStats[];
-  repo: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -76,14 +74,69 @@ export function TestsTable({
       prev.includes(testId) ? prev.filter((x) => x !== testId) : [...prev, testId],
     );
 
+  const [running, setRunning] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Commits the generated specs to the linked repository on a new branch and
+  // opens a pull request. Requires a GitHub connection and a repo URL; the API
+  // says which one is missing rather than failing silently.
+  async function exportToRepo() {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/projects/${id}/export-github`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ tone: "error", title: "Export failed", body: data.error });
+        return;
+      }
+      toast({
+        tone: "success",
+        title: `${data.fileCount} spec${data.fileCount === 1 ? "" : "s"} pushed to ${data.repo}`,
+        body: `Pull request opened on ${data.branch}.`,
+      });
+      window.open(data.prUrl, "_blank", "noopener");
+    } catch {
+      toast({ tone: "error", title: "Export failed", body: "The request could not be completed." });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+
+  // One real code path for the header button, "Run selected" and the row menu.
+  // Passing no ids runs the whole suite; ids run just those cases.
+  async function runTests(caseIds?: string[], what?: string) {
+    setRunning(true);
+    toast({ tone: "info", title: `Running ${what ?? "suite"}`, body: "Executing specs in a real browser." });
+    try {
+      const res = await fetch(`/api/projects/${id}/runs`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(caseIds?.length ? { caseIds } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ tone: "error", title: "Run could not start", body: data.error });
+        return;
+      }
+      toast({
+        tone: data.failed === 0 ? "success" : "warning",
+        title: `${data.passed} of ${data.total} passed`,
+        body: `Finished in ${(data.durationMs / 1000).toFixed(1)}s.`,
+      });
+      router.push(`/projects/${id}/runs/${data.runId}`);
+    } catch {
+      toast({ tone: "error", title: "Run failed", body: "The suite could not be executed." });
+    } finally {
+      setRunning(false);
+    }
+  }
+
   const rowMenu = (testId: string, name: string) => [
     {
       label: "Run this test",
       icon: Play,
-      onSelect: () => {
-        toast({ tone: "info", title: "Test queued", body: name });
-        router.push(`/projects/${id}/runs/137`);
-      },
+      onSelect: () => void runTests([testId], name),
     },
     { label: "Edit code", icon: Pencil, onSelect: () => router.push(`/projects/${id}/tests/${testId}`) },
     {
@@ -111,24 +164,16 @@ export function TestsTable({
         description={`${tests.length} Playwright spec${tests.length === 1 ? "" : "s"} generated from your approved plan.`}
         actions={
           <>
-            <Button
-              icon={Upload}
-              onClick={() =>
-                toast({
-                  tone: "success",
-                  title: "Export started",
-                  body: `${tests.length} specs pushed to ${repo}`,
-                })
-              }
-            >
-              Export all to repo
+            <Button icon={Upload} disabled={exporting} onClick={() => void exportToRepo()}>
+              {exporting ? "Exporting…" : "Export all to repo"}
             </Button>
             <Button
               variant="primary"
               icon={Play}
-              onClick={() => router.push(`/projects/${id}/runs/137`)}
+              disabled={running}
+              onClick={() => void runTests()}
             >
-              Run suite
+              {running ? "Running…" : "Run suite"}
             </Button>
           </>
         }
@@ -191,14 +236,10 @@ export function TestsTable({
               <Button
                 size="sm"
                 icon={Play}
-                onClick={() => {
-                  toast({
-                    tone: "info",
-                    title: `${selected.length} tests queued`,
-                    body: "Running on Chromium, Firefox and WebKit.",
-                  });
-                  router.push(`/projects/${id}/runs/137`);
-                }}
+                disabled={running}
+                onClick={() =>
+                  void runTests(selected, `${selected.length} test${selected.length === 1 ? "" : "s"}`)
+                }
               >
                 Run selected
               </Button>
