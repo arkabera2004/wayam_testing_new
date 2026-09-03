@@ -21,11 +21,78 @@ export type ImportInfo = {
   endpoints: number;
 } | null;
 
-export function ImportPanel({ projectId, info }: { projectId: string; info: ImportInfo }) {
+export function ImportPanel({
+  projectId,
+  info,
+  initialBaseUrl,
+}: {
+  projectId: string;
+  info: ImportInfo;
+  initialBaseUrl: string;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [url, setUrl] = useState(info?.repoUrl ?? "");
   const [busy, setBusy] = useState(false);
+  const [baseUrl, setBaseUrl] = useState(initialBaseUrl);
+
+  /**
+   * Writes a spec per discovered route. The specs need somewhere to navigate,
+   * so the base URL is saved with the project first - without it there is
+   * nothing for a generated test to open.
+   */
+  async function generate() {
+    if (!baseUrl.trim()) {
+      toast({ tone: "error", title: "Base URL required", body: "Where does this application run?" });
+      return;
+    }
+    setBusy(true);
+    try {
+      await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ baseUrl: baseUrl.trim() }),
+      });
+      const res = await fetch(`/api/projects/${projectId}/generate-tests`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ baseUrl: baseUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ tone: "error", title: "Could not generate", body: data.error });
+        return;
+      }
+      toast({
+        tone: "success",
+        title: `${data.generated} specs generated`,
+        body: "One per discovered route. Review them on Tests before running.",
+      });
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function review() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/review-repo`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ tone: "error", title: "Could not review", body: data.error });
+        return;
+      }
+      toast({
+        tone: data.findings ? "warning" : "success",
+        title: `${data.findings} findings across ${data.filesReviewed} files`,
+        body: "Open Code Reviewer to read them.",
+      });
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function run() {
     if (!url.trim()) {
@@ -103,8 +170,33 @@ export function ImportPanel({ projectId, info }: { projectId: string; info: Impo
 
           <p className="text-body-sm text-quaternary">
             Routes and endpoints are derived from the file tree by static analysis, not by crawling
-            the running app. Generating executable specs from arbitrary source is not wired yet.
+            the running app.
           </p>
+
+          <div className="border-muted flex flex-col gap-2 rounded-lg border p-3">
+            <label htmlFor="base-url" className="text-label-md text-secondary">
+              Application base URL
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="base-url"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="http://localhost:5000"
+                className="border-muted bg-raised text-body-md text-primary h-9 min-w-64 flex-1 rounded-lg border px-3 focus-visible:outline-none"
+              />
+              <Button variant="primary" disabled={busy} onClick={() => void generate()}>
+                Generate tests from routes
+              </Button>
+              <Button variant="secondary" disabled={busy} onClick={() => void review()}>
+                Review the source
+              </Button>
+            </div>
+            <p className="text-body-sm text-quaternary">
+              One spec per route, checking the page responds and renders. They are starting points to
+              edit, not finished tests - nothing here has read what the app is supposed to do.
+            </p>
+          </div>
         </div>
       ) : (
         <p className="text-body-md text-tertiary">

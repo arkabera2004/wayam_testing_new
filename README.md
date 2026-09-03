@@ -159,6 +159,15 @@ role+name (1) beats text (0) - and every candidate is gated on `impliedRole`,
 so a search *button* is never healed to a nav link or to the input's label.
 Anything scoring below 30 confidence is discarded rather than guessed at.
 
+**Healing without a running app.** A URL is no longer required. Given one, a
+browser opens the page and reads the live DOM, which is the stronger evidence.
+Without one the imported source is searched instead, since the markup a page
+will render is written there - most projects here are imported code with
+nothing deployed, which previously left them unable to heal at all. Source
+candidates are capped below the live healer's confidence, because source shows
+what is declared rather than what the browser ends up with, and each one names
+the file and line it came from.
+
 `isReachableFromCloud(url)` routes localhost and private IPs to a local
 Chromium. A cloud browser cannot reach your laptop, and letting it try burns a
 billable session to arrive at `ERR_CONNECTION_REFUSED`.
@@ -202,8 +211,22 @@ contents kept for the first 400 source files under 96 KB each; anything beyond
 that is reported as truncated rather than silently dropped.
 
 Private repositories cannot be imported this way, and the error says so.
-Generating executable specs from arbitrary source is **not** wired - the import
-tells you what exists, it does not write tests for it.
+
+### What an import feeds
+
+From Repo Baseline, once something is imported:
+
+- **Generate tests from routes** writes one Playwright spec per discovered
+  route. Each opens the route and checks the app answered without a server
+  error and rendered, plus that a form the source declares is present. It needs
+  the application's base URL, because a spec has to navigate somewhere. These
+  are starting points to edit - nothing has read what the app is meant to do,
+  so they assert only what is true of any working page.
+- **Review the source** runs the fixed rules in `src/lib/repo-review.ts`:
+  credentials written into source, secrets or request bodies logged, SQL built
+  by concatenation, HTML injected without escaping, silently swallowed errors,
+  promises without a rejection handler. Every finding carries a file and line.
+  A clean result means those patterns were absent, not that the code is good.
 
 ## GitHub integration
 
@@ -295,6 +318,8 @@ nothing here reads as working when it is still demo data.
 | `GET` `PATCH` `DELETE` | `/api/projects/[id]` | Accepts a slug or a uuid |
 | `GET` | `/api/projects/[id]/tests` | |
 | `POST` | `/api/projects/[id]/import-repo` | Imports a public repo, no credentials |
+| `POST` | `/api/projects/[id]/generate-tests` | A spec per discovered route |
+| `POST` | `/api/projects/[id]/review-repo` | Static review of the imported source |
 | `GET` `POST` | `/api/projects/[id]/runs` | `POST` executes the suite. Body accepts `caseIds` and `baseUrl` |
 | `POST` | `/api/projects/[id]/heal` | |
 | `POST` | `/api/projects/[id]/export-github` | Opens a PR with the specs |

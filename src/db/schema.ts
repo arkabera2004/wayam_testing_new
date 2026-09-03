@@ -42,6 +42,8 @@ export const projects = pgTable("projects", {
   description: text("description"),
   githubRepoUrl: text("github_repo_url"),
   githubDefaultBranch: text("github_default_branch"),
+  /** Where the app actually runs, so generated specs have somewhere to go. */
+  baseUrl: text("base_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

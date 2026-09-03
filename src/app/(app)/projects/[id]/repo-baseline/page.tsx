@@ -97,7 +97,7 @@ export default async function RepoBaselinePage({ params }: { params: Promise<{ i
         }
       />
 
-      <ImportPanel projectId={id} info={importInfo} />
+      <ImportPanel projectId={id} info={importInfo} initialBaseUrl={project.baseUrl ?? ""} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Existing tests" value={String(b.tests.length)} />

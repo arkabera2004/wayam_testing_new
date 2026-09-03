@@ -79,13 +79,14 @@ export async function createProject(input: {
 }
 
 /** Only these may be changed through the API. */
-const PROJECT_PATCH_FIELDS = ["name", "description", "githubRepoUrl", "githubDefaultBranch"] as const;
+const PROJECT_PATCH_FIELDS = ["name", "description", "githubRepoUrl", "githubDefaultBranch", "baseUrl"] as const;
 
 export type ProjectPatch = Partial<{
   name: string;
   description: string | null;
   githubRepoUrl: string | null;
   githubDefaultBranch: string | null;
+  baseUrl: string | null;
 }>;
 
 export async function updateProject(userId: string, idOrSlug: string, patch: ProjectPatch) {
@@ -1728,4 +1729,182 @@ export async function repoFileSummary(userId: string, projectId: string) {
       .sort((a, b) => b.files - a.files)
       .slice(0, 12),
   };
+}
+
+/**
+ * Replaces the generated suite for a project with specs derived from the
+ * routes discovery found. Generated cases are kept in one suite so a regenerate
+ * cannot touch anything a human wrote by hand in another suite.
+ */
+export async function replaceGeneratedSuite(
+  userId: string,
+  projectId: string,
+  cases: Array<{
+    title: string;
+    description: string;
+    steps: string[];
+    expectedResult: string;
+    priority: "critical" | "high" | "medium" | "low";
+    filePathHint: string;
+    code: string;
+  }>,
+) {
+  const db = getDb();
+
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const SUITE_NAME = "Generated from routes";
+
+  const [existing] = await db
+    .select({ id: schema.testSuites.id })
+    .from(schema.testSuites)
+    .where(and(eq(schema.testSuites.projectId, projectId), eq(schema.testSuites.name, SUITE_NAME)))
+    .limit(1);
+
+  let suiteId = existing?.id;
+  if (suiteId) {
+    await db.delete(schema.testCases).where(eq(schema.testCases.suiteId, suiteId));
+  } else {
+    const [created] = await db
+      .insert(schema.testSuites)
+      .values({ projectId, name: SUITE_NAME, source: "repo_scan" })
+      .returning();
+    suiteId = created.id;
+  }
+
+  if (cases.length === 0) return { suiteId, count: 0 };
+
+  for (let i = 0; i < cases.length; i += 100) {
+    await db.insert(schema.testCases).values(
+      cases.slice(i, i + 100).map((c) => ({
+        suiteId: suiteId as string,
+        title: c.title,
+        description: c.description,
+        type: "ui" as const,
+        steps: c.steps,
+        expectedResult: c.expectedResult,
+        priority: c.priority,
+        generatedByAi: false,
+        // Generated specs start unapproved: a human decides what runs.
+        automationStatus: "manual" as const,
+        playwrightCode: c.code,
+        filePathHint: c.filePathHint,
+      })),
+    );
+  }
+
+  return { suiteId, count: cases.length };
+}
+
+/** Routes discovered for a project, for generating specs against. */
+export async function listDiscoveredRoutes(userId: string, projectId: string) {
+  const db = getDb();
+  return db
+    .select({
+      path: schema.discoveredPages.path,
+      title: schema.discoveredPages.title,
+      forms: schema.discoveredPages.forms,
+      gated: schema.discoveredPages.gated,
+      risk: schema.discoveredPages.risk,
+    })
+    .from(schema.discoveredPages)
+    .innerJoin(schema.projects, eq(schema.discoveredPages.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.discoveredPages.projectId, projectId)));
+}
+
+/** Imported files with readable contents, for healing against the source. */
+export async function listRepoFileContents(userId: string, projectId: string) {
+  const db = getDb();
+  const rows = await db
+    .select({ path: schema.repoFiles.path, content: schema.repoFiles.content })
+    .from(schema.repoFiles)
+    .innerJoin(schema.projects, eq(schema.repoFiles.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.repoFiles.projectId, projectId)));
+  return rows.filter((r) => r.content);
+}
+
+/** Replaces the generated review for a project with findings from the source. */
+export async function replaceRepoReview(
+  userId: string,
+  projectId: string,
+  input: {
+    commitSha: string;
+    repo: string;
+    filesReviewed: number;
+    findings: Array<{
+      file: string;
+      line: number;
+      severity: string;
+      category: string;
+      title: string;
+      body: string;
+      suggestion: string;
+    }>;
+  },
+) {
+  const db = getDb();
+
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const existing = await db
+    .select({ id: schema.codeReviews.id })
+    .from(schema.codeReviews)
+    .where(eq(schema.codeReviews.projectId, projectId));
+  if (existing.length) {
+    await db
+      .delete(schema.codeReviewComments)
+      .where(inArray(schema.codeReviewComments.reviewId, existing.map((r) => r.id)));
+    await db.delete(schema.codeReviews).where(eq(schema.codeReviews.projectId, projectId));
+  }
+
+  const critical = input.findings.filter((f) => f.severity === "critical").length;
+  const high = input.findings.filter((f) => f.severity === "high").length;
+
+  const [review] = await db
+    .insert(schema.codeReviews)
+    .values({
+      projectId,
+      sha: input.commitSha.slice(0, 7),
+      message: `Static review of ${input.repo}`,
+      author: "Parikshan",
+      recommendation: critical > 0 ? "REQUEST_CHANGES" : high > 0 ? "COMMENT" : "APPROVE",
+      summary:
+        input.findings.length === 0
+          ? `Read ${input.filesReviewed} files and none matched the patterns checked. That is not the same as no defects - these rules only catch what they describe.`
+          : `Read ${input.filesReviewed} files and found ${input.findings.length} ${input.findings.length === 1 ? "issue" : "issues"}: ${critical} critical, ${high} high. Each says the file and line it came from.`,
+      securityFlags: input.findings
+        .filter((f) => f.category === "security" && (f.severity === "critical" || f.severity === "high"))
+        .slice(0, 6)
+        .map((f) => `${f.title} - ${f.file}:${f.line}`),
+    })
+    .returning();
+
+  if (input.findings.length) {
+    for (let i = 0; i < input.findings.length; i += 100) {
+      await db.insert(schema.codeReviewComments).values(
+        input.findings.slice(i, i + 100).map((f) => ({
+          reviewId: review.id,
+          file: f.file,
+          line: f.line,
+          severity: f.severity as (typeof schema.REVIEW_SEVERITY)[number],
+          category: f.category as (typeof schema.REVIEW_CATEGORY)[number],
+          title: f.title,
+          body: f.body,
+          suggestion: f.suggestion,
+        })),
+      );
+    }
+  }
+
+  return { reviewId: review.id, findings: input.findings.length };
 }
