@@ -184,10 +184,19 @@ The token is never returned by any endpoint and never rendered.
 disconnects (which deletes the row).
 
 **Exporting specs.** "Export all to repo" on the Tests screen commits every
-case that has Playwright code to `tests/parikshan/<slug>.spec.ts` on a new
-timestamped branch, then opens a pull request against the default branch. It
-is a PR rather than a direct push so the export is reviewable. Filenames that
-would collide get the case id appended. It requires both a connection and a
+case that has Playwright code to `tests/parikshan/<slug>.spec.ts` in a single
+commit on a new timestamped branch, then opens a pull request against the
+default branch. It is a PR rather than a direct push so the export is
+reviewable. Filenames that would collide get the case id appended.
+
+It is built on the Git Data API (blobs, tree, commit, ref) rather than the
+Contents API, which writes one commit per file. If the tree it builds matches
+the base branch there is nothing to export, so it stops with a 409 instead of
+opening a PR that GitHub would reject; and if the PR call fails the branch is
+deleted rather than left behind. Exercise it without touching a real
+repository by pointing `GITHUB_API_URL` at `audit/fake-github.mjs`.
+
+It requires both a connection and a
 `github_repo_url` on the project; the API says which one is missing.
 
 ---

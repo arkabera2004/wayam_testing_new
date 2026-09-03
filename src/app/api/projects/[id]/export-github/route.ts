@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { currentUserId } from "@/lib/auth";
 import { decryptToken } from "@/lib/crypto";
-import { exportSpecsToRepo, repoFullName } from "@/lib/github";
+import { NothingToExportError, exportSpecsToRepo, repoFullName } from "@/lib/github";
 import { getGithubConnection, listExecutableCases, resolveProject } from "@/db/queries";
 
 /** Slugs a test name into a filename that is safe on every platform. */
@@ -55,6 +55,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return NextResponse.json({ ...result, repo: fullName });
   } catch (error) {
+    // Nothing to export is a normal outcome to be told about, not an upstream
+    // fault, so it comes back as a 409 rather than a 502.
+    if (error instanceof NothingToExportError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Export failed." },
       { status: 502 },

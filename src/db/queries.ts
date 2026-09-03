@@ -78,16 +78,37 @@ export async function createProject(input: {
   return row;
 }
 
-export async function updateProject(
-  userId: string,
-  projectId: string,
-  patch: Partial<{ name: string; description: string; githubRepoUrl: string; githubDefaultBranch: string }>,
-) {
+/** Only these may be changed through the API. */
+const PROJECT_PATCH_FIELDS = ["name", "description", "githubRepoUrl", "githubDefaultBranch"] as const;
+
+export type ProjectPatch = Partial<{
+  name: string;
+  description: string | null;
+  githubRepoUrl: string | null;
+  githubDefaultBranch: string | null;
+}>;
+
+export async function updateProject(userId: string, idOrSlug: string, patch: ProjectPatch) {
+  // The caller may pass a slug, and Postgres raises on a malformed uuid rather
+  // than returning no rows, so resolving first is what keeps this a 404
+  // instead of a 500.
+  const project = await resolveProject(userId, idOrSlug);
+  if (!project) return null;
+
+  // Copy field by field. Spreading the request body straight into set() let a
+  // caller write any column, including user_id, which would have handed the
+  // project to another tenant.
+  const set: Record<string, unknown> = {};
+  for (const field of PROJECT_PATCH_FIELDS) {
+    if (field in patch) set[field] = patch[field] ?? null;
+  }
+  if (Object.keys(set).length === 0) return project;
+
   const db = getDb();
   const [row] = await db
     .update(schema.projects)
-    .set({ ...patch, updatedAt: new Date() })
-    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .set({ ...set, updatedAt: new Date() })
+    .where(and(eq(schema.projects.id, project.id), eq(schema.projects.userId, userId)))
     .returning();
   return row ?? null;
 }
