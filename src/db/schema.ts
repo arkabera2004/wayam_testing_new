@@ -143,6 +143,34 @@ export const testSelections = pgTable("test_selections", {
   createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
 });
 
+/* ---- Imported repository files ---- */
+
+export const repoFiles = pgTable("repo_files", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  path: text("path").notNull(),
+  sizeBytes: integer("size_bytes"),
+  /** Git blob sha, so a re-import can tell what actually changed. */
+  sha: text("sha"),
+  /** Only kept for files small enough to be worth reading. */
+  content: text("content"),
+  importedAt: timestamp("imported_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
+export const repoImports = pgTable("repo_imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  repoUrl: text("repo_url").notNull(),
+  ref: text("ref"),
+  commitSha: text("commit_sha"),
+  fileCount: integer("file_count").default(0),
+  /** Files whose contents were stored, which is a subset of fileCount. */
+  storedCount: integer("stored_count").default(0),
+  framework: text("framework"),
+  truncated: boolean("truncated").default(false),
+  importedAt: timestamp("imported_at", { withTimezone: true }).$defaultFn(() => new Date()),
+});
+
 /* ---- API keys ---- */
 
 export const apiKeys = pgTable("api_keys", {

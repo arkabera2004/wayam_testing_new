@@ -97,6 +97,7 @@ alone is enough.
 | `DATABASE_URL_UNPOOLED` | no | Direct connection, used by some tooling |
 | `SEED_USER_ID` | no | Tenant everything runs as while auth is out (default `demo-user`) |
 | `TOKEN_ENCRYPTION_KEY` | for GitHub | Encrypts the stored GitHub token. Any passphrase; it is SHA-256'd to a 32-byte key. Generate with `openssl rand -hex 32` |
+| `GITHUB_API_URL` / `GITHUB_RAW_URL` | no | Point the GitHub client at a stub. Only for testing; unset means the real thing |
 | `BROWSER_USE_API_KEY` | no | Rents a Browser Use cloud browser for healing. Without it, healing uses local Chromium and costs nothing |
 | `BROWSER_USE_CDP_URL` | no | Attach to a browser session you already started, skipping create/stop |
 
@@ -168,6 +169,38 @@ billing.
 
 ---
 
+## Importing a repository
+
+Paste a public repository URL and Parikshan reads it. **No GitHub connection is
+involved** - the tree is listed anonymously and file contents come from
+`raw.githubusercontent.com`, which is not the API and so does not spend the
+sixty-requests-an-hour anonymous limit. A whole repository costs two API calls
+however many files it has.
+
+Two entry points: the repository path on **New project**, which creates the
+project and imports in one step, and the **Import / Re-import** panel on Repo
+Baseline.
+
+From the file tree it derives, by static analysis:
+
+- **Routes** - `app/` and `pages/` directories at any depth, so monorepos and
+  example repositories work. Route groups `(marketing)` and parallel slots
+  `@modal` are stripped, because they are not in the URL.
+- **API endpoints** - route handlers, with the HTTP verbs they actually export.
+- **Forms and fetches** per route, counted from the source.
+- **Whether a route looks gated**, from auth-ish path segments and calls like
+  `getServerSession` or a redirect to `/login`.
+- **The framework**, named from the files present.
+
+These land in `discovered_pages` and `api_endpoints`, so Discovery and the
+Application Map are populated from the repository. Bounds: 4000 files listed,
+contents kept for the first 400 source files under 96 KB each; anything beyond
+that is reported as truncated rather than silently dropped.
+
+Private repositories cannot be imported this way, and the error says so.
+Generating executable specs from arbitrary source is **not** wired - the import
+tells you what exists, it does not write tests for it.
+
 ## GitHub integration
 
 Real, not a mock. Configured per user on any project's Integrations screen.
@@ -232,14 +265,14 @@ nothing here reads as working when it is still demo data.
 | `/projects/[id]/analytics` | Postgres | Trends over recent runs |
 | `/projects/[id]/healing` | Postgres | Proposed and applied locator repairs |
 | `/projects/[id]/quarantine` | Postgres | Quarantined tests |
-| `/projects/[id]/discovery` | Postgres | Crawled pages and API endpoints |
+| `/projects/[id]/discovery` | Postgres | Routes and endpoints derived from the imported repo |
 | `/projects/[id]/map` | Postgres | Application map |
 | `/projects/[id]/root-cause` | Postgres | Failure clustering |
 | `/projects/[id]/prioritization` | Postgres | Risk-ranked tests |
 | `/projects/[id]/test-selection` | Postgres (selection derived live) | What to run for a change |
 | `/projects/[id]/defect-prediction` | Postgres | Predicted defect hotspots |
 | `/projects/[id]/release-gate` | Postgres | Go / no-go readiness |
-| `/projects/[id]/repo-baseline` | Postgres | Repository scan baseline |
+| `/projects/[id]/repo-baseline` | Postgres | Import a public repo; what it already tests |
 | `/projects/[id]/code-review` | Postgres | Review findings per commit |
 | `/projects/[id]/prd`, `/prd/new`, `/prd/[prdId]` | Postgres | Requirements; coverage derived from the suite |
 | `/projects/[id]/doc-tests` | Postgres | Tests derived from docs |
@@ -257,6 +290,7 @@ nothing here reads as working when it is still demo data.
 | `GET` `POST` | `/api/projects` | Create a project |
 | `GET` `PATCH` `DELETE` | `/api/projects/[id]` | Accepts a slug or a uuid |
 | `GET` | `/api/projects/[id]/tests` | |
+| `POST` | `/api/projects/[id]/import-repo` | Imports a public repo, no credentials |
 | `GET` `POST` | `/api/projects/[id]/runs` | `POST` executes the suite. Body accepts `caseIds` and `baseUrl` |
 | `POST` | `/api/projects/[id]/heal` | |
 | `POST` | `/api/projects/[id]/export-github` | Opens a PR with the specs |

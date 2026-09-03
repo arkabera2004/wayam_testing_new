@@ -5,7 +5,17 @@ import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { notFound } from "next/navigation";
 
-import { listTestCasesWithStats, listTestPlan, resolveProject } from "@/db/queries";
+import {
+  discoverySummary,
+  latestRepoImport,
+  listTestCasesWithStats,
+  listTestPlan,
+  repoFileSummary,
+  resolveProject,
+} from "@/db/queries";
+import { relativeTime } from "@/lib/format";
+
+import { ImportPanel, type ImportInfo } from "./import-panel";
 import { currentUserId } from "@/lib/auth";
 
 /**
@@ -21,10 +31,30 @@ export default async function RepoBaselinePage({ params }: { params: Promise<{ i
   const project = await resolveProject(userId, id);
   if (!project) notFound();
 
-  const [{ journeys }, cases] = await Promise.all([
+  const [{ journeys }, cases, lastImport, fileSummary, discovery] = await Promise.all([
     listTestPlan(userId, project.id),
     listTestCasesWithStats(userId, project.id),
+    latestRepoImport(userId, project.id),
+    repoFileSummary(userId, project.id),
+    discoverySummary(userId, project.id),
   ]);
+
+  const importInfo: ImportInfo = lastImport
+    ? {
+        repoUrl: lastImport.repoUrl,
+        ref: lastImport.ref,
+        framework: lastImport.framework,
+        fileCount: lastImport.fileCount ?? 0,
+        storedCount: lastImport.storedCount ?? 0,
+        truncated: Boolean(lastImport.truncated),
+        // Formatted here so server and client markup agree on hydration.
+        importedLabel: lastImport.importedAt ? relativeTime(lastImport.importedAt) : "just now",
+        totalBytes: fileSummary.totalBytes,
+        byExtension: fileSummary.byExtension,
+        pages: discovery.stats.pages,
+        endpoints: discovery.stats.apis,
+      }
+    : null;
 
   /**
    * The baseline is what this project already has automated. A coverage gap is
@@ -66,6 +96,8 @@ export default async function RepoBaselinePage({ params }: { params: Promise<{ i
           </ActionButton>
         }
       />
+
+      <ImportPanel projectId={id} info={importInfo} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Existing tests" value={String(b.tests.length)} />

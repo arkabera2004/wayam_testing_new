@@ -1596,3 +1596,136 @@ export async function passRateTrend(userId: string, projectId: string | null, li
     })
     .filter((_, i, all) => all.length > 1 || i === 0);
 }
+
+/* ================================================================== */
+/* Repository import                                                   */
+/* ================================================================== */
+
+/**
+ * Replaces a project's imported files and the discovery data derived from
+ * them. A re-import is a full replace rather than a merge, so a file deleted
+ * upstream stops being reported here too.
+ */
+export async function saveRepoImport(
+  userId: string,
+  projectId: string,
+  input: {
+    repoUrl: string;
+    ref: string;
+    commitSha: string;
+    framework: string | null;
+    fileCount: number;
+    truncated: boolean;
+    files: Array<{ path: string; sizeBytes: number; sha: string; content: string | null }>;
+    pages: Array<{ path: string; title: string; forms: number; apis: number; gated: boolean; risk: string }>;
+    endpoints: Array<{ method: string; path: string }>;
+  },
+) {
+  const db = getDb();
+
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  await Promise.all([
+    db.delete(schema.repoFiles).where(eq(schema.repoFiles.projectId, projectId)),
+    db.delete(schema.discoveredPages).where(eq(schema.discoveredPages.projectId, projectId)),
+    db.delete(schema.apiEndpoints).where(eq(schema.apiEndpoints.projectId, projectId)),
+  ]);
+
+  // Chunked: a few thousand rows in one statement exceeds the parameter limit.
+  const chunk = <T,>(rows: T[], size: number) =>
+    Array.from({ length: Math.ceil(rows.length / size) }, (_, i) => rows.slice(i * size, i * size + size));
+
+  for (const batch of chunk(input.files, 200)) {
+    await db.insert(schema.repoFiles).values(
+      batch.map((f) => ({
+        projectId,
+        path: f.path,
+        sizeBytes: f.sizeBytes,
+        sha: f.sha,
+        content: f.content,
+      })),
+    );
+  }
+
+  if (input.pages.length) {
+    for (const batch of chunk(input.pages, 200)) {
+      await db.insert(schema.discoveredPages).values(batch.map((p) => ({ projectId, ...p })));
+    }
+  }
+
+  if (input.endpoints.length) {
+    for (const batch of chunk(input.endpoints, 200)) {
+      await db.insert(schema.apiEndpoints).values(
+        batch.map((e) => ({ projectId, method: e.method, path: e.path })),
+      );
+    }
+  }
+
+  const [record] = await db
+    .insert(schema.repoImports)
+    .values({
+      projectId,
+      repoUrl: input.repoUrl,
+      ref: input.ref,
+      commitSha: input.commitSha,
+      framework: input.framework,
+      fileCount: input.fileCount,
+      storedCount: input.files.filter((f) => f.content !== null).length,
+      truncated: input.truncated,
+    })
+    .returning();
+
+  // Keep the project's repo URL in step with what was actually imported.
+  await db
+    .update(schema.projects)
+    .set({ githubRepoUrl: input.repoUrl, githubDefaultBranch: input.ref, updatedAt: new Date() })
+    .where(eq(schema.projects.id, projectId));
+
+  return record;
+}
+
+export async function latestRepoImport(userId: string, projectId: string) {
+  const db = getDb();
+  const [row] = await db
+    .select({ i: schema.repoImports })
+    .from(schema.repoImports)
+    .innerJoin(schema.projects, eq(schema.repoImports.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.repoImports.projectId, projectId)))
+    .orderBy(desc(schema.repoImports.importedAt))
+    .limit(1)
+    .then((rows) => rows.map((r) => r.i));
+  return row ?? null;
+}
+
+/** File inventory for the repo baseline, grouped by extension. */
+export async function repoFileSummary(userId: string, projectId: string) {
+  const db = getDb();
+  const rows = await db
+    .select({ path: schema.repoFiles.path, sizeBytes: schema.repoFiles.sizeBytes })
+    .from(schema.repoFiles)
+    .innerJoin(schema.projects, eq(schema.repoFiles.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.repoFiles.projectId, projectId)));
+
+  const byExt = new Map<string, { files: number; bytes: number }>();
+  for (const r of rows) {
+    const ext = r.path.includes(".") ? `.${r.path.split(".").pop()}` : "(no extension)";
+    const entry = byExt.get(ext) ?? { files: 0, bytes: 0 };
+    entry.files += 1;
+    entry.bytes += r.sizeBytes ?? 0;
+    byExt.set(ext, entry);
+  }
+
+  return {
+    totalFiles: rows.length,
+    totalBytes: rows.reduce((n, r) => n + (r.sizeBytes ?? 0), 0),
+    byExtension: [...byExt.entries()]
+      .map(([ext, v]) => ({ ext, ...v }))
+      .sort((a, b) => b.files - a.files)
+      .slice(0, 12),
+  };
+}

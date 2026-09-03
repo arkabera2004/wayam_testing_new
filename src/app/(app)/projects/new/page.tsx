@@ -22,6 +22,7 @@ export default function NewProjectPage() {
   const { toast } = useToast();
   const [entryPath, setEntryPath] = useState<EntryPath>("requirements");
   const [name, setName] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
   const [creating, setCreating] = useState(false);
 
   const finishLabel =
@@ -37,6 +38,10 @@ export default function NewProjectPage() {
       toast({ tone: "error", title: "Name required", body: "Give the project a name." });
       return;
     }
+    if (entryPath === "application" && !repoUrl.trim()) {
+      toast({ tone: "error", title: "Repository URL required", body: "Paste a public GitHub repository URL." });
+      return;
+    }
     setCreating(true);
     try {
       const res = await fetch("/api/projects", {
@@ -49,8 +54,33 @@ export default function NewProjectPage() {
         toast({ tone: "error", title: "Could not create project", body: data.error });
         return;
       }
+      const projectId = data.project.id;
+
+      // Coming in from a repository, import it before showing anything: the
+      // discovery and map screens are rendered from what the import writes.
+      if (entryPath === "application" && repoUrl.trim()) {
+        toast({ tone: "info", title: "Importing repository", body: "Reading the file tree." });
+        const imp = await fetch(`/api/projects/${projectId}/import-repo`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ repoUrl: repoUrl.trim() }),
+        });
+        const result = await imp.json();
+        if (!imp.ok) {
+          // The project exists; say what failed rather than stranding the user.
+          toast({ tone: "error", title: "Import failed", body: result.error });
+          router.push(`/projects/${projectId}/settings`);
+          return;
+        }
+        toast({
+          tone: "success",
+          title: `Imported ${result.repo}`,
+          body: `${result.fileCount} files, ${result.pages} routes, ${result.endpoints} endpoints.`,
+        });
+      }
+
       const next = entryPath === "requirements" ? "prd/new" : "discovery";
-      router.push(`/projects/${data.project.id}/${next}`);
+      router.push(`/projects/${projectId}/${next}`);
     } catch {
       toast({ tone: "error", title: "Could not create project", body: "The request failed." });
     } finally {
@@ -95,6 +125,25 @@ export default function NewProjectPage() {
         showAdvanced
         onPathChange={setEntryPath}
       />
+
+      {entryPath === "application" && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="repo-url" className="text-label-md text-secondary">
+            Public repository URL
+          </label>
+          <input
+            id="repo-url"
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
+            placeholder="https://github.com/owner/repo"
+            className="border-muted bg-raised text-body-md text-primary focus-visible:border-active h-9 rounded-lg border px-3 focus-visible:outline-none"
+          />
+          <p className="text-body-sm text-quaternary">
+            No GitHub connection needed. Parikshan reads the file tree and derives the routes and API
+            endpoints it finds. Private repositories cannot be imported this way.
+          </p>
+        </div>
+      )}
 
       <div className="border-muted flex items-center justify-between border-t pt-5">
         <Link href="/projects">
