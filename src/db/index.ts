@@ -14,7 +14,14 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
 
 const REQUEST_TIMEOUT_MS = 12_000;
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 4;
+/**
+ * DNS and connection failures return instantly, so short gaps meant all the
+ * attempts were spent inside the same blip - three tries finished in under a
+ * second and the page still failed. Backing off further covers a few seconds
+ * of trouble while staying well inside a request.
+ */
+const BACKOFF_MS = [300, 900, 1800];
 
 /**
  * Neon is reached over HTTP, so a stalled connection surfaces as a hung fetch.
@@ -60,8 +67,7 @@ async function resilientFetch(input: RequestInfo | URL, init?: RequestInit): Pro
       lastError = error;
       const retryable = neverConnected(error) || isReadOnly(init);
       if (attempt === MAX_ATTEMPTS || !retryable) break;
-      // Back off a little so a momentarily overloaded endpoint gets room.
-      await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+      await new Promise((resolve) => setTimeout(resolve, BACKOFF_MS[attempt - 1] ?? 1800));
     }
   }
   throw lastError;
