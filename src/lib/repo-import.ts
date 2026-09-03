@@ -16,7 +16,7 @@ const MAX_FILES = 4000;
 const MAX_STORED = 400;
 const MAX_FILE_BYTES = 96_000;
 
-const SOURCE = /\.(tsx?|jsx?|mjs|cjs|vue|svelte|py|rb|go|java|kt|php|cs|rs)$/i;
+const SOURCE = /\.(tsx?|jsx?|mjs|cjs|vue|svelte|py|rb|go|java|kt|php|cs|cshtml|razor|rs|html?|erb|blade\.php)$/i;
 const IGNORED =
   /(^|\/)(node_modules|\.git|\.next|dist|build|out|vendor|coverage|__pycache__|\.venv)\//i;
 
@@ -72,6 +72,10 @@ function detectFramework(paths: string[]): string | null {
   if (has(/^src\/routes\/.*\+page\.svelte$/)) return "SvelteKit";
   if (has(/^(src\/)?app\/.*\.vue$/) || has(/^nuxt\.config\./)) return "Nuxt";
   if (has(/^angular\.json$/)) return "Angular";
+  if (has(/Controller\.cs$/) || has(/\.cshtml$/)) return "ASP.NET MVC";
+  if (has(/\.csproj$/)) return ".NET";
+  if (has(/(?:^|\/)requirements\.txt$/) && has(/\.py$/)) return "Python";
+  if (has(/(?:^|\/)Gemfile$/)) return "Ruby";
   if (has(/^manage\.py$/)) return "Django";
   if (has(/^(app|main)\.py$/)) return "Python";
   if (has(/^go\.mod$/)) return "Go";

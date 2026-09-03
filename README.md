@@ -183,10 +183,14 @@ Baseline.
 
 From the file tree it derives, by static analysis:
 
-- **Routes** - `app/` and `pages/` directories at any depth, so monorepos and
-  example repositories work. Route groups `(marketing)` and parallel slots
-  `@modal` are stripped, because they are not in the URL.
-- **API endpoints** - route handlers, with the HTTP verbs they actually export.
+- **Routes**, from whichever convention the repository uses: Next.js `app/`
+  and `pages/` at any depth (route groups `(marketing)` and parallel slots
+  `@modal` stripped, since they are not in the URL), React Router `<Route>`
+  declarations, ASP.NET MVC controller actions, and plain HTML or Razor
+  templates. Where a project has MVC controllers the controller wins, because
+  its views are what the actions render rather than routes of their own.
+- **API endpoints** - Next.js route handlers, Express and router calls, Flask
+  and FastAPI decorators, and MVC POST actions, with the verbs they declare.
 - **Forms and fetches** per route, counted from the source.
 - **Whether a route looks gated**, from auth-ish path segments and calls like
   `getServerSession` or a redirect to `/login`.

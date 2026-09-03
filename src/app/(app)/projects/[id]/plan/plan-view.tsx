@@ -290,12 +290,38 @@ export function PlanView({
             );
           })}
 
-          <Card>
-            <p className="text-body-md text-tertiary">
-              Showing {cases.length} of {stats.total} scenarios. Expand a journey group above
-              to review the rest.
-            </p>
-          </Card>
+          {stats.total === 0 ? (
+            /* "Showing 0 of 0" told the reader nothing about why it was empty
+               or what to do next. A plan has to come from somewhere. */
+            <Card title="No scenarios yet">
+              <p className="text-body-md text-tertiary">
+                A test plan is written from something: requirements you paste, or the routes found
+                by importing a repository. Neither has produced scenarios for this project yet.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href={`/projects/${id}/prd/new`}>
+                  <Button variant="primary">Start from requirements</Button>
+                </Link>
+                <Link href={`/projects/${id}/repo-baseline`}>
+                  <Button variant="secondary">Import a repository</Button>
+                </Link>
+                <Link href={`/projects/${id}/discovery`}>
+                  <Button variant="secondary">See what was discovered</Button>
+                </Link>
+              </div>
+              <p className="text-body-sm text-quaternary mt-4">
+                Turning discovered routes into written scenarios is not wired yet, so scenarios
+                currently come from requirements or seeded data.
+              </p>
+            </Card>
+          ) : (
+            <Card>
+              <p className="text-body-md text-tertiary">
+                Showing {cases.length} of {stats.total} scenarios. Expand a journey group above
+                to review the rest.
+              </p>
+            </Card>
+          )}
         </div>
       </div>
 

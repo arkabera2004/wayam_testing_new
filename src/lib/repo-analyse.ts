@@ -61,6 +61,86 @@ function riskFor(route: string, forms: number, gated: boolean): string {
   return "low";
 }
 
+/**
+ * Routes declared in source rather than implied by file layout. Next.js puts
+ * routing in the tree; most other stacks write it down, so it has to be read.
+ */
+function routesFromSource(file: ImportedFile): { pages: DerivedPage[]; endpoints: DerivedEndpoint[] } {
+  const pages: DerivedPage[] = [];
+  const endpoints: DerivedEndpoint[] = [];
+  const content = file.content;
+  if (!content) return { pages, endpoints };
+
+  // ASP.NET MVC: "/{Controller}/{Action}" from the controller's action methods.
+  const controller = file.path.match(/(?:^|\/)(\w+)Controller\.cs$/i);
+  if (controller) {
+    const name = controller[1];
+    const prefix = /^home$/i.test(name) ? "" : `/${name}`;
+    const actions = content.matchAll(
+      /(\[Http(Get|Post|Put|Patch|Delete)\][\s\S]{0,200}?)?public\s+(?:async\s+)?(?:Task<)?(?:I?ActionResult|ViewResult|JsonResult|IResult)>?\s+(\w+)\s*\(/g,
+    );
+    for (const a of actions) {
+      const verb = (a[2] ?? "GET").toUpperCase();
+      const action = a[3];
+      const route = /^index$/i.test(action) ? prefix || "/" : `${prefix}/${action}`;
+      if (verb === "GET") {
+        pages.push({
+          path: route,
+          title: titleFor(route),
+          forms: 0,
+          apis: 0,
+          gated: looksGated(route, content),
+          risk: riskFor(route, 0, looksGated(route, content)),
+        });
+      } else {
+        endpoints.push({ method: verb, path: route });
+      }
+    }
+    return { pages, endpoints };
+  }
+
+  // Express and friends: app.get("/x"), router.post("/x").
+  for (const m of content.matchAll(
+    /\b(?:app|router|api)\.(get|post|put|patch|delete|all)\s*\(\s*["'`]([^"'`]+)["'`]/g,
+  )) {
+    endpoints.push({ method: m[1].toUpperCase(), path: m[2] });
+  }
+
+  // Flask and FastAPI decorators.
+  for (const m of content.matchAll(
+    /@(?:app|router|blueprint|bp)\.(get|post|put|patch|delete|route)\s*\(\s*["']([^"']+)["']/g,
+  )) {
+    endpoints.push({ method: m[1] === "route" ? "GET" : m[1].toUpperCase(), path: m[2] });
+  }
+
+  // React Router, in either the element or the object form.
+  for (const m of content.matchAll(/<Route[^>]*\spath=["']([^"']+)["']/g)) {
+    const route = m[1].startsWith("/") ? m[1] : `/${m[1]}`;
+    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false) });
+  }
+  for (const m of content.matchAll(/\bpath:\s*["']([^"']+)["'][\s\S]{0,80}?\belement:/g)) {
+    const route = m[1].startsWith("/") ? m[1] : `/${m[1]}`;
+    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false) });
+  }
+
+  return { pages, endpoints };
+}
+
+/** Static sites and view templates: the file is the page. */
+function routeFromTemplate(file: string): string | null {
+  const m = file.match(/^(.*)\.(html?|cshtml|razor|erb)$/i);
+  if (!m) return null;
+  // Layouts and partials are not pages.
+  if (/(?:^|\/)(_|Shared\/|layouts?\/|partials?\/)/i.test(file)) return null;
+  if (/(ViewImports|ViewStart|Layout|Partial)$/i.test(m[1])) return null;
+
+  const cleaned = m[1]
+    .replace(/^(?:src|public|dist|www|Views|Pages|templates)\//i, "")
+    .replace(/\/index$/i, "")
+    .replace(/^index$/i, "");
+  return "/" + cleaned;
+}
+
 export function analyseRepo(files: ImportedFile[]): {
   pages: DerivedPage[];
   endpoints: DerivedEndpoint[];
@@ -68,6 +148,12 @@ export function analyseRepo(files: ImportedFile[]): {
   const byPath = new Map(files.map((f) => [f.path, f]));
   const pages: DerivedPage[] = [];
   const endpoints: DerivedEndpoint[] = [];
+
+  // In an MVC app the controller is authoritative: its actions are the routes,
+  // and the views are what those actions render. Deriving routes from the view
+  // files as well produced a second, wrong set - "/Create" alongside the real
+  // "/Event/Create".
+  const hasControllers = files.some((f) => /(?:^|\/)\w+Controller\.cs$/i.test(f.path));
 
   for (const file of files) {
     // API route handlers: "app/api/users/route.ts" -> the methods it exports.
@@ -91,7 +177,16 @@ export function analyseRepo(files: ImportedFile[]): {
       continue;
     }
 
-    const route = routeFromAppPath(file.path) ?? routeFromPagesPath(file.path);
+    // Anything that writes its routes down rather than implying them.
+    const declared = routesFromSource(file);
+    pages.push(...declared.pages);
+    endpoints.push(...declared.endpoints);
+    if (declared.pages.length || declared.endpoints.length) continue;
+
+    const isTemplate = /\.(cshtml|razor|erb)$/i.test(file.path);
+    if (isTemplate && hasControllers) continue;
+
+    const route = routeFromAppPath(file.path) ?? routeFromPagesPath(file.path) ?? routeFromTemplate(file.path);
     if (!route) continue;
 
     const content = byPath.get(file.path)?.content ?? null;
