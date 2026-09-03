@@ -73,7 +73,15 @@ function Select({
  * The wedge screen. Two mutually exclusive sources, plus the credentials
  * accordion that answers the "but my app needs login" objection.
  */
-export function ProjectSourcePicker({ showAdvanced = false }: { showAdvanced?: boolean }) {
+export function ProjectSourcePicker({
+  showAdvanced = false,
+  repoUrl = "",
+  onRepoUrlChange,
+}: {
+  showAdvanced?: boolean;
+  repoUrl?: string;
+  onRepoUrlChange?: (url: string) => void;
+}) {
   const [source, setSource] = useState<"url" | "repo">("url");
   const [authOpen, setAuthOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -86,8 +94,8 @@ export function ProjectSourcePicker({ showAdvanced = false }: { showAdvanced?: b
             {
               key: "repo" as const,
               icon: Github,
-              title: "Connect a GitHub repository",
-              body: "We read your routes and components to plan deeper tests.",
+              title: "Import a public repository",
+              body: "We read its routes and components to plan deeper tests. No authorisation needed.",
             },
             {
               key: "url" as const,
@@ -125,14 +133,25 @@ export function ProjectSourcePicker({ showAdvanced = false }: { showAdvanced?: b
       </div>
 
       {source === "repo" ? (
-        <div className="border-muted bg-container flex flex-col gap-4 rounded-xl border p-4">
-          <ActionButton icon="externalLink" className="w-full sm:w-auto" title="GitHub authorisation unavailable" body="OAuth needs a server; pick a repository below to continue.">
-            Authorise GitHub
-          </ActionButton>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select id="repo" label="Repository" options={["acme/shopstack", "acme/pay", "acme/docs"]} />
-            <Select id="branch" label="Branch" options={["main", "develop", "release/2026.08"]} />
-          </div>
+        <div className="border-muted bg-container flex flex-col gap-2 rounded-xl border p-4">
+          {/* No authorisation step: a public repository is read anonymously,
+              so the URL is the only thing needed. This used to offer an
+              "Authorise GitHub" button that could not authorise anything and a
+              list of repositories that did not exist. */}
+          <label htmlFor="repo-url" className="text-label-md text-secondary">
+            Public repository URL
+          </label>
+          <input
+            id="repo-url"
+            value={repoUrl}
+            onChange={(e) => onRepoUrlChange?.(e.target.value)}
+            placeholder="https://github.com/owner/repo"
+            className="border-muted bg-raised text-body-md text-primary focus-visible:border-active h-9 rounded-lg border px-3 focus-visible:outline-none"
+          />
+          <p className="text-body-sm text-quaternary">
+            Parikshan reads the file tree and derives the routes and API endpoints it finds. The
+            default branch is used. Private repositories cannot be read this way.
+          </p>
         </div>
       ) : (
         <div className="border-muted bg-container flex flex-col gap-4 rounded-xl border p-4">

@@ -27,10 +27,14 @@ export function ProjectEntryPicker({
   initialPath = "requirements",
   showAdvanced = false,
   onPathChange,
+  repoUrl,
+  onRepoUrlChange,
 }: {
   initialPath?: EntryPath;
   showAdvanced?: boolean;
   onPathChange?: (path: EntryPath) => void;
+  repoUrl?: string;
+  onRepoUrlChange?: (url: string) => void;
 }) {
   const [path, setPath] = useState<EntryPath>(initialPath);
   const [tab, setTab] = useState<SourceTab>("paste");
@@ -56,7 +60,7 @@ export function ProjectEntryPicker({
       key: "application" as const,
       icon: Globe,
       title: "Start from your application",
-      body: "Connect GitHub or paste a live URL. Explore what already exists.",
+      body: "Paste a public repository or a live URL. Explore what already exists.",
       badge: "Path B · Existing app",
     },
   ];
@@ -226,7 +230,11 @@ export function ProjectEntryPicker({
             <Github size={14} className="shrink-0" aria-hidden="true" />
             Repository for structure, or a live URL for exploration - authenticated flows included.
           </p>
-          <ProjectSourcePicker showAdvanced={showAdvanced} />
+          <ProjectSourcePicker
+            showAdvanced={showAdvanced}
+            repoUrl={repoUrl}
+            onRepoUrlChange={onRepoUrlChange}
+          />
         </div>
       )}
     </div>

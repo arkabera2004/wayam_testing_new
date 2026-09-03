@@ -124,26 +124,9 @@ export default function NewProjectPage() {
         initialPath={entryPath}
         showAdvanced
         onPathChange={setEntryPath}
+        repoUrl={repoUrl}
+        onRepoUrlChange={setRepoUrl}
       />
-
-      {entryPath === "application" && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="repo-url" className="text-label-md text-secondary">
-            Public repository URL
-          </label>
-          <input
-            id="repo-url"
-            value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
-            placeholder="https://github.com/owner/repo"
-            className="border-muted bg-raised text-body-md text-primary focus-visible:border-active h-9 rounded-lg border px-3 focus-visible:outline-none"
-          />
-          <p className="text-body-sm text-quaternary">
-            No GitHub connection needed. Parikshan reads the file tree and derives the routes and API
-            endpoints it finds. Private repositories cannot be imported this way.
-          </p>
-        </div>
-      )}
 
       <div className="border-muted flex items-center justify-between border-t pt-5">
         <Link href="/projects">
