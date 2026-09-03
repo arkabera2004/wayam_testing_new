@@ -22,14 +22,32 @@ const MAX_ATTEMPTS = 3;
  * under load parked a page render for minutes before finally returning a 500.
  * The timeout below is the main fix: fail in seconds, not minutes.
  *
- * Retries are deliberately narrow. A timeout means the query may well have
- * reached the database and only the response was lost, so replaying it could
- * insert a row twice. Only failures where the connection never established are
- * retried, because those cannot have had any effect.
+ * Retries are deliberately narrow, and split by what is safe to replay:
+ *
+ * - Connection failures cannot have had any effect, so they always retry.
+ * - Timeouts may mean the query reached the database and only the response was
+ *   lost. Replaying an insert would write the row twice, so a timeout is only
+ *   retried when the statement is a SELECT. Neon sends one statement per
+ *   request, so reading the verb off the body is enough to know.
+ *
+ * Without the second rule a single slow moment failed the request outright,
+ * even for a read where trying again costs nothing.
  */
 function neverConnected(error: unknown): boolean {
   const code = (error as { cause?: { code?: string } })?.cause?.code;
   return code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "EAI_AGAIN" || code === "ECONNRESET";
+}
+
+function isReadOnly(init?: RequestInit): boolean {
+  const body = init?.body;
+  if (typeof body !== "string") return false;
+  try {
+    const query = (JSON.parse(body) as { query?: string }).query ?? "";
+    // A CTE can still write, so "with" is not treated as read-only.
+    return /^\s*select\b/i.test(query);
+  } catch {
+    return false;
+  }
 }
 
 async function resilientFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -40,7 +58,8 @@ async function resilientFetch(input: RequestInfo | URL, init?: RequestInit): Pro
       return await fetch(input, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     } catch (error) {
       lastError = error;
-      if (attempt === MAX_ATTEMPTS || !neverConnected(error)) break;
+      const retryable = neverConnected(error) || isReadOnly(init);
+      if (attempt === MAX_ATTEMPTS || !retryable) break;
       // Back off a little so a momentarily overloaded endpoint gets room.
       await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
     }

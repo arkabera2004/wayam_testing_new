@@ -22,9 +22,12 @@ const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
  * subdirectories, and anchoring at the root found nothing in them.
  */
 function routeFromAppPath(file: string): string | null {
-  const m = file.match(/(?:^|\/)app\/(.*)\/(page|route)\.(tsx?|jsx?)$/);
+  // The directory part is optional: "app/page.tsx" is the root route, and
+  // requiring a slash after "app" silently dropped the home page of every
+  // App Router project.
+  const m = file.match(/(?:^|\/)app\/(?:(.*)\/)?(page|route)\.(tsx?|jsx?)$/);
   if (!m) return null;
-  const segments = m[1]
+  const segments = (m[1] ?? "")
     .split("/")
     .filter(Boolean)
     // Route groups "(marketing)" and parallel slots "@modal" are not in the URL.
@@ -157,7 +160,7 @@ export function analyseRepo(files: ImportedFile[]): {
 
   for (const file of files) {
     // API route handlers: "app/api/users/route.ts" -> the methods it exports.
-    if (/(?:^|\/)app\/.*\/route\.(tsx?|jsx?)$/.test(file.path)) {
+    if (/(?:^|\/)app\/(?:.*\/)?route\.(tsx?|jsx?)$/.test(file.path)) {
       const route = routeFromAppPath(file.path);
       if (route) {
         const content = byPath.get(file.path)?.content ?? "";

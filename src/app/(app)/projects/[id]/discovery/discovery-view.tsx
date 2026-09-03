@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, RotateCcw } from "lucide-react";
+import { ArrowRight, Check, RotateCcw, X } from "lucide-react";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
 import type { ApiEndpoint, DiscoveredPage } from "@/db/schema";
@@ -47,7 +47,7 @@ function buildGraph(paths: string[]): { nodes: GraphNode[]; edges: Array<[string
         label: path,
         x: 10 + ((i + 1) / (row.length + 1)) * 80,
         // Spread over the canvas with a margin top and bottom.
-        y: rows.length === 1 ? 50 : 12 + (rowIndex / (rows.length - 1)) * 74,
+        y: rows.length === 1 ? 50 : 12 + (rowIndex / (rows.length - 1)) * 62,
       });
     });
   });
@@ -100,6 +100,7 @@ export function DiscoveryView({
    * Replay is there for anyone who wants to watch it build.
    */
   const [tick, setTick] = useState(totalTicks);
+  const [summaryOpen, setSummaryOpen] = useState(true);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const done = tick >= totalTicks;
@@ -284,13 +285,24 @@ export function DiscoveryView({
             </div>
           ))}
 
-          {done && (
+          {done && summaryOpen && (
             <div className="absolute right-4 bottom-4 z-10 max-w-sm">
               <Card>
-                <p className="text-heading-sm text-primary">Discovery complete</p>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-heading-sm text-primary">Discovery complete</p>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryOpen(false)}
+                    aria-label="Dismiss summary"
+                    className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover -mt-1 -mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors duration-[170ms]"
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                </div>
                 <p className="text-body-md text-tertiary mt-1">
-                  {stats.pages} pages, {stats.journeys} journeys and {stats.apis} API
-                  endpoints found in the imported source.
+                  {stats.pages} {stats.pages === 1 ? "route" : "routes"}, {stats.journeys}{" "}
+                  {stats.journeys === 1 ? "journey" : "journeys"} and {stats.apis} API{" "}
+                  {stats.apis === 1 ? "endpoint" : "endpoints"} found in the imported source.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <Link href={`/projects/${id}/map`} className="flex-1">
