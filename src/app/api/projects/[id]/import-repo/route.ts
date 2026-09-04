@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/auth";
 import { analyseRepo } from "@/lib/repo-analyse";
 import { importPublicRepo, parseRepoUrl } from "@/lib/repo-import";
+import { failProgress, setProgress } from "@/lib/import-progress";
 import { resolveProject, saveRepoImport } from "@/db/queries";
 
 /**
@@ -31,8 +32,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const imported = await importPublicRepo(repoUrl);
+    setProgress(project.id, "listing", "Starting");
+    const imported = await importPublicRepo(repoUrl, (phase, message, counts) =>
+      setProgress(project.id, phase, message, counts),
+    );
     const { pages, endpoints } = analyseRepo(imported.files);
+
+    setProgress(project.id, "saving", "Saving what was found");
 
     const record = await saveRepoImport(userId, project.id, {
       repoUrl: `https://github.com/${imported.owner}/${imported.repo}`,
@@ -52,6 +58,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       revalidatePath(`/projects/${id}${path}`);
     }
 
+    setProgress(project.id, "done", `Imported ${imported.fileCount} files`);
+
     return NextResponse.json({
       repo: `${imported.owner}/${imported.repo}`,
       ref: imported.ref,
@@ -64,6 +72,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Import failed.";
+    failProgress(project.id, message);
     // A missing or private repository is the caller's problem, not a fault here.
     const status = /not found|does not look like/i.test(message) ? 400 : 502;
     return NextResponse.json({ error: message }, { status });

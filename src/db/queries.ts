@@ -1618,7 +1618,7 @@ export async function saveRepoImport(
     fileCount: number;
     truncated: boolean;
     files: Array<{ path: string; sizeBytes: number; sha: string; content: string | null }>;
-    pages: Array<{ path: string; title: string; forms: number; apis: number; gated: boolean; risk: string }>;
+    pages: Array<{ path: string; title: string; forms: number; apis: number; gated: boolean; risk: string; sourceFile: string }>;
     endpoints: Array<{ method: string; path: string }>;
   },
 ) {
@@ -1811,6 +1811,7 @@ export async function listDiscoveredRoutes(userId: string, projectId: string) {
       forms: schema.discoveredPages.forms,
       gated: schema.discoveredPages.gated,
       risk: schema.discoveredPages.risk,
+      sourceFile: schema.discoveredPages.sourceFile,
     })
     .from(schema.discoveredPages)
     .innerJoin(schema.projects, eq(schema.discoveredPages.projectId, schema.projects.id))

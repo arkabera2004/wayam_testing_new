@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Github, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { Button, Card, Chip } from "@/components/ui";
+import { Button, Card, Chip, ProgressBar } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 
 export type ImportInfo = {
@@ -35,6 +35,7 @@ export function ImportPanel({
   const [url, setUrl] = useState(info?.repoUrl ?? "");
   const [busy, setBusy] = useState(false);
   const [baseUrl, setBaseUrl] = useState(initialBaseUrl);
+  const [progress, setProgress] = useState<{ percent: number; message: string } | null>(null);
 
   /**
    * Writes a spec per discovered route. The specs need somewhere to navigate,
@@ -100,7 +101,28 @@ export function ImportPanel({
       return;
     }
     setBusy(true);
-    toast({ tone: "info", title: "Importing", body: "Reading the repository's file tree." });
+    setProgress({ percent: 0, message: "Starting" });
+
+    // The import is one request, so its progress is polled while it runs.
+    // A missing record means it has not started writing yet, not an error.
+    let polling = true;
+    const poll = async () => {
+      while (polling) {
+        try {
+          const res = await fetch(`/api/projects/${projectId}/import-repo/progress`);
+          const data = await res.json();
+          if (data.progress) {
+            setProgress({ percent: data.progress.percent, message: data.progress.message });
+            if (data.progress.phase === "done" || data.progress.phase === "failed") break;
+          }
+        } catch {
+          /* A dropped poll should not fail the import it is watching. */
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    };
+    void poll();
+
     try {
       const res = await fetch(`/api/projects/${projectId}/import-repo`, {
         method: "POST",
@@ -121,7 +143,11 @@ export function ImportPanel({
     } catch {
       toast({ tone: "error", title: "Import failed", body: "The request could not be completed." });
     } finally {
+      polling = false;
       setBusy(false);
+      // Held briefly at 100 so the bar is seen finishing rather than vanishing.
+      setProgress({ percent: 100, message: "Complete" });
+      setTimeout(() => setProgress(null), 1500);
     }
   }
 
@@ -148,6 +174,16 @@ export function ImportPanel({
         </span>
       }
     >
+      {progress && (
+        <div className="border-muted bg-raised mb-4 rounded-lg border p-3">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-label-md text-secondary">{progress.message}</span>
+            <span className="text-label-sm text-tertiary tabular">{progress.percent}%</span>
+          </div>
+          <ProgressBar value={progress.percent} className="mt-2" />
+        </div>
+      )}
+
       {info ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-8">

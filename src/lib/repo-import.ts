@@ -83,11 +83,15 @@ function detectFramework(paths: string[]): string | null {
   return null;
 }
 
-export async function importPublicRepo(url: string): Promise<RepoImport> {
+export async function importPublicRepo(
+  url: string,
+  onProgress?: (phase: "listing" | "reading" | "analysing", message: string, counts?: { done: number; total: number }) => void,
+): Promise<RepoImport> {
   const ref = parseRepoUrl(url);
   if (!ref) throw new Error("That does not look like a GitHub repository URL.");
   const { owner, repo } = ref;
 
+  onProgress?.("listing", `Reading ${owner}/${repo}`);
   const meta = await api<{ default_branch: string }>(`/repos/${owner}/${repo}`);
   const branch = meta.default_branch;
 
@@ -107,6 +111,8 @@ export async function importPublicRepo(url: string): Promise<RepoImport> {
     .slice(0, MAX_STORED);
   const wantedPaths = new Set(wanted.map((n) => n.path));
 
+  onProgress?.("reading", `Reading ${wanted.length} source files`, { done: 0, total: wanted.length });
+
   const contents = new Map<string, string>();
   // Fetched in batches: one request per file, but bounded and parallel enough
   // to stay quick without opening hundreds of sockets at once.
@@ -122,7 +128,13 @@ export async function importPublicRepo(url: string): Promise<RepoImport> {
         }
       }),
     );
+    onProgress?.("reading", `Read ${Math.min(i + batch.length, wanted.length)} of ${wanted.length} files`, {
+      done: Math.min(i + batch.length, wanted.length),
+      total: wanted.length,
+    });
   }
+
+  onProgress?.("analysing", "Deriving routes and endpoints");
 
   return {
     owner,

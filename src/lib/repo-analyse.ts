@@ -9,7 +9,7 @@ import type { ImportedFile } from "./repo-import";
  * here is something the repository literally states.
  */
 
-export type DerivedPage = { path: string; title: string; forms: number; apis: number; gated: boolean; risk: string };
+export type DerivedPage = { path: string; title: string; forms: number; apis: number; gated: boolean; risk: string; sourceFile: string };
 export type DerivedEndpoint = { method: string; path: string };
 
 const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] as const;
@@ -94,6 +94,7 @@ function routesFromSource(file: ImportedFile): { pages: DerivedPage[]; endpoints
           apis: 0,
           gated: looksGated(route, content),
           risk: riskFor(route, 0, looksGated(route, content)),
+          sourceFile: file.path,
         });
       } else {
         endpoints.push({ method: verb, path: route });
@@ -119,11 +120,11 @@ function routesFromSource(file: ImportedFile): { pages: DerivedPage[]; endpoints
   // React Router, in either the element or the object form.
   for (const m of content.matchAll(/<Route[^>]*\spath=["']([^"']+)["']/g)) {
     const route = m[1].startsWith("/") ? m[1] : `/${m[1]}`;
-    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false) });
+    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false), sourceFile: file.path });
   }
   for (const m of content.matchAll(/\bpath:\s*["']([^"']+)["'][\s\S]{0,80}?\belement:/g)) {
     const route = m[1].startsWith("/") ? m[1] : `/${m[1]}`;
-    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false) });
+    pages.push({ path: route, title: titleFor(route), forms: 0, apis: 0, gated: looksGated(route, content), risk: riskFor(route, 0, false), sourceFile: file.path });
   }
 
   return { pages, endpoints };
@@ -197,7 +198,7 @@ export function analyseRepo(files: ImportedFile[]): {
     const apis = content ? (content.match(/fetch\(|useSWR\(|useQuery\(/g) ?? []).length : 0;
     const gated = looksGated(route, content);
 
-    pages.push({ path: route, title: titleFor(route), forms, apis, gated, risk: riskFor(route, forms, gated) });
+    pages.push({ path: route, title: titleFor(route), forms, apis, gated, risk: riskFor(route, forms, gated), sourceFile: file.path });
   }
 
   // A repository can define the same route twice (page and layout variants).

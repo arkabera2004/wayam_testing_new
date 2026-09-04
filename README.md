@@ -218,8 +218,12 @@ From Repo Baseline, once something is imported:
 
 - **Generate tests from routes** writes one Playwright spec per discovered
   route. Each opens the route and checks it was served - under 400 after any
-  redirect, so a 404 fails rather than passing as "not a server error" - that
-  it rendered, and that a form the source declares is present. It needs
+  redirect, so a 404 fails rather than passing as "not a server error" - and
+  then asserts what that route's own markup declares: its title, its headings,
+  its named fields, its buttons. Only literal text is used; a heading built
+  from a variable is real on the page but unknowable from the source, so it is
+  skipped rather than guessed at. Gated routes get no markup assertions, since
+  a signed-out run would land on a sign-in page and fail for the wrong reason. It needs
   the application's base URL, because a spec has to navigate somewhere. These
   are starting points to edit - nothing has read what the app is meant to do,
   so they assert only what is true of any working page.

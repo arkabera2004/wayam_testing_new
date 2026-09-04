@@ -374,6 +374,8 @@ export const discoveredPages = pgTable("discovered_pages", {
   apis: integer("apis").default(0),
   gated: boolean("gated").default(false),
   risk: text("risk"),
+  /** The file this route came from, so a generated spec can read its markup. */
+  sourceFile: text("source_file"),
   discoveredAt: timestamp("discovered_at", { withTimezone: true }).$defaultFn(() => new Date()),
 });
 
