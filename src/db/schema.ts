@@ -184,7 +184,7 @@ export const repoImports = pgTable("repo_imports", {
 
 /* ---- Fix verification (Phase 4) ---- */
 
-export const FIX_VERDICT = ["accepted", "rejected"] as const;
+export const FIX_VERDICT = ["accepted", "rejected", "unverifiable"] as const;
 
 /**
  * A snapshot taken before a fix is attempted, and the verdict once it is.
@@ -206,6 +206,36 @@ export const fixVerifications = pgTable("fix_verifications", {
   specDiff: jsonb("spec_diff").$type<unknown>(),
   createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
+});
+
+/* ---- Proposed fixes (Phase 5) ---- */
+
+export const FIX_PROPOSAL_STATE = ["proposed", "rejected_by_harness", "accepted", "discarded"] as const;
+
+/**
+ * A change an agent suggested, the branch it lives on, and what the harness
+ * made of it. Never merged by anything here - the state only ever records what
+ * a human decided.
+ */
+export const fixProposals = pgTable("fix_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  testCaseId: uuid("test_case_id").notNull(),
+  resultId: uuid("result_id"),
+  branch: text("branch"),
+  commitSha: text("commit_sha"),
+  filePath: text("file_path"),
+  lineNumber: integer("line_number"),
+  before: text("before"),
+  after: text("after"),
+  rationale: text("rationale"),
+  caveat: text("caveat"),
+  diff: text("diff"),
+  state: text("state").$type<(typeof FIX_PROPOSAL_STATE)[number]>().default("proposed"),
+  harnessVerdict: text("harness_verdict"),
+  harnessReasons: jsonb("harness_reasons").$type<string[]>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
 });
 
 /* ---- API keys ---- */

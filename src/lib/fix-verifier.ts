@@ -36,7 +36,7 @@ export type SpecDiff = {
 export type RunOutcome = { total: number; passed: number; failed: number };
 
 export type VerificationVerdict = {
-  outcome: "accepted" | "rejected";
+  outcome: "accepted" | "rejected" | "unverifiable";
   reasons: string[];
   diff: SpecDiff;
   targetSpecPasses: boolean;
@@ -134,9 +134,31 @@ export function verifyFix(input: {
   targetSpecPasses: boolean;
   suiteBefore: RunOutcome;
   suiteAfter: RunOutcome;
+  /**
+   * Set when the change could not actually be exercised - for instance a
+   * source edit to an application that is served from a previous build.
+   */
+  unverifiableReason?: string | null;
 }): VerificationVerdict {
   const diff = diffSpec(input.specBefore, input.specAfter);
   const reasons: string[] = [];
+
+  // A harness that cannot exercise a change must not report on it. Running the
+  // suite against code the change never reached would fail every correct fix
+  // and pass any fix that happened to touch nothing - both answers would be
+  // fiction, and a confident fiction is worse here than an admission.
+  if (input.unverifiableReason) {
+    return {
+      outcome: "unverifiable",
+      reasons: [
+        input.unverifiableReason,
+        "No verdict is claimed. The suite was run, but not against the proposed change, so its result says nothing about whether the fix works.",
+      ],
+      diff,
+      targetSpecPasses: false,
+      suiteRegressed: false,
+    };
+  }
 
   // A spec that was already failing is expected to stop failing; the rest of
   // the suite is expected not to start.

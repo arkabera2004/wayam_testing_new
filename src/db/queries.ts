@@ -2017,7 +2017,7 @@ export async function recordFixVerdict(
   input: {
     specAfter: string;
     suiteAfter: { total: number; passed: number; failed: number };
-    verdict: "accepted" | "rejected";
+    verdict: "accepted" | "rejected" | "unverifiable";
     reasons: string[];
     specDiff: unknown;
   },
@@ -2041,4 +2041,91 @@ export async function listFixVerifications(userId: string, projectId: string) {
     .where(and(eq(schema.projects.userId, userId), eq(schema.fixVerifications.projectId, projectId)))
     .orderBy(desc(schema.fixVerifications.createdAt))
     .then((rows) => rows.map((r) => ({ ...r.v, title: r.title })));
+}
+
+/* ================================================================== */
+/* Proposed fixes (Phase 5)                                            */
+/* ================================================================== */
+
+export async function createFixProposal(
+  projectId: string,
+  input: {
+    testCaseId: string;
+    resultId: string | null;
+    branch: string | null;
+    commitSha: string | null;
+    filePath: string;
+    lineNumber: number;
+    before: string;
+    after: string;
+    rationale: string;
+    caveat: string;
+    diff: string;
+    state: "proposed" | "rejected_by_harness";
+    harnessVerdict: string;
+    harnessReasons: string[];
+  },
+) {
+  const db = getDb();
+  const [row] = await db.insert(schema.fixProposals).values({ projectId, ...input }).returning();
+  return row;
+}
+
+export async function listFixProposals(userId: string, projectId: string) {
+  const db = getDb();
+  return db
+    .select({ p: schema.fixProposals, title: schema.testCases.title })
+    .from(schema.fixProposals)
+    .innerJoin(schema.projects, eq(schema.fixProposals.projectId, schema.projects.id))
+    .leftJoin(schema.testCases, eq(schema.fixProposals.testCaseId, schema.testCases.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.fixProposals.projectId, projectId)))
+    .orderBy(desc(schema.fixProposals.createdAt))
+    .then((rows) => rows.map((r) => ({ ...r.p, title: r.title })));
+}
+
+/**
+ * Records a human's decision. Accepting marks the proposal, it does not merge:
+ * merging is a thing a person does with git, deliberately, outside this app.
+ */
+export async function decideFixProposal(
+  userId: string,
+  proposalId: string,
+  state: "accepted" | "discarded",
+) {
+  if (!UUID.test(proposalId)) return null;
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.fixProposals.id })
+    .from(schema.fixProposals)
+    .innerJoin(schema.projects, eq(schema.fixProposals.projectId, schema.projects.id))
+    .where(and(eq(schema.fixProposals.id, proposalId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .update(schema.fixProposals)
+    .set({ state, decidedAt: new Date() })
+    .where(eq(schema.fixProposals.id, proposalId))
+    .returning();
+  return row;
+}
+
+/** One result, with what a fixer needs to reason about it. */
+export async function getResultForFix(userId: string, resultId: string) {
+  if (!UUID.test(resultId)) return null;
+  const db = getDb();
+  const [row] = await db
+    .select({
+      id: schema.testRunResults.id,
+      testCaseId: schema.testRunResults.testCaseId,
+      classification: schema.testRunResults.classification,
+      errorMessage: schema.testRunResults.errorMessage,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testCases, eq(schema.testRunResults.testCaseId, schema.testCases.id))
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.testRunResults.id, resultId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  return row ?? null;
 }
