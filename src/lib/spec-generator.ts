@@ -4,8 +4,8 @@ import "server-only";
  * Turns discovered routes into Playwright specs.
  *
  * This is deliberately mechanical rather than clever. Every assertion is
- * something that is true of any working page - it responded without a server
- * error, it rendered a body, and a form that the source declares is present.
+ * something that is true of any working page - the route exists and was served,
+ * it rendered a body, and a form that the source declares is present.
  * Nothing here guesses at business rules, because nothing here has read them.
  * A generated spec is a starting point a human edits, not a finished test.
  */
@@ -72,15 +72,19 @@ export function generateSpecsForRoutes(routes: RouteInput[], baseUrl: string): G
         ? "// This route has a dynamic segment. \"placeholder\" stands in for a real\n// id, so replace it with a value that exists before trusting this spec."
         : null,
       route.gated
-        ? "// This route looks gated. Without a signed-in session it may redirect,\n// so the assertion below only checks the app responded, not what it showed."
+        ? "// This route looks gated. Without a signed-in session it may redirect to\n// a sign-in page, which Playwright follows - so this checks the app served\n// something, not that the gated page itself was reached."
         : null,
     ].filter(Boolean);
 
     const body = [
       `  const response = await page.goto(${JSON.stringify(target)});`,
       "",
-      "  // A server error is a failure whatever the page then renders.",
-      "  expect(response?.status() ?? 0).toBeLessThan(500);",
+      "  // Redirects are followed before this is read, so a gated route that",
+      "  // bounces to a sign-in page still reports the page it landed on.",
+      "  // Below 400 means the route exists and was served: a 404 here says the",
+      "  // base URL does not host this route, which is a real failure rather",
+      "  // than something to wave through.",
+      "  expect(response?.status() ?? 0).toBeLessThan(400);",
       "  await expect(page.locator('body')).toBeVisible();",
       route.forms > 0 && !route.gated
         ? "\n  // The source declares a form on this route.\n  await expect(page.locator('form').first()).toBeVisible();"
@@ -103,11 +107,11 @@ ${body}
       description: `Opens ${route.path} and checks the application responds and renders.`,
       steps: [
         `Navigate to ${route.path}`,
-        "Check the response is not a server error",
+        "Check the route was served, following any redirect",
         "Check the page renders a body",
         ...(route.forms > 0 && !route.gated ? ["Check the form declared in the source is present"] : []),
       ],
-      expectedResult: "The route responds without a server error and renders.",
+      expectedResult: "The route exists at the base URL, is served without an error, and renders.",
       priority: priorityFor(route),
       filePathHint: `tests/parikshan/${name}.spec.ts`,
       code,

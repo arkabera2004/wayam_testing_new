@@ -217,8 +217,9 @@ Private repositories cannot be imported this way, and the error says so.
 From Repo Baseline, once something is imported:
 
 - **Generate tests from routes** writes one Playwright spec per discovered
-  route. Each opens the route and checks the app answered without a server
-  error and rendered, plus that a form the source declares is present. It needs
+  route. Each opens the route and checks it was served - under 400 after any
+  redirect, so a 404 fails rather than passing as "not a server error" - that
+  it rendered, and that a form the source declares is present. It needs
   the application's base URL, because a spec has to navigate somewhere. These
   are starting points to edit - nothing has read what the app is meant to do,
   so they assert only what is true of any working page.
