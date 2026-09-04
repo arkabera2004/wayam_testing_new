@@ -6,7 +6,9 @@ import { ActionButton } from "@/components/ui/action-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { notFound } from "next/navigation";
 
-import { rankedTests, resolveProject, type RankedTestView } from "@/db/queries";
+import { rankedTestRisk, rankedTests, resolveProject, type RankedTestView } from "@/db/queries";
+
+import { RiskRanking } from "./risk-ranking";
 import { currentUserId } from "@/lib/auth";
 import { toUiStatus } from "@/lib/format";
 import type { IconName } from "@/lib/icons";
@@ -47,7 +49,10 @@ export default async function PrioritizationPage({ params }: { params: Promise<{
   const project = await resolveProject(userId, id);
   if (!project) notFound();
 
-  const ranked = await rankedTests(userId, project.id);
+  const [ranked, riskRanked] = await Promise.all([
+    rankedTests(userId, project.id),
+    rankedTestRisk(userId, project.id),
+  ]);
   const known = ranked.filter((t) => t.knownFailure);
 
   return (
@@ -61,6 +66,10 @@ export default async function PrioritizationPage({ params }: { params: Promise<{
           </ActionButton>
         }
       />
+
+      <div className="mb-4">
+        <RiskRanking id={id} tests={riskRanked} />
+      </div>
 
       {known.length > 0 && (
         <Card

@@ -15,6 +15,8 @@ function relativeLabel(value: Date | null): string {
   return days < 30 ? `${days}d ago` : `${Math.round(days / 30)}mo ago`;
 }
 
+import { changeSignalsForPaths, shopstackPathForRoute } from "@/lib/code-change";
+import { rankTests, routesFromSpec } from "@/lib/risk-ranker";
 import { getDb, schema } from "./index";
 
 /**
@@ -1908,4 +1910,61 @@ export async function replaceRepoReview(
   }
 
   return { reviewId: review.id, findings: input.findings.length };
+}
+
+/**
+ * Ranks a project's tests by how much running them now would tell you.
+ *
+ * Pulls together the two things this system has learned that a static guess
+ * cannot: which specs have actually caught real defects (as opposed to flaking
+ * or hitting an outage), and which parts of the code have recently moved.
+ */
+export async function rankedTestRisk(userId: string, projectId: string) {
+  const db = getDb();
+
+  const cases = await db
+    .select({
+      id: schema.testCases.id,
+      title: schema.testCases.title,
+      priority: schema.testCases.priority,
+      code: schema.testCases.playwrightCode,
+    })
+    .from(schema.testCases)
+    .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+    .innerJoin(schema.projects, eq(schema.testSuites.projectId, schema.projects.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.projects.id, projectId)));
+
+  if (cases.length === 0) return [];
+
+  const verdictRows = await db
+    .select({
+      caseId: schema.testRunResults.testCaseId,
+      classification: schema.testRunResults.classification,
+      at: schema.testRuns.startedAt,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .where(inArray(schema.testRunResults.testCaseId, cases.map((c) => c.id)))
+    .orderBy(desc(schema.testRuns.startedAt));
+
+  const verdicts = new Map<string, Array<{ classification: string | null; at: Date | null }>>();
+  for (const row of verdictRows) {
+    if (!row.caseId || !row.classification) continue;
+    const list = verdicts.get(row.caseId) ?? [];
+    list.push({ classification: row.classification, at: row.at });
+    verdicts.set(row.caseId, list);
+  }
+
+  const inputs = cases.map((c) => ({
+    id: c.id,
+    title: c.title,
+    priority: c.priority,
+    routes: routesFromSpec(c.code),
+    verdicts: verdicts.get(c.id) ?? [],
+  }));
+
+  const paths = [...new Set(inputs.flatMap((i) => i.routes.map(shopstackPathForRoute)))];
+  const changes = await changeSignalsForPaths(process.cwd(), paths);
+
+  return rankTests(inputs, changes, shopstackPathForRoute);
 }
