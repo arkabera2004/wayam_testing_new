@@ -18,6 +18,15 @@ export const CASE_PRIORITY = ["low", "medium", "high", "critical"] as const;
 export const AUTOMATION_STATUS = ["manual", "automated", "not_applicable"] as const;
 export const RUN_TRIGGER = ["manual", "automated"] as const;
 export const RUN_STATUS = ["queued", "running", "passed", "failed", "partial", "error"] as const;
+/** What a failure means, as opposed to what its error text looks like. */
+export const FAILURE_CLASS = [
+  "environment",
+  "test-drift",
+  "flaky",
+  "real-bug",
+  "unclassified",
+] as const;
+
 export const RESULT_STATUS = ["pass", "fail", "error", "skipped"] as const;
 export const REQUIREMENT_SOURCE = ["manual", "imported"] as const;
 export const CONFIDENCE = ["low", "medium", "high"] as const;
@@ -238,6 +247,14 @@ export const testRunResults = pgTable("test_run_results", {
   errorMessage: text("error_message"),
   logs: text("logs"),
   screenshotUrl: text("screenshot_url"),
+  /* ---- Failure classification (Phase 1) ---- */
+  classification: text("classification").$type<(typeof FAILURE_CLASS)[number]>(),
+  classificationConfidence: integer("classification_confidence"),
+  /** Which signals fired and what they were worth, so the verdict is auditable
+   *  and later phases can upgrade or downgrade it with more evidence. */
+  classificationEvidence: jsonb("classification_evidence").$type<
+    Array<{ signal: string; category: string; weight: number; detail: string }>
+  >(),
 });
 
 export const riskScores = pgTable("risk_scores", {

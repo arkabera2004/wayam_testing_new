@@ -4,9 +4,10 @@ import { spawn } from "node:child_process";
 import { copyFile, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
 import { getDb, schema } from "@/db";
+import { classifyRun, type HistoryEntry, type ResultInput, type Verdict } from "./failure-classifier";
 
 /**
  * Executes a project's specs with the real Playwright runner.
@@ -147,6 +148,8 @@ async function executeSuite(
     .values({ suiteId: suites[0].id, triggeredBy: "manual", status: "running" })
     .returning();
 
+  const writtenResults: ResultInput[] = [];
+
   const dir = path.join(process.cwd(), RUN_ROOT, run.id);
   const artifactDir = path.join(process.cwd(), ARTIFACT_ROOT, run.id);
   const started = Date.now();
@@ -213,15 +216,30 @@ async function executeSuite(
         }
       }
 
-      await db.insert(schema.testRunResults).values({
-        runId: run.id,
-        testCaseId: c.id,
-        status: ok ? "pass" : spec ? "fail" : "error",
-        durationMs: result?.duration ?? 0,
-        errorMessage: result?.error?.message ? stripAnsi(result.error.message).slice(0, 2000) : null,
-        screenshotUrl,
+      const [written] = await db
+        .insert(schema.testRunResults)
+        .values({
+          runId: run.id,
+          testCaseId: c.id,
+          status: ok ? "pass" : spec ? "fail" : "error",
+          durationMs: result?.duration ?? 0,
+          errorMessage: result?.error?.message ? stripAnsi(result.error.message).slice(0, 2000) : null,
+          screenshotUrl,
+        })
+        .returning();
+      writtenResults.push({
+        id: written.id,
+        testCaseId: written.testCaseId,
+        status: written.status,
+        errorMessage: written.errorMessage,
+        durationMs: written.durationMs,
       });
     }
+
+    // Classified after the loop, because two of the signals cannot be seen from
+    // a single result: what the rest of this run did, and what this same spec
+    // did in earlier runs.
+    await classifyAndStore(db, run.id, runnable.map((c) => c.id), writtenResults);
 
     const status = failed === 0 ? "passed" : passed === 0 ? "failed" : "partial";
     await db
@@ -240,5 +258,128 @@ async function executeSuite(
     // Specs are regenerated from the database each run, so nothing here is
     // worth keeping once results are recorded.
     await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * Classifies this run's failures and stores the verdict on each result.
+ *
+ * Reads the previous outcomes of the same specs so a flake can be told from a
+ * clean break, and reads when each spec was last edited so a change of outcome
+ * that follows an edit is not mistaken for non-determinism.
+ */
+async function classifyAndStore(
+  db: ReturnType<typeof getDb>,
+  runId: string,
+  caseIds: string[],
+  results: ResultInput[],
+) {
+  if (results.length === 0) return;
+
+  const prior = await db
+    .select({
+      testCaseId: schema.testRunResults.testCaseId,
+      status: schema.testRunResults.status,
+      at: schema.testRuns.startedAt,
+      classification: schema.testRunResults.classification,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .where(and(inArray(schema.testRunResults.testCaseId, caseIds), ne(schema.testRunResults.runId, runId)))
+    .orderBy(desc(schema.testRuns.startedAt));
+
+  const history = new Map<string, HistoryEntry[]>();
+  for (const row of prior) {
+    if (!row.testCaseId) continue;
+    const list = history.get(row.testCaseId) ?? [];
+    list.push({ status: row.status, at: row.at, classification: row.classification });
+    history.set(row.testCaseId, list);
+  }
+
+  const cases = await db
+    .select({ id: schema.testCases.id, updatedAt: schema.testCases.updatedAt })
+    .from(schema.testCases)
+    .where(inArray(schema.testCases.id, caseIds));
+  const caseUpdatedAt = new Map(cases.map((c) => [c.id, c.updatedAt]));
+
+  const verdicts = classifyRun({ results, history, caseUpdatedAt });
+  await store(db, verdicts);
+
+  // A verdict is a reading of the evidence available when it was written, and
+  // a flake only shows itself once it recovers: at the third failure in a row
+  // the honest reading is "this broke and stayed broken". Once a later run
+  // passes, that same failure looks different. So the recent failures of these
+  // specs are judged again with what is now known, rather than being left
+  // wrong for good.
+  await reclassifyRecent(db, caseIds, caseUpdatedAt);
+}
+
+async function store(db: ReturnType<typeof getDb>, verdicts: Map<string, Verdict>) {
+  for (const [resultId, verdict] of verdicts) {
+    await db
+      .update(schema.testRunResults)
+      .set({
+        classification: verdict.classification,
+        classificationConfidence: verdict.confidence,
+        classificationEvidence: verdict.evidence,
+      })
+      .where(eq(schema.testRunResults.id, resultId));
+  }
+}
+
+/** How many recent runs are revisited when new outcomes arrive. */
+const RECLASSIFY_RUNS = 6;
+
+async function reclassifyRecent(
+  db: ReturnType<typeof getDb>,
+  caseIds: string[],
+  caseUpdatedAt: Map<string, Date | null>,
+) {
+  const rows = await db
+    .select({
+      id: schema.testRunResults.id,
+      runId: schema.testRunResults.runId,
+      testCaseId: schema.testRunResults.testCaseId,
+      status: schema.testRunResults.status,
+      errorMessage: schema.testRunResults.errorMessage,
+      durationMs: schema.testRunResults.durationMs,
+      classification: schema.testRunResults.classification,
+      at: schema.testRuns.startedAt,
+    })
+    .from(schema.testRunResults)
+    .innerJoin(schema.testRuns, eq(schema.testRunResults.runId, schema.testRuns.id))
+    .where(inArray(schema.testRunResults.testCaseId, caseIds))
+    .orderBy(desc(schema.testRuns.startedAt));
+
+  const runsNewestFirst = [...new Set(rows.map((r) => r.runId))].slice(0, RECLASSIFY_RUNS);
+
+  for (const runId of runsNewestFirst) {
+    const inRun = rows.filter((r) => r.runId === runId);
+    if (!inRun.some((r) => r.status !== "pass")) continue;
+
+    // History for this run means every other run, including later ones - that
+    // hindsight is the whole point of looking again.
+    const history = new Map<string, HistoryEntry[]>();
+    for (const row of rows) {
+      if (row.runId === runId || !row.testCaseId) continue;
+      const list = history.get(row.testCaseId) ?? [];
+      list.push({ status: row.status, at: row.at, classification: row.classification });
+      history.set(row.testCaseId, list);
+    }
+
+    await store(
+      db,
+      classifyRun({
+        results: inRun.map((r) => ({
+          id: r.id,
+          testCaseId: r.testCaseId,
+          status: r.status,
+          errorMessage: r.errorMessage,
+          durationMs: r.durationMs,
+        })),
+        history,
+        caseUpdatedAt,
+      }),
+    );
   }
 }

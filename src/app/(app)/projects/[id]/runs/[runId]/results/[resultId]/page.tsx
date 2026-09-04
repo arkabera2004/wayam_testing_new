@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, Chip, CodeBlock, PageHeader, StatusBadge, cn } from "@/components/ui";
 import { AppIcon } from "@/components/ui/app-icon";
+import { ClassificationPanel } from "@/components/classification-panel";
 import { getResult } from "@/db/queries";
 import { currentUserId } from "@/lib/auth";
 import { relativeTime, toUiStatus } from "@/lib/format";
@@ -44,6 +45,16 @@ export default async function ResultDetailPage({
           </>
         }
       />
+
+      {result.classification && (
+        <div className="mb-4">
+          <ClassificationPanel
+            classification={result.classification}
+            confidence={result.classificationConfidence}
+            evidence={result.classificationEvidence}
+          />
+        </div>
+      )}
 
       {result.errorMessage && (
         <Card title="Failure" padded={false}>
