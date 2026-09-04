@@ -182,6 +182,32 @@ export const repoImports = pgTable("repo_imports", {
   importedAt: timestamp("imported_at", { withTimezone: true }).$defaultFn(() => new Date()),
 });
 
+/* ---- Fix verification (Phase 4) ---- */
+
+export const FIX_VERDICT = ["accepted", "rejected"] as const;
+
+/**
+ * A snapshot taken before a fix is attempted, and the verdict once it is.
+ * Without a recorded before, "did the assertion change" cannot be answered -
+ * and that question is the whole point of the harness.
+ */
+export const fixVerifications = pgTable("fix_verifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull(),
+  testCaseId: uuid("test_case_id").notNull(),
+  description: text("description"),
+  /** The spec exactly as it was before anyone touched it. */
+  specBefore: text("spec_before").notNull(),
+  specAfter: text("spec_after"),
+  suiteBefore: jsonb("suite_before").$type<{ total: number; passed: number; failed: number }>(),
+  suiteAfter: jsonb("suite_after").$type<{ total: number; passed: number; failed: number }>(),
+  verdict: text("verdict").$type<(typeof FIX_VERDICT)[number]>(),
+  reasons: jsonb("reasons").$type<string[]>(),
+  specDiff: jsonb("spec_diff").$type<unknown>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).$defaultFn(() => new Date()),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+});
+
 /* ---- API keys ---- */
 
 export const apiKeys = pgTable("api_keys", {

@@ -1968,3 +1968,77 @@ export async function rankedTestRisk(userId: string, projectId: string) {
 
   return rankTests(inputs, changes, shopstackPathForRoute);
 }
+
+/* ================================================================== */
+/* Fix verification (Phase 4)                                          */
+/* ================================================================== */
+
+/** Records the spec and suite state before a fix is attempted. */
+export async function createFixBaseline(
+  userId: string,
+  projectId: string,
+  input: {
+    testCaseId: string;
+    description: string;
+    specBefore: string;
+    suiteBefore: { total: number; passed: number; failed: number };
+  },
+) {
+  const db = getDb();
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const [row] = await db
+    .insert(schema.fixVerifications)
+    .values({ projectId, ...input })
+    .returning();
+  return row;
+}
+
+export async function getFixBaseline(userId: string, baselineId: string) {
+  if (!UUID.test(baselineId)) return null;
+  const db = getDb();
+  const [row] = await db
+    .select({ v: schema.fixVerifications })
+    .from(schema.fixVerifications)
+    .innerJoin(schema.projects, eq(schema.fixVerifications.projectId, schema.projects.id))
+    .where(and(eq(schema.fixVerifications.id, baselineId), eq(schema.projects.userId, userId)))
+    .limit(1)
+    .then((rows) => rows.map((r) => r.v));
+  return row ?? null;
+}
+
+export async function recordFixVerdict(
+  baselineId: string,
+  input: {
+    specAfter: string;
+    suiteAfter: { total: number; passed: number; failed: number };
+    verdict: "accepted" | "rejected";
+    reasons: string[];
+    specDiff: unknown;
+  },
+) {
+  const db = getDb();
+  const [row] = await db
+    .update(schema.fixVerifications)
+    .set({ ...input, verifiedAt: new Date() })
+    .where(eq(schema.fixVerifications.id, baselineId))
+    .returning();
+  return row;
+}
+
+export async function listFixVerifications(userId: string, projectId: string) {
+  const db = getDb();
+  return db
+    .select({ v: schema.fixVerifications, title: schema.testCases.title })
+    .from(schema.fixVerifications)
+    .innerJoin(schema.projects, eq(schema.fixVerifications.projectId, schema.projects.id))
+    .leftJoin(schema.testCases, eq(schema.fixVerifications.testCaseId, schema.testCases.id))
+    .where(and(eq(schema.projects.userId, userId), eq(schema.fixVerifications.projectId, projectId)))
+    .orderBy(desc(schema.fixVerifications.createdAt))
+    .then((rows) => rows.map((r) => ({ ...r.v, title: r.title })));
+}
