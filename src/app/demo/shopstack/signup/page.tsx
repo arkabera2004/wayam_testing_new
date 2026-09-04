@@ -2,22 +2,36 @@
 
 import { useState } from "react";
 
-import { KNOWN_EMAIL } from "../store";
+
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [created, setCreated] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  // Goes through the server so sign-up has an API layer underneath it. When
+  // that call fails, the error element never renders - which from the UI is
+  // indistinguishable from the element having been renamed.
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (email.trim().toLowerCase() === KNOWN_EMAIL) {
-      setError("An account with that email already exists.");
-      setCreated(false);
-      return;
-    }
     setError("");
-    setCreated(true);
+    setCreated(false);
+    try {
+      const res = await fetch("/demo/shopstack/api/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.status === 409) {
+        setError(data.error);
+        return;
+      }
+      if (!res.ok) return;
+      setCreated(true);
+    } catch {
+      /* Nothing rendered: the page cannot say what it was not told. */
+    }
   }
 
   return (

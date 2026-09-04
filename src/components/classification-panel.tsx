@@ -43,14 +43,25 @@ const LABEL: Record<string, { text: string; tone: "error" | "warning" | "info" |
   },
 };
 
+export type NetworkEvent = {
+  method: string;
+  url: string;
+  status: number | null;
+  ok: boolean;
+  body: string | null;
+  failure: string | null;
+};
+
 export function ClassificationPanel({
   classification,
   confidence,
   evidence,
+  network,
 }: {
   classification: string | null;
   confidence: number | null;
   evidence: ClassificationEvidence[] | null;
+  network?: NetworkEvent[] | null;
 }) {
   if (!classification) return null;
   const label = LABEL[classification] ?? LABEL.unclassified;
@@ -88,6 +99,29 @@ export function ClassificationPanel({
             </li>
           ))}
         </ul>
+      )}
+
+      {/* What the layers underneath were doing. A verdict that says the server
+          faulted should be checkable against the response that says so. */}
+      {network && network.length > 0 && (
+        <div className="border-muted mt-4 border-t pt-4">
+          <p className="text-label-sm text-tertiary mb-2">What the page received</p>
+          <ul className="flex flex-col gap-1">
+            {network
+              .filter((e) => /\/api\//.test(e.url) || !e.ok)
+              .slice(0, 8)
+              .map((e, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <Chip tone={e.failure ? undefined : e.ok ? "success" : (e.status ?? 0) >= 500 ? "error" : "warning"}>
+                    {e.failure ? "failed" : e.status}
+                  </Chip>
+                  <span className="text-body-sm text-secondary min-w-0 flex-1 truncate">
+                    {e.method} {e.url.replace(/^https?:\/\/[^/]+/, "")}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
       )}
     </Card>
   );

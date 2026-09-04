@@ -52,6 +52,7 @@ export default async function ResultDetailPage({
             classification={result.classification}
             confidence={result.classificationConfidence}
             evidence={result.classificationEvidence}
+            network={result.networkEvents}
           />
         </div>
       )}

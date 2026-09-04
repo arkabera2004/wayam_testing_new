@@ -255,6 +255,10 @@ export const testRunResults = pgTable("test_run_results", {
   classificationEvidence: jsonb("classification_evidence").$type<
     Array<{ signal: string; category: string; weight: number; detail: string }>
   >(),
+  /** What the page asked for and what came back, captured during the spec. */
+  networkEvents: jsonb("network_events").$type<
+    Array<{ method: string; url: string; status: number | null; ok: boolean; body: string | null; failure: string | null; ms: number }>
+  >(),
 });
 
 export const riskScores = pgTable("risk_scores", {

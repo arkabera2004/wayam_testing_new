@@ -8,6 +8,7 @@ import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
 import { getDb, schema } from "@/db";
 import { classifyRun, type HistoryEntry, type ResultInput, type Verdict } from "./failure-classifier";
+import { correlate } from "./cross-layer";
 
 /**
  * Executes a project's specs with the real Playwright runner.
@@ -156,8 +157,21 @@ async function executeSuite(
 
   try {
     await mkdir(dir, { recursive: true });
+
+    // Every spec is rewritten to import its test from a fixture written
+    // alongside it. That fixture attaches network and console listeners to the
+    // page, so what the app answered underneath a UI failure is recorded
+    // without any spec having to ask for it. A spec that was written by hand
+    // gets the same treatment as a generated one.
+    await writeFile(path.join(dir, "parikshan-capture.ts"), CAPTURE_FIXTURE, "utf8");
     await Promise.all(
-      runnable.map((c) => writeFile(path.join(dir, c.id + ".spec.ts"), c.playwrightCode as string, "utf8")),
+      runnable.map((c) =>
+        writeFile(
+          path.join(dir, c.id + ".spec.ts"),
+          instrumentSpec(c.playwrightCode as string),
+          "utf8",
+        ),
+      ),
     );
 
     const reportPath = path.join(dir, "report.json");
@@ -187,6 +201,19 @@ async function executeSuite(
       child.on("close", () => { clearTimeout(kill); resolve(); });
       child.on("error", () => { clearTimeout(kill); resolve(); });
     });
+
+    // What each spec saw underneath the UI, written by the fixture.
+    const captures = new Map<string, CapturedLayers>();
+    await Promise.all(
+      runnable.map(async (c) => {
+        try {
+          const raw = await readFile(path.join(dir, `${c.id}.capture.json`), "utf8");
+          captures.set(c.id, JSON.parse(raw) as CapturedLayers);
+        } catch {
+          /* A spec that never navigated leaves no capture; that is not an error. */
+        }
+      }),
+    );
 
     const report = JSON.parse(await readFile(reportPath, "utf8")) as { suites?: ReportSuite[] };
     const specs = (report.suites ?? []).flatMap(flattenSpecs);
@@ -225,6 +252,10 @@ async function executeSuite(
           durationMs: result?.duration ?? 0,
           errorMessage: result?.error?.message ? stripAnsi(result.error.message).slice(0, 2000) : null,
           screenshotUrl,
+          networkEvents: captures.get(c.id)?.network ?? null,
+          logs: captures.get(c.id)?.console?.length
+            ? captures.get(c.id)!.console.join("\n").slice(0, 4000)
+            : null,
         })
         .returning();
       writtenResults.push({
@@ -303,7 +334,24 @@ async function classifyAndStore(
   const caseUpdatedAt = new Map(cases.map((c) => [c.id, c.updatedAt]));
 
   const verdicts = classifyRun({ results, history, caseUpdatedAt });
-  await store(db, verdicts);
+
+  // The UI verdict is only the first layer. What the page actually received
+  // underneath it can confirm, weaken or overturn it.
+  const layers = await db
+    .select({
+      id: schema.testRunResults.id,
+      networkEvents: schema.testRunResults.networkEvents,
+      logs: schema.testRunResults.logs,
+    })
+    .from(schema.testRunResults)
+    .where(inArray(schema.testRunResults.id, [...verdicts.keys()]));
+
+  const correlated = new Map<string, Verdict>();
+  for (const [id, verdict] of verdicts) {
+    const layer = layers.find((l) => l.id === id);
+    correlated.set(id, correlate(verdict, layer?.networkEvents ?? null, layer?.logs ?? null));
+  }
+  await store(db, correlated);
 
   // A verdict is a reading of the evidence available when it was written, and
   // a flake only shows itself once it recovers: at the third failure in a row
@@ -344,6 +392,8 @@ async function reclassifyRecent(
       errorMessage: schema.testRunResults.errorMessage,
       durationMs: schema.testRunResults.durationMs,
       classification: schema.testRunResults.classification,
+      networkEvents: schema.testRunResults.networkEvents,
+      logs: schema.testRunResults.logs,
       at: schema.testRuns.startedAt,
     })
     .from(schema.testRunResults)
@@ -367,19 +417,139 @@ async function reclassifyRecent(
       history.set(row.testCaseId, list);
     }
 
-    await store(
-      db,
-      classifyRun({
-        results: inRun.map((r) => ({
-          id: r.id,
-          testCaseId: r.testCaseId,
-          status: r.status,
-          errorMessage: r.errorMessage,
-          durationMs: r.durationMs,
-        })),
-        history,
-        caseUpdatedAt,
-      }),
-    );
+    const fresh = classifyRun({
+      results: inRun.map((r) => ({
+        id: r.id,
+        testCaseId: r.testCaseId,
+        status: r.status,
+        errorMessage: r.errorMessage,
+        durationMs: r.durationMs,
+      })),
+      history,
+      caseUpdatedAt,
+    });
+
+    const withLayers = new Map<string, Verdict>();
+    for (const [id, verdict] of fresh) {
+      const row = inRun.find((r) => r.id === id);
+      withLayers.set(id, correlate(verdict, row?.networkEvents ?? null, row?.logs ?? null));
+    }
+    await store(db, withLayers);
   }
 }
+
+export type NetworkEvent = {
+  method: string;
+  url: string;
+  status: number | null;
+  ok: boolean;
+  /** Only kept for responses that failed, which is what a failure needs. */
+  body: string | null;
+  failure: string | null;
+  ms: number;
+};
+
+export type CapturedLayers = { network: NetworkEvent[]; console: string[] };
+
+/**
+ * Points a spec's imports at the capture fixture.
+ *
+ * Rewriting the import rather than asking spec authors to change anything is
+ * what makes this work for hand-written specs as well as generated ones. The
+ * fixture re-exports expect unchanged, so only where `test` comes from moves.
+ */
+function instrumentSpec(code: string): string {
+  return code.replace(
+    /from\s+["']@playwright\/test["']/g,
+    'from "./parikshan-capture"',
+  );
+}
+
+/**
+ * Written next to the specs at run time. It records what the page asked for and
+ * what came back, plus browser console errors, then writes them beside the spec
+ * for the runner to read. Response bodies are only kept for failures - a
+ * successful body is rarely why a test failed and would dwarf everything else.
+ */
+const CAPTURE_FIXTURE = `import { test as base, expect } from "@playwright/test";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+
+const MAX_BODY = 1500;
+const MAX_EVENTS = 60;
+
+export const test = base.extend({
+  page: async ({ page }, use, testInfo) => {
+    const network = [];
+    const consoleLines = [];
+    const startedAt = Date.now();
+
+    page.on("response", async (res) => {
+      if (network.length >= MAX_EVENTS) return;
+      const req = res.request();
+      // Documents and API calls are what matter; asset noise is not.
+      const type = req.resourceType();
+      if (type !== "document" && type !== "fetch" && type !== "xhr") return;
+      const ok = res.status() < 400;
+      let body = null;
+      if (!ok) {
+        try {
+          body = (await res.text()).slice(0, MAX_BODY);
+        } catch {
+          body = null;
+        }
+      }
+      network.push({
+        method: req.method(),
+        url: res.url(),
+        status: res.status(),
+        ok,
+        body,
+        failure: null,
+        ms: Date.now() - startedAt,
+      });
+    });
+
+    page.on("requestfailed", (req) => {
+      if (network.length >= MAX_EVENTS) return;
+      const type = req.resourceType();
+      if (type !== "document" && type !== "fetch" && type !== "xhr") return;
+      network.push({
+        method: req.method(),
+        url: req.url(),
+        status: null,
+        ok: false,
+        body: null,
+        failure: req.failure()?.errorText ?? "request failed",
+        ms: Date.now() - startedAt,
+      });
+    });
+
+    page.on("console", (msg) => {
+      if (msg.type() !== "error" && msg.type() !== "warning") return;
+      if (consoleLines.length >= 40) return;
+      consoleLines.push(msg.type().toUpperCase() + ": " + msg.text().slice(0, 300));
+    });
+
+    page.on("pageerror", (err) => {
+      if (consoleLines.length >= 40) return;
+      consoleLines.push("PAGEERROR: " + String(err).slice(0, 300));
+    });
+
+    await use(page);
+
+    // Named from the spec file, which the runner names after the test case.
+    const caseId = path.basename(testInfo.file).replace(/\\.spec\\.ts$/, "");
+    try {
+      writeFileSync(
+        path.join(path.dirname(testInfo.file), caseId + ".capture.json"),
+        JSON.stringify({ network, console: consoleLines }),
+      );
+    } catch {
+      /* Losing a capture must never fail the test it was watching. */
+    }
+  },
+});
+
+export { expect };
+`;
