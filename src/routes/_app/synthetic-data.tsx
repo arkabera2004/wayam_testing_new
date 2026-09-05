@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Database } from "lucide-react";
@@ -44,12 +44,30 @@ function SyntheticDataPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PublicSyntheticDataRun | null>(null);
 
+  async function loadScenariosFor(id: string) {
+    if (!id) {
+      setScenarios([]);
+      return;
+    }
+    const { scenarios: loaded } = await loadScenarios({ data: { projectId: id } });
+    setScenarios(loaded);
+  }
+
+  // Load scenarios for the project that's already selected on mount (the
+  // first project in the list) — handleProjectChange alone only fires on
+  // a user-driven Select change, which never happens for the default
+  // value, so the scenario dropdown was stuck empty until you manually
+  // re-picked the already-selected project.
+  useEffect(() => {
+    loadScenariosFor(projectId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleProjectChange(id: string) {
     setProjectId(id);
     setScenarioId("");
     setResult(null);
-    const { scenarios: loaded } = await loadScenarios({ data: { projectId: id } });
-    setScenarios(loaded);
+    await loadScenariosFor(id);
   }
 
   async function handleGenerate() {
