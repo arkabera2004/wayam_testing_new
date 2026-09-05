@@ -87,6 +87,40 @@ export function parseUrlMismatch(error: string): { expectedPath: string; receive
 }
 
 /**
+ * Why a URL assertion could not be reduced to two concrete paths.
+ *
+ * parseUrlMismatch returns null for several different reasons and the caller
+ * cannot tell them apart, so each one is named here rather than collapsed into
+ * a single message. A refusal that misdescribes the input is worse than a
+ * blunt one: it sends whoever reads it looking for the wrong thing.
+ */
+function describeUrlRefusal(error: string): string {
+  const receivedRaw = error.match(/Received string:\s*"([^"]*)"/)?.[1];
+  if (!receivedRaw) {
+    return "The URL assertion failed but the error does not report the address the browser ended up at, so there is no wrong destination to trace back to the source.";
+  }
+
+  let receivedPath: string;
+  try {
+    receivedPath = new URL(receivedRaw).pathname;
+  } catch {
+    return `The URL assertion reported "${receivedRaw.slice(0, 60)}" as the address reached, which is not a URL this can take a path from.`;
+  }
+
+  const expectedPattern = error.match(/Expected pattern:\s*(\S+)/)?.[1];
+  if (expectedPattern && literalFromPattern(expectedPattern) === null) {
+    return `The spec expects the URL to match ${expectedPattern}, which describes a set of paths rather than naming one. The browser went to ${receivedPath}. A pattern is not a value: picking a member of that set to write into the source would be a guess, so only a pattern that is a single literal wearing regex syntax is handled.`;
+  }
+
+  const expectedString = error.match(/Expected string:\s*"([^"]*)"/)?.[1];
+  if (!expectedPattern && !expectedString) {
+    return `The browser went to ${receivedPath}, but the error does not state which address the spec expected, so there is nothing to change it to.`;
+  }
+
+  return `The URL assertion reports the same path, ${receivedPath}, as both expected and reached. Whatever made this spec fail is not the destination, so there is no navigation to correct.`;
+}
+
+/**
  * Where a page decides to send the browser. These take a literal often enough
  * to be worth searching for, and when they do the wrong destination is a string
  * sitting in the source exactly like a wrong message is.
@@ -138,6 +172,15 @@ export async function proposeFix(input: {
       refused: true,
       reason: `The page went to ${urlMismatch.receivedPath} instead of ${urlMismatch.expectedPath}, but no navigation call with that destination as a literal was found in non-test source. The destination may be computed, or the redirect may come from configuration rather than code.`,
     };
+  }
+
+  // A URL assertion that could not be reduced to two concrete paths has to
+  // refuse on its own terms. Falling through to the value-mismatch path below
+  // reported that the failure "does not state both the value it expected and
+  // the value it received" - which is wrong for a pattern assertion. It states
+  // both; it just states the expected one as a set of paths rather than a path.
+  if (/toHaveURL/.test(input.errorMessage ?? "")) {
+    return { refused: true, reason: describeUrlRefusal(input.errorMessage ?? "") };
   }
 
   const parsed = parseValueMismatch(input.errorMessage ?? "");

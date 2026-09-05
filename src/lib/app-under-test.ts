@@ -36,9 +36,23 @@ export const SHOPSTACK: AppUnderTest = {
 const BUILD_TIMEOUT_MS = 180_000;
 const READY_TIMEOUT_MS = 60_000;
 
+/**
+ * Environment for the build and the server it starts.
+ *
+ * `NODE_ENV` is forced rather than inherited. Parikshan runs under `next dev`
+ * during development, which sets `NODE_ENV=development` on its own process, and
+ * a spawned child inherits it - so `next build` ran in development mode and
+ * failed on the storefront's error page with "<Html> should not be imported
+ * outside of pages/_document". Whether the harness can build the application it
+ * is judging must not depend on how the harness itself was started.
+ */
+function buildEnv(): NodeJS.ProcessEnv {
+  return { ...process.env, NODE_ENV: "production" };
+}
+
 function run(command: string, args: string[], cwd: string, timeoutMs: number): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { cwd });
+    const child = spawn(command, args, { cwd, env: buildEnv() });
     let output = "";
     child.stdout.on("data", (d) => (output += d));
     child.stderr.on("data", (d) => (output += d));
@@ -85,6 +99,7 @@ async function start(app: AppUnderTest, repoRoot: string): Promise<boolean> {
     cwd,
     detached: true,
     stdio: "ignore",
+    env: buildEnv(),
   });
   child.unref();
   return waitUntil(() => isUp(app.baseUrl), READY_TIMEOUT_MS);

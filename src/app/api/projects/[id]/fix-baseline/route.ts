@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { currentUserId } from "@/lib/auth";
 import { SHOPSTACK, rebuildAndRestart } from "@/lib/app-under-test";
-import { runSuite } from "@/lib/test-runner";
+import { RunInProgressError, runSuite } from "@/lib/test-runner";
 import { createFixBaseline, getTestCase, resolveProject } from "@/db/queries";
 
 /**
@@ -39,7 +39,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const outcome = await runSuite(project.id);
+  // A run already in flight for this project is a temporary conflict, not a
+  // fault. Uncaught, it escaped as a bare 500 with no body, which reads as the
+  // harness breaking rather than as "wait and try again" - and taking a
+  // baseline is exactly the moment someone clicks twice.
+  let outcome;
+  try {
+    outcome = await runSuite(project.id);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Run failed" },
+      { status: err instanceof RunInProgressError ? 409 : 422 },
+    );
+  }
 
   const baseline = await createFixBaseline(userId, project.id, {
     testCaseId,

@@ -16,9 +16,16 @@ import type { IconName } from "@/lib/icons";
 /**
  * Ported from AIDLC-Azure's Release Gate: a composite readiness score over CI
  * results, open bugs and security findings, resolved into a go / no-go call.
- * The original drove this from a live evaluation endpoint; here the signals
- * come from the demo dataset, so the shape is preserved but the verdict is
- * fixed.
+ *
+ * The original drove this from a live evaluation endpoint. Here the verdict is
+ * computed by releaseGate() from what the database actually holds - the latest
+ * run's pass rate, how many tests are still quarantined, and how many healed
+ * locators are awaiting review. No run at all is NO-GO rather than a pass, on
+ * the grounds that an absence of evidence is not evidence of readiness.
+ *
+ * Two of the original's inputs are not ported: open bugs and security
+ * findings. Nothing in this build measures either, so the score is narrower
+ * than the one this screen was modelled on.
  */
 const VERDICT: Record<
   GateVerdict,
