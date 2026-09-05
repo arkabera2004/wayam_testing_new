@@ -200,6 +200,54 @@ against a build, change written to disk, application rebuilt and restarted,
 suite re-run, verdict issued. That was partial when this document was first
 written and is no longer.
 
+### The same loop, driven by the fixer rather than by hand
+
+The two cases above are a person editing a file and asking the harness to
+judge it. This one is the agent doing the editing.
+
+A real defect was planted in the storefront's source - the sign-in failure
+message changed from "Incorrect email or password." to "Those credentials did
+not match." - the application was rebuilt so it genuinely served the defect, and
+the suite was run twice until the failure was classified `real-bug` at 70. Then
+the fixer was pointed at that result and nothing else.
+
+```
+proposed: true          merged: false
+branch:   parikshan/fix-0d232bd9 @ e1927445f5
+working branch untouched: design-system-icon-registry
+
+apps/shopstack/src/app/login/page.tsx:29
+  -  : "Those credentials did not match.",
+  +  : "Incorrect email or password.",
+
+HARNESS: ACCEPTED
+  spec passes: true    regressed: false
+  suite: 1 failing -> 0 failing
+  The spec is byte-for-byte unchanged in what it asserts, it now passes, and
+  nothing else in the suite started failing. The behaviour changed, not the
+  expectation.
+```
+
+Every step was checked afterwards rather than taken on trust:
+
+- **The working tree was put back.** The defect is still on disk; the fix was
+  not left behind. Verification has to apply a change to test it, and it is
+  restored in a `finally` whether the run passed, failed or threw.
+- **The change exists only on its branch.** `HEAD` is where it was, the current
+  branch was never left, and nothing was merged. The branch is written with git
+  plumbing straight into the object store, so the working tree is never
+  switched and a build cannot pick up the wrong code.
+- **The application was rebuilt back to the restored source.** Re-running the
+  suite afterwards gives 9 of 10 again, which is only true if the fix stopped
+  being served the moment verification ended.
+- **The verdict required a real rebuild.** The running build had the defect when
+  the fixer was called. The only way that spec could pass is if the harness
+  built the fixer's edit and re-ran against it.
+
+**The loop is proven end to end including the fixer's own proposal**: classify,
+propose, branch, apply, rebuild, restart, re-run, verdict, restore - with no
+step performed by hand.
+
 ---
 
 ## What this does not show
@@ -227,11 +275,14 @@ Stated so the trio above is read for what it is.
 - **One demonstration each.** These are single reproduced cases, not a measured
   accuracy rate over a corpus. They show the mechanisms work on real failures;
   they do not establish how often the classifier is right in general.
-- **The fixer proposes; it has not had a proposal verified end to end.** Phase 5
-  can put a change on a branch and refuses everything it cannot reason about,
-  and the rebuild that used to make its verdicts meaningless is now in place.
-  What is shown above is the harness judging fixes applied by hand. A fixer
-  proposal carried all the way through the rebuilt loop has not been
-  demonstrated, and should not be claimed until it is.
+- **One proposal, of one shape.** The loop has been carried end to end once, for
+  the single case the fixer handles: an assertion that names both the value it
+  wanted and the value it got, where that value is a literal in non-test source.
+  It refuses everything else, and those refusals are the common case. This shows
+  the loop is sound; it does not show the fixer is useful across a range of
+  bugs, and it is not evidence of a success rate.
+- **The fixer does not know what the wording should be.** It restores what the
+  assertion demands and says so: the replacement satisfies the test, and whether
+  it is the right sentence for the product is a judgement it does not make.
 - **Nothing merges.** Accepting a proposal records a decision; a person merges
   the branch with git, deliberately, outside this application.
