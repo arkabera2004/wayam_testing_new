@@ -72,9 +72,24 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
           delta="summed spec time"
           trend={a.durationTrend}
         />
-        {/* No coverage table exists yet, so this says so rather than printing
-            a number nothing measured. */}
-        <StatCard label="Coverage" value="Not measured" />
+        {/* Routes a spec navigates to, over routes the crawl found. It is a
+            reach figure, not an assertion figure: a page a spec merely passes
+            through counts, so this reads higher than what the suite actually
+            checks. The label says "routes reached" rather than "coverage" for
+            that reason. Nothing crawled means nothing to divide by. */}
+        <StatCard
+          label="Routes reached"
+          value={
+            coverage.length
+              ? `${Math.round((coverage.filter((p) => p.covered).length / coverage.length) * 100)}%`
+              : "-"
+          }
+          delta={
+            coverage.length
+              ? `${coverage.filter((p) => p.covered).length} of ${coverage.length} pages`
+              : "nothing crawled yet"
+          }
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

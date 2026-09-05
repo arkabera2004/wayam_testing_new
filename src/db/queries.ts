@@ -17,6 +17,7 @@ function relativeLabel(value: Date | null): string {
 
 import { changeSignalsForPaths, shopstackPathForRoute } from "@/lib/code-change";
 import { rankTests, routesFromSpec } from "@/lib/risk-ranker";
+import { extractRequirements } from "@/lib/prd-extract";
 import { getDb, schema } from "./index";
 
 /**
@@ -1036,24 +1037,71 @@ export async function rankedTests(userId: string, projectId: string) {
     .sort((a, b) => b.priority - a.priority);
 }
 
-/** Coverage per page, from the snapshots the crawl recorded. */
+/**
+ * Coverage per page: which discovered routes any spec actually navigates to.
+ *
+ * Derived on read rather than served from coverage_snapshots. Those rows were
+ * seeded, so the heatmap was shading numbers nothing had measured - the one
+ * thing this screen should not do. Here a page counts as covered when a spec
+ * in this project names its route, read out of the spec source with the same
+ * routesFromSpec the risk ranker uses, so the two screens cannot disagree
+ * about what a spec touches.
+ *
+ * Confidence is about the match, not about test quality:
+ *  - high   an exact route match
+ *  - medium matched a parameterised segment, e.g. /products/:slug via /products/abc
+ *  - low    nothing matched
+ *
+ * This measures navigation, not assertions. A page a spec merely passes
+ * through counts as covered, which overstates what the suite is really
+ * checking - stated here rather than implied by a green tile.
+ */
 export async function coverageByPage(userId: string, projectId: string) {
   const db = getDb();
-  const rows = await db
-    .select({ c: schema.coverageSnapshots })
-    .from(schema.coverageSnapshots)
-    .innerJoin(schema.projects, eq(schema.coverageSnapshots.projectId, schema.projects.id))
-    .where(and(eq(schema.projects.userId, userId), eq(schema.coverageSnapshots.projectId, projectId)));
 
-  return rows.map((r) => ({
-    path: r.c.filePath,
-    covered: Boolean(r.c.isCovered),
-    // The snapshot records whether a page is covered and how confident that is,
-    // not a percentage. Confidence is mapped to a band so the heatmap has
-    // something honest to shade with.
-    confidence: r.c.estimatedConfidence ?? "low",
-    mappedTests: (r.c.mappedTestCaseIds ?? []).length,
-  }));
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return [];
+
+  const [pages, cases] = await Promise.all([
+    db
+      .select({ path: schema.discoveredPages.path })
+      .from(schema.discoveredPages)
+      .where(eq(schema.discoveredPages.projectId, projectId)),
+    db
+      .select({ id: schema.testCases.id, code: schema.testCases.playwrightCode })
+      .from(schema.testCases)
+      .innerJoin(schema.testSuites, eq(schema.testCases.suiteId, schema.testSuites.id))
+      .where(eq(schema.testSuites.projectId, projectId)),
+  ]);
+
+  const specRoutes = cases.map((c) => ({ id: c.id, routes: routesFromSpec(c.code) }));
+
+  /** "/products/:slug" also matches "/products/anything". */
+  const matches = (pagePath: string, route: string) => {
+    if (route === pagePath) return "exact" as const;
+    if (!pagePath.includes(":")) return null;
+    const pattern = new RegExp(`^${pagePath.replace(/:[^/]+/g, "[^/]+")}$`);
+    return pattern.test(route) ? ("param" as const) : null;
+  };
+
+  return pages.map((p) => {
+    const hits = specRoutes.filter((s) => s.routes.some((r) => matches(p.path, r)));
+    const exact = specRoutes.some((s) => s.routes.some((r) => matches(p.path, r) === "exact"));
+
+    return {
+      path: p.path,
+      covered: hits.length > 0,
+      confidence: (hits.length === 0 ? "low" : exact ? "high" : "medium") as
+        | "low"
+        | "medium"
+        | "high",
+      mappedTests: hits.length,
+    };
+  });
 }
 
 /** One recorded result, with its case and run. */
@@ -1532,19 +1580,40 @@ export async function createPrdDocument(
     .limit(1);
   if (!owned) return null;
 
+  // Extraction runs inline. It is a parser over the text that was just
+  // supplied, not a call to anything, so it finishes inside the request - and
+  // a document that reaches the database has already been read. Storing it as
+  // "analyzing" and leaving it there was how this previously behaved, which
+  // read as a job that never finished rather than as a step that never ran.
+  const extracted = extractRequirements(input.body);
+
   const [row] = await db
     .insert(schema.prdDocuments)
     .values({
       projectId,
       name: input.name,
       body: input.body,
-      // Requirement extraction is not wired, so the document is stored as
-      // uploaded rather than claiming an analysis that did not run.
-      status: "analyzing",
+      status: "analyzed",
       sizeBytes: Buffer.byteLength(input.body, "utf8"),
       sections: input.body.split(/^#{1,6}\s/m).length - 1,
     })
     .returning();
+
+  if (extracted.length > 0) {
+    await db.insert(schema.requirements).values(
+      extracted.map((r) => ({
+        projectId,
+        prdId: row.id,
+        title: r.title,
+        body: r.body,
+        kind: r.kind,
+        priority: r.priority,
+        ambiguity: r.ambiguity,
+        source: "imported" as const,
+      })),
+    );
+  }
+
   return row;
 }
 
