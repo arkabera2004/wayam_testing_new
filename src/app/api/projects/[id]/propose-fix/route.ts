@@ -9,6 +9,7 @@ import { branchDiff, commitToBranch, currentBranch, withFixApplied } from "@/lib
 import { verifyFix } from "@/lib/fix-verifier";
 import { proposeFix } from "@/lib/fixer";
 import { runSuite } from "@/lib/test-runner";
+import { SHOPSTACK, rebuildAndRestart } from "@/lib/app-under-test";
 import { createFixProposal, getResultForFix, getTestCase, resolveProject } from "@/db/queries";
 
 /**
@@ -24,7 +25,9 @@ import { createFixProposal, getResultForFix, getTestCase, resolveProject } from 
  * look, not that anything has happened. That holds regardless of how confident
  * the harness is, and there is no code path here that could change it.
  */
-const SOURCE_ROOTS = ["src/app/demo/shopstack", "src/app", "src/lib", "src/components"];
+// Only the application under test. Parikshan's own source is not a place a
+// fixer should be proposing changes to.
+const SOURCE_ROOTS = ["apps/shopstack/src"];
 
 async function candidateFiles(repoRoot: string): Promise<string[]> {
   const { execFile } = await import("node:child_process");
@@ -85,24 +88,30 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   );
   const diff = await branchDiff(repoRoot, branch);
 
-  // Applied only long enough to be tested, then put back.
+  // Applied, genuinely built, re-run, then put back and built again. The
+  // rebuild is the point: without it the suite would be re-run against code the
+  // change never reached, which is how a correct fix used to be rejected.
+  let buildFailure: string | null = null;
   const { targetPasses, suiteAfter } = await withFixApplied(
     repoRoot,
     proposal.file,
     proposal.line,
     proposal.after,
     async () => {
+      const rebuilt = await rebuildAndRestart(SHOPSTACK, repoRoot);
+      if (!rebuilt.ok) {
+        buildFailure = `The application under test failed to ${rebuilt.stage} with the change applied: ${rebuilt.output.slice(-400)}`;
+        return { targetPasses: false, suiteAfter: suiteBefore };
+      }
       const target = await runSuite(project.id, { caseIds: [result.testCaseId as string] });
       const suite = await runSuite(project.id);
       return { targetPasses: target.failed === 0, suiteAfter: suite };
     },
   );
 
-  // The application under test here is served from a build, and this route is
-  // running inside that same server - so a source edit cannot reach the running
-  // app, and rebuilding would kill the process doing the verifying. Rather than
-  // emit a rejection that means nothing, the harness is told it cannot judge.
-  const servedFromBuild = proposal.file.startsWith("src/") && process.env.NODE_ENV === "production";
+  // Put the running application back to what is actually on disk, so a
+  // rejected proposal does not leave its change serving.
+  const restored = await rebuildAndRestart(SHOPSTACK, repoRoot);
 
   const verdict = verifyFix({
     specBefore: testCase.playwrightCode,
@@ -113,9 +122,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     targetSpecPasses: targetPasses,
     suiteBefore: { total: suiteBefore.total, passed: suiteBefore.passed, failed: suiteBefore.failed },
     suiteAfter: { total: suiteAfter.total, passed: suiteAfter.passed, failed: suiteAfter.failed },
-    unverifiableReason: servedFromBuild
-      ? `The change is to ${proposal.file}, which this application serves from a compiled build. Editing the source does not change what is running, and rebuilding would restart the process performing the verification. An application under test that is a separate process can be rebuilt between the baseline and the re-run; this one cannot.`
-      : null,
+    // Only a build that genuinely failed leaves this unverifiable now.
+    unverifiableReason:
+      buildFailure ??
+      (restored.ok ? null : "The application could not be rebuilt from the restored source, so the environment is no longer in a known state."),
   });
 
   const record = await createFixProposal(project.id, {

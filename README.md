@@ -268,8 +268,25 @@ It requires both a connection and a
 
 ## ShopStack, the system under test
 
-`/demo/shopstack` is a small storefront that exists to be tested: catalogue,
-product pages, search, cart, checkout, login, signup, account settings.
+`apps/shopstack` is a small storefront that exists to be tested: catalogue,
+product pages, search, cart, checkout, login, signup, account settings. It is a
+**separate application on its own port**, not a route inside Parikshan.
+
+That separation is load-bearing rather than tidy. While it lived here, the
+harness and the thing it was judging were the same process: a proposed source
+change could not be built without restarting the process doing the verifying,
+so the suite was re-run against code the change had never reached and a correct
+fix was rejected with a confident explanation. Two processes is what lets a
+baseline, a change and a re-run be three states of the same application.
+
+```bash
+cd apps/shopstack && npx next build && npx next start -p 4000
+```
+
+It keeps the `/demo/shopstack` base path, so specs written against the old URLs
+work unchanged. Two things follow from that base path and are easy to get
+wrong: `next/link` and the router prepend it automatically, so internal hrefs
+must not include it, while `fetch` does not, so an API call must.
 
 The cart persists to `localStorage` behind a `hydrated` gate. This is not
 incidental - with cart state in React only, it was lost on every navigation and

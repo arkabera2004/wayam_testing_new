@@ -62,8 +62,8 @@ export async function changeSignalsForPaths(
   return out;
 }
 
-/** Where the demo storefront's code lives, for mapping a route to a directory. */
+/** Where the storefront's code lives, for mapping a route to a directory. */
 export function shopstackPathForRoute(route: string): string {
   const clean = route.replace(/^\/+|\/+$/g, "");
-  return path.posix.join("src/app/demo/shopstack", clean);
+  return path.posix.join("apps/shopstack/src/app", clean);
 }

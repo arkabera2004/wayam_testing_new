@@ -82,40 +82,50 @@ contact with real data and were only found by running it:
 Live from the running application, over the real suite:
 
 ```
- 69  Sign up is rejected for an existing email
- 66  Account locks after five failed attempts
- 55  Checkout is blocked when the cart is empty
- 55  User checks out with an expired card
- 55  User completes checkout with a valid card
- 50  Login fails with an incorrect password
- 50  User changes their account email
- 42  Search with no matches shows an empty state
- 42  User removes the last item from the cart
- 42  User updates the quantity of a cart item
+ 60  Login fails with an incorrect password
+ 39  Sign up is rejected for an existing email
+ 36  Account locks after five failed attempts
+ 25  Checkout is blocked when the cart is empty
+ 25  User checks out with an expired card
+ 25  User completes checkout with a valid card
+ 20  User changes their account email
+ 12  Search with no matches shows an empty state
+ 12  User removes the last item from the cart
+ 12  User updates the quantity of a cart item
 ```
 
-**Top — 69**
+**Top — 60**
 
 | Points | Factor | Reason |
 |---|---|---|
-| +34 | has caught real bugs | Classified as a real bug 2 times. This area has a record of actually breaking. |
+| +40 | has caught real bugs | Classified as a real bug 5 times. This area has a record of actually breaking. |
 | 0 | outages discounted | 1 of its failures was an environment outage, left out of the count above. |
-| +30 | changed this week | `src/app/demo/shopstack/signup` changed today. |
-| +20 | access path | Covers `/signup`. Sign-in defects lock people out or let the wrong people in. |
+| 0 | untouched recently | No code behind this test has changed in the last 90 days. |
+| +20 | access path | Covers `/login`. Sign-in defects lock people out or let the wrong people in. |
 
-**Bottom — 42**
+**Bottom — 12**
 
 | Points | Factor | Reason |
 |---|---|---|
-| 0 | no real bugs recorded | Has failed 1 time but never in a way judged a genuine defect. |
-| 0 | outages discounted | Its one failure was an environment outage. |
-| +30 | changed this week | `src/app/demo/shopstack/cart` changed 3 days ago. |
+| 0 | no real bugs recorded | Has failed 3 times but never in a way judged a genuine defect. |
+| 0 | outages discounted | 1 of its failures was an environment outage. |
+| 0 | untouched recently | No code behind this test has changed in the last 90 days. |
 | +12 | core journey | Covers `/cart`, which most sessions pass through. |
 
-Both were recently changed and both earned the same +30 for it. The 27-point gap
-is the bug record and what a failure there costs. The bug record comes from the
-Phase 1 and 2 classifications; the recency comes from the repository's own
-`git log`. Neither is a static guess at importance.
+Both have failed several times. The 48-point gap is entirely what those failures
+*were*: five of the top one's were judged genuine defects, none of the bottom
+one's were. Outages are excluded from both, and the exclusion is shown rather
+than applied quietly. The bug record comes from the Phase 1 and 2
+classifications, not from a static guess at importance.
+
+**Recency reads zero for every test here, and that is worth explaining rather
+than hiding.** The storefront was moved into its own directory to make the fix
+loop in section 3 real. Change recency is read from `git log` at the path a
+route maps to, and those paths are new, so nothing shows as recently changed.
+An earlier ranking - before the move - did separate two equally-recent tests by
+their bug record while both earned the same recency credit. The factor works;
+this particular snapshot cannot exercise it, and a ranking that claimed recency
+data it does not have would be the sort of thing this document exists to avoid.
 
 Two judgement calls are worth stating, because they change the order:
 
@@ -130,10 +140,22 @@ Two judgement calls are worth stating, because they change the order:
 
 ## 3. The harness caught a bad fix and passed a real one
 
+The application under test is now a separate process. It used to be a route
+inside Parikshan, which meant the harness and the thing it was judging were the
+same server: a source change could not be built without restarting the process
+doing the verifying, so the suite was re-run against code the change had never
+reached. That produced a confident rejection of a correct fix. The storefront
+now lives in `apps/shopstack`, builds and serves on its own port, and the
+harness builds it from disk before both the baseline and the re-run.
+
 Same defect in both attempts: the account-lockout message no longer says
-`"locked"`. Both stored verdicts, read back from the database:
+`"locked"`. Both verdicts below are against a genuine build of the changed
+source - the fix was written to disk and nothing else, and the harness had to
+rebuild to see it.
 
 ### Bad fix — the assertion rewritten to expect the broken message
+
+The defect was left in the source and only the test was changed.
 
 ```
 [REJECTED] Account locks after five failed attempts
@@ -150,20 +172,33 @@ The suite went fully green and the target spec passed. It was refused anyway.
 That is the case that matters: a suite reporting zero failures is exactly what a
 silenced test looks like.
 
-### Good fix — the application corrected, the spec untouched
+### Good fix — the application source corrected, the spec untouched
+
+The source was edited and deliberately not rebuilt by hand. The running build
+still served the defect at the moment verification was asked for.
 
 ```
 [ACCEPTED] Account locks after five failed attempts
   suite: 1 failing -> 0 failing
-  spec assertions changed: 0, removed: 0, unchanged: true
+  spec passes: true
+  spec assertions changed: 0, unchanged: true
 
   The spec is byte-for-byte unchanged in what it asserts, it now passes, and
   nothing else in the suite started failing. The behaviour changed, not the
   expectation.
 ```
 
-Identical run results — `1 failing -> 0 failing`, target spec passing in both.
-Opposite verdicts, decided only by whether the test or the application moved.
+The only way that spec could pass is if the harness built the edited source and
+re-ran against it, which is the step that did not exist before.
+
+Identical run results — `1 failing -> 0 failing`, target spec passing in both,
+both against a real build of what was on disk. Opposite verdicts, decided only
+by whether the test or the application moved.
+
+**The loop is now proven end to end for a source-level fix**: baseline captured
+against a build, change written to disk, application rebuilt and restarted,
+suite re-run, verdict issued. That was partial when this document was first
+written and is no longer.
 
 ---
 
@@ -183,9 +218,20 @@ Stated so the trio above is read for what it is.
   file listing with no history attached; for those the recency factor reports
   itself unavailable rather than scoring as zero risk.
 - **Server-side logs are not captured.** What the correlator reads is what the
-  browser saw: API responses, transport failures, console and page errors. Logs
-  from the application's own process would need it to be run by us.
+  browser saw: API responses, transport failures, console and page errors. Now
+  that the application is a separate process its output could be collected, but
+  that is not built.
+- **The rebuild is wired to one known application.** `apps/shopstack` with a
+  fixed build command, not an arbitrary command taken from a request. A second
+  application under test would need adding deliberately.
 - **One demonstration each.** These are single reproduced cases, not a measured
   accuracy rate over a corpus. They show the mechanisms work on real failures;
   they do not establish how often the classifier is right in general.
-- **No fixer agent exists.** Phase 5 has not been started.
+- **The fixer proposes; it has not had a proposal verified end to end.** Phase 5
+  can put a change on a branch and refuses everything it cannot reason about,
+  and the rebuild that used to make its verdicts meaningless is now in place.
+  What is shown above is the harness judging fixes applied by hand. A fixer
+  proposal carried all the way through the rebuilt loop has not been
+  demonstrated, and should not be claimed until it is.
+- **Nothing merges.** Accepting a proposal records a decision; a person merges
+  the branch with git, deliberately, outside this application.

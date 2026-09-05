@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   // cart has been read back. Redirecting on the pre-hydration state bounced
   // shoppers with a full cart straight to the empty-cart page.
   useEffect(() => {
-    if (hydrated && lines.length === 0 && !orderNumber) router.replace("/demo/shopstack/cart");
+    if (hydrated && lines.length === 0 && !orderNumber) router.replace("/cart");
   }, [hydrated, lines.length, orderNumber, router]);
 
   if (!hydrated) return <p>Loading checkout…</p>;

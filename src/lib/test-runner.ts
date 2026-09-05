@@ -116,6 +116,14 @@ async function executeSuite(
 ): Promise<RunOutcome> {
   const db = getDb();
 
+  // A project records where its application runs; a spec has to be pointed at
+  // it rather than at whatever the process serving this happens to be.
+  const [project] = await db
+    .select({ baseUrl: schema.projects.baseUrl })
+    .from(schema.projects)
+    .where(eq(schema.projects.id, projectId))
+    .limit(1);
+
   const suites = await db
     .select()
     .from(schema.testSuites)
@@ -191,7 +199,7 @@ async function executeSuite(
             ...process.env,
             PLAYWRIGHT_JSON_OUTPUT_NAME: reportPath,
             // What the generated specs navigate against.
-            BASE_URL: opts?.baseUrl ?? process.env.BASE_URL ?? "http://localhost:3000",
+            BASE_URL: opts?.baseUrl ?? project?.baseUrl ?? process.env.BASE_URL ?? "http://localhost:3000",
           },
         },
       );

@@ -9,13 +9,13 @@ export function Header() {
   return (
     <header className="border-b border-neutral-200">
       <nav className="mx-auto flex max-w-3xl items-center gap-4 px-6 py-3 text-sm">
-        <Link href="/demo/shopstack" className="font-semibold">
+        <Link href="/" className="font-semibold">
           ShopStack
         </Link>
-        <Link href="/demo/shopstack/search">Search</Link>
-        <Link href="/demo/shopstack/login">Sign in</Link>
-        <Link href="/demo/shopstack/account/settings">Account</Link>
-        <Link href="/demo/shopstack/cart" className="ml-auto">
+        <Link href="/search">Search</Link>
+        <Link href="/login">Sign in</Link>
+        <Link href="/account/settings">Account</Link>
+        <Link href="/cart" className="ml-auto">
           Cart <span data-testid="cart-badge">{count}</span>
         </Link>
       </nav>

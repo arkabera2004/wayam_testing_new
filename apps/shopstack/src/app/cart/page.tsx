@@ -14,7 +14,7 @@ export default function CartPage() {
         <p className="mt-4" data-testid="cart-empty">
           Your cart is empty.
         </p>
-        <Link href="/demo/shopstack" className="mt-2 inline-block underline">
+        <Link href="/" className="mt-2 inline-block underline">
           Continue shopping
         </Link>
       </>
@@ -53,7 +53,7 @@ export default function CartPage() {
       <p className="mt-4">
         Cart total <span data-testid="cart-total">{money(total)}</span>
       </p>
-      <Link href="/demo/shopstack/checkout" className="mt-4 inline-block border border-neutral-900 px-3 py-1">
+      <Link href="/checkout" className="mt-4 inline-block border border-neutral-900 px-3 py-1">
         Checkout
       </Link>
     </>

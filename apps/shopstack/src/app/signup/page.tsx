@@ -17,6 +17,8 @@ export default function SignupPage() {
     setError("");
     setCreated(false);
     try {
+      // next/link and the router prepend basePath; fetch does not, so this one
+      // needs the full path or it lands outside the application.
       const res = await fetch("/demo/shopstack/api/signup", {
         method: "POST",
         headers: { "content-type": "application/json" },

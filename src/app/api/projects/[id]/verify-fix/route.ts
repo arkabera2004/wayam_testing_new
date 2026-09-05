@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { currentUserId } from "@/lib/auth";
 import { verifyFix } from "@/lib/fix-verifier";
+import { SHOPSTACK, rebuildAndRestart } from "@/lib/app-under-test";
 import { runSuite } from "@/lib/test-runner";
 import { getFixBaseline, getTestCase, recordFixVerdict, resolveProject } from "@/db/queries";
 
@@ -31,6 +32,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const testCase = await getTestCase(userId, baseline.testCaseId);
   if (!testCase?.playwrightCode) {
     return NextResponse.json({ error: "The test case no longer has a spec." }, { status: 409 });
+  }
+
+  // Build the application from what is currently on disk before judging it.
+  // Without this the suite would be re-run against the previous build and the
+  // verdict would describe code nobody changed.
+  const rebuilt = await rebuildAndRestart(SHOPSTACK, process.cwd());
+  if (!rebuilt.ok) {
+    return NextResponse.json(
+      {
+        verdict: "unverifiable",
+        reasons: [
+          `The application under test failed to ${rebuilt.stage}: ${rebuilt.output.slice(-400)}`,
+          "No verdict is claimed, because the change was never running.",
+        ],
+      },
+      { status: 200 },
+    );
   }
 
   // The target spec on its own first, so its result is not confused with the

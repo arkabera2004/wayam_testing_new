@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { currentUserId } from "@/lib/auth";
+import { SHOPSTACK, rebuildAndRestart } from "@/lib/app-under-test";
 import { runSuite } from "@/lib/test-runner";
 import { createFixBaseline, getTestCase, resolveProject } from "@/db/queries";
 
@@ -26,6 +27,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!testCase) return NextResponse.json({ error: "Test case not found." }, { status: 404 });
   if (!testCase.playwrightCode) {
     return NextResponse.json({ error: "That test case has no spec to compare against." }, { status: 409 });
+  }
+
+  // Built from disk first, so the baseline describes the code as it stands
+  // rather than whatever happened to be running.
+  const rebuilt = await rebuildAndRestart(SHOPSTACK, process.cwd());
+  if (!rebuilt.ok) {
+    return NextResponse.json(
+      { error: `The application under test failed to ${rebuilt.stage}: ${rebuilt.output.slice(-300)}` },
+      { status: 502 },
+    );
   }
 
   const outcome = await runSuite(project.id);
