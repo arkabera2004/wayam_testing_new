@@ -1,9 +1,10 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import { Wordmark } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -153,7 +154,7 @@ function OnboardingInner() {
                     i > step && "bg-raised text-quaternary",
                   )}
                 >
-                  {i < step ? <Check size={12} strokeWidth={2.5} aria-hidden="true" /> : i + 1}
+                  {i < step ? <AppIcon name="check" size="xs" aria-hidden="true" /> : i + 1}
                 </span>
                 <span
                   className={cn(
@@ -229,7 +230,7 @@ function OnboardingInner() {
         <footer className="flex items-center justify-between">
           <Button
             variant="ghost"
-            icon={ArrowLeft}
+            icon="arrowLeft"
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0}
           >
@@ -237,12 +238,12 @@ function OnboardingInner() {
           </Button>
 
           {step < 2 ? (
-            <Button variant="primary" icon={ArrowRight} onClick={() => setStep((s) => s + 1)}>
+            <Button variant="primary" icon="arrowRight" onClick={() => setStep((s) => s + 1)}>
               Continue
             </Button>
           ) : (
             <Link href={finishHref}>
-              <Button variant="primary" icon={ArrowRight}>
+              <Button variant="primary" icon="arrowRight">
                 {finishLabel}
               </Button>
             </Link>

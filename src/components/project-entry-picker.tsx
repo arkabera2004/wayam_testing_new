@@ -1,20 +1,15 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
-import {
-  ClipboardPaste,
-  FileText,
-  FileUp,
-  Github,
-  Globe,
-  Link2,
-} from "lucide-react";
 
 import { ProjectSourcePicker } from "@/components/project-source-picker";
 import { Button, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 import { samplePrd } from "@/lib/prd-data";
 
+import type { IconName } from "@/lib/icons";
 export type EntryPath = "requirements" | "application";
 
 type SourceTab = "paste" | "upload" | "import";
@@ -51,14 +46,14 @@ export function ProjectEntryPicker({
   const PATHS = [
     {
       key: "requirements" as const,
-      icon: FileText,
+      icon: "requirements" as IconName,
       title: "Start from requirements",
       body: "Upload an SRS, user stories, or Jira export. Test before code ships.",
       badge: "Path A · Pre-development",
     },
     {
       key: "application" as const,
-      icon: Globe,
+      icon: "globe" as IconName,
       title: "Start from your application",
       body: "Paste a public repository or a live URL. Explore what already exists.",
       badge: "Path B · Existing app",
@@ -66,9 +61,9 @@ export function ProjectEntryPicker({
   ];
 
   const TABS = [
-    { key: "paste" as const, icon: ClipboardPaste, label: "Paste text" },
-    { key: "upload" as const, icon: FileUp, label: "Upload a file" },
-    { key: "import" as const, icon: Link2, label: "Import Jira" },
+    { key: "paste" as const, icon: "paste" as IconName, label: "Paste text" },
+    { key: "upload" as const, icon: "fileUpload" as IconName, label: "Upload a file" },
+    { key: "import" as const, icon: "link" as IconName, label: "Import Jira" },
   ];
 
   return (
@@ -97,7 +92,7 @@ export function ProjectEntryPicker({
                     : "bg-raised-2 icon-tertiary",
                 )}
               >
-                <card.icon size={15} strokeWidth={1.75} aria-hidden="true" />
+                <AppIcon name={card.icon} size="sm" />
               </span>
               <span className="text-caption text-quaternary">{card.badge}</span>
             </div>
@@ -123,7 +118,7 @@ export function ProjectEntryPicker({
                     : "text-tertiary hover:text-secondary border-transparent",
                 )}
               >
-                <t.icon size={13} aria-hidden="true" />
+                <AppIcon name={t.icon} size="sm" />
                 {t.label}
               </button>
             ))}
@@ -166,7 +161,7 @@ export function ProjectEntryPicker({
                 )}
               >
                 <span className="bg-raised-2 icon-tertiary grid h-10 w-10 place-items-center rounded-full">
-                  <FileUp size={18} aria-hidden="true" />
+                  <AppIcon name="fileUpload" size="lg" aria-hidden="true" />
                 </span>
                 <span className="text-heading-sm text-primary">
                   {fileName ?? "Drop a PDF, DOCX, or Markdown file"}
@@ -227,7 +222,7 @@ export function ProjectEntryPicker({
       ) : (
         <div className="flex flex-col gap-3">
           <p className="text-body-sm text-tertiary flex items-center gap-2">
-            <Github size={14} className="shrink-0" aria-hidden="true" />
+            <AppIcon name="github" size="sm" className="shrink-0" aria-hidden="true" />
             Repository for structure, or a live URL for exploration - authenticated flows included.
           </p>
           <ProjectSourcePicker

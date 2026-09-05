@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Github } from "lucide-react";
 
 import { Button, cn } from "@/components/ui";
 import { Logo } from "@/components/layout/logo";
@@ -58,7 +57,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         </div>
 
         <Link href={isSignup ? "/onboarding" : "/projects"} className="mt-6 block">
-          <Button variant="primary" icon={Github} className="h-9 w-full">
+          <Button variant="primary" icon="github" className="h-9 w-full">
             Continue with GitHub
           </Button>
         </Link>

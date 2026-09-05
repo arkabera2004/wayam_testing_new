@@ -1,16 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Pencil,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
 
 import { Button, Card, Chip, ProgressBar, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
@@ -62,7 +55,7 @@ function TestCaseCard({
               : "border-default icon-quaternary hover:border-active",
           )}
         >
-          {testCase.approved ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
+          {testCase.approved ? <AppIcon name="check" size="xs" aria-hidden="true" /> : null}
         </button>
 
         <div className="min-w-0 flex-1">
@@ -95,7 +88,7 @@ function TestCaseCard({
             <>
               <p className="text-heading-sm text-primary flex items-start gap-2">
                 {testCase.executable ? (
-                  <Sparkles size={14} className="text-success mt-1 shrink-0" aria-hidden="true" />
+                  <AppIcon name="sparkle" size="sm" className="text-success mt-1 shrink-0" aria-hidden="true" />
                 ) : null}
                 <span>{title}</span>
               </p>
@@ -117,8 +110,8 @@ function TestCaseCard({
             aria-expanded={stepsOpen}
             className="text-label-sm text-tertiary hover:text-primary mt-3 flex items-center gap-1.5 transition-colors duration-[170ms]"
           >
-            <ChevronDown
-              size={13}
+            <AppIcon name="chevronDown"
+              size="xs"
               aria-hidden="true"
               className={cn("transition-transform duration-[170ms]", stepsOpen && "rotate-180")}
             />
@@ -144,7 +137,7 @@ function TestCaseCard({
             aria-label="Edit test case"
             className="icon-quaternary hover:icon-secondary hover:bg-raised grid h-7 w-7 place-items-center rounded-lg transition-colors duration-[170ms]"
           >
-            <Pencil size={13} aria-hidden="true" />
+            <AppIcon name="edit" size="xs" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -152,7 +145,7 @@ function TestCaseCard({
             aria-label="Regenerate test case"
             className="icon-quaternary hover:icon-secondary hover:bg-raised grid h-7 w-7 place-items-center rounded-lg transition-colors duration-[170ms]"
           >
-            <RotateCcw size={13} aria-hidden="true" />
+            <AppIcon name="refresh" size="xs" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -160,7 +153,7 @@ function TestCaseCard({
             aria-label="Delete test case"
             className="icon-quaternary hover:text-error hover:bg-raised grid h-7 w-7 place-items-center rounded-lg transition-colors duration-[170ms]"
           >
-            <Trash2 size={13} aria-hidden="true" />
+            <AppIcon name="delete" size="xs" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -221,7 +214,7 @@ export function PlanView({
               <ActionButton icon="add" title="Add scenario" body="Manual scenario authoring arrives with the editor.">Add scenario</ActionButton>
               <ActionButton icon="refresh" title="Regenerating plan" body="Parikshan re-reads the requirements and proposes a fresh set.">Regenerate</ActionButton>
               <Button
-                icon={Check}
+                icon="check"
                 onClick={() => setCases((prev) => prev.map((c) => ({ ...c, approved: true })))}
               >
                 Approve all
@@ -249,8 +242,8 @@ export function PlanView({
                   aria-expanded={open}
                   className="flex w-full items-center gap-2.5 py-2 text-left"
                 >
-                  <ChevronDown
-                    size={14}
+                  <AppIcon name="chevronDown"
+                    size="sm"
                     aria-hidden="true"
                     className={cn(
                       "icon-tertiary shrink-0 transition-transform duration-[170ms]",
@@ -339,7 +332,7 @@ export function PlanView({
           </div>
 
           <Link href={`/projects/${id}/tests`}>
-            <Button variant="primary" icon={ArrowRight} disabled={approvedTotal === 0}>
+            <Button variant="primary" icon="arrowRight" disabled={approvedTotal === 0}>
               Generate tests from approved plan
             </Button>
           </Link>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
 
@@ -121,7 +121,7 @@ export default function PricingPage() {
             <ul className="mt-5 flex flex-1 flex-col gap-2.5">
               {plan.features.map((f) => (
                 <li key={f} className="flex items-start gap-2">
-                  <Check size={14} className="text-success mt-0.5 shrink-0" aria-hidden="true" />
+                  <AppIcon name="check" size="sm" className="text-success mt-0.5 shrink-0" aria-hidden="true" />
                   <span className="text-body-md text-secondary">{f}</span>
                 </li>
               ))}

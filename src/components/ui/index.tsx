@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import type { IconName } from "@/lib/icons";
 
 import type { Status } from "@/lib/demo-data";
 
@@ -60,13 +61,14 @@ export function StatusDot({ status }: { status: Status }) {
 type ButtonProps = ComponentProps<"button"> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md";
-  icon?: LucideIcon;
+  /** Semantic name from the icon registry - never a glyph component. */
+  icon?: IconName;
 };
 
 export function Button({
   variant = "secondary",
   size = "md",
-  icon: Icon,
+  icon,
   className,
   children,
   ...props
@@ -90,7 +92,7 @@ export function Button({
       )}
       {...props}
     >
-      {Icon ? <Icon size={14} strokeWidth={1.75} aria-hidden="true" /> : null}
+      {icon ? <AppIcon name={icon} size="sm" /> : null}
       {children}
     </button>
   );
@@ -381,13 +383,13 @@ export function AvatarGroup({ initials }: { initials: string[] }) {
 /* ------------------------------------------------------------------ */
 
 export function EmptyState({
-  icon: Icon,
+  icon,
   art,
   title,
   description,
   action,
 }: {
-  icon: LucideIcon;
+  icon: IconName;
   /** Optional 3D mark; replaces the flat icon when the surface has room. */
   art?: ReactNode;
   title: string;
@@ -398,7 +400,7 @@ export function EmptyState({
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
       {art ?? (
         <span className="bg-raised icon-tertiary grid h-10 w-10 place-items-center rounded-full">
-          <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+          <AppIcon name={icon} size="lg" />
         </span>
       )}
       <div>

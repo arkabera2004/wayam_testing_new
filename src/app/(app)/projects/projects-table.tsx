@@ -1,8 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, Github, Globe, MoreHorizontal, Play, Plus, Settings } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -44,7 +45,7 @@ export function ProjectsTable({
         description="Every application Parikshan is testing for Acme Inc."
         actions={
           <Link href="/projects/new">
-            <Button variant="primary" icon={Plus}>
+            <Button variant="primary" icon="add">
               New project
             </Button>
           </Link>
@@ -53,13 +54,13 @@ export function ProjectsTable({
 
       {projects.length === 0 ? (
         <EmptyState
-          icon={Plus}
+          icon="add"
           art={<Icon3D name="first-discovery" size={96} />}
           title="No projects yet"
           description="Point Parikshan at a URL or a repository and it will explore the app, propose a test plan, and keep the suite green."
           action={
             <Link href="/projects/new">
-              <Button variant="primary" icon={Plus}>
+              <Button variant="primary" icon="add">
                 Create your first project
               </Button>
             </Link>
@@ -110,9 +111,9 @@ export function ProjectsTable({
                 <Td>
                   <span className="text-body-sm text-tertiary flex items-center gap-1.5">
                     {p.githubRepoUrl ? (
-                      <Github size={13} className="shrink-0" aria-hidden="true" />
+                      <AppIcon name="github" size="xs" className="shrink-0" aria-hidden="true" />
                     ) : (
-                      <Globe size={13} className="shrink-0" aria-hidden="true" />
+                      <AppIcon name="globe" size="xs" className="shrink-0" aria-hidden="true" />
                     )}
                     {p.githubRepoUrl?.replace("https://github.com/", "") ?? p.description ?? "-"}
                   </span>
@@ -141,11 +142,11 @@ export function ProjectsTable({
                 <Td>
                   <Menu
                     label={`Actions for ${p.name}`}
-                    trigger={<MoreHorizontal size={15} aria-hidden="true" />}
+                    trigger={<AppIcon name="more" size="sm" aria-hidden="true" />}
                     items={[
                       {
                         label: "Run suite",
-                        icon: Play,
+                        icon: "play",
                         onSelect: () => {
                           toast({ tone: "info", title: `${p.name} suite queued` });
                           router.push(`/projects/${p.slug}/runs`);
@@ -153,12 +154,12 @@ export function ProjectsTable({
                       },
                       {
                         label: "Settings",
-                        icon: Settings,
+                        icon: "settings",
                         onSelect: () => router.push(`/projects/${p.slug}/settings`),
                       },
                       {
                         label: "Archive",
-                        icon: Archive,
+                        icon: "archive",
                         danger: true,
                         onSelect: () => toast({ tone: "warning", title: `${p.name} archived` }),
                       },

@@ -1,3 +1,6 @@
+import { config as faConfig } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
@@ -8,6 +11,13 @@ import { ThemeProvider } from "@/context/theme-context";
 import { THEME_STORAGE_KEY, themeFromCookie } from "@/lib/theme";
 
 import "./globals.css";
+
+/**
+ * Font Awesome injects its own <style> at runtime by default, which arrives
+ * after first paint and flashes every glyph at its natural size. The stylesheet
+ * is imported above instead, so it ships with the document.
+ */
+faConfig.autoAddCss = false;
 
 /** Functional product UI typeface - the interface default. */
 const geist = Geist({

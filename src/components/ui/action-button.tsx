@@ -5,7 +5,6 @@ import type { ComponentProps } from "react";
 import { Button } from "./index";
 import { useToast } from "./toast";
 import type { IconName } from "@/lib/icons";
-import { icons } from "@/lib/icons";
 
 /**
  * A button for an action this build cannot really perform yet.
@@ -40,7 +39,7 @@ export function ActionButton({
   return (
     <Button
       {...props}
-      icon={icon ? icons[icon] : undefined}
+      icon={icon}
       onClick={() => toast({ tone, title, body })}
     >
       {children}

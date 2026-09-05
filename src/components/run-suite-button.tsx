@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Play } from "lucide-react";
 
 import { Button } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
@@ -67,7 +66,7 @@ export function RunSuiteButton({
   }
 
   return (
-    <Button variant="primary" icon={Play} {...rest} onClick={run} disabled={running}>
+    <Button variant="primary" icon="play" {...rest} onClick={run} disabled={running}>
       {running ? "Running…" : label}
     </Button>
   );

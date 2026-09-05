@@ -1,8 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, RotateCcw } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, Chip, PageHeader, StatCard } from "@/components/ui";
@@ -89,7 +90,7 @@ export function HealingView({
               </div>
               {event.status === "accepted" ? (
                 <Chip tone="success">
-                  <Check size={11} aria-hidden="true" />
+                  <AppIcon name="check" size="xs" aria-hidden="true" />
                   Accepted
                 </Chip>
               ) : (
@@ -121,7 +122,7 @@ export function HealingView({
               {event.status === "pending" ? (
                 <Button
                   variant="primary"
-                  icon={Check}
+                  icon="check"
                   disabled={busy === event.id}
                   onClick={() =>
                     decide(event.id, "accepted", `${event.newSelector} is now the locator of record.`)
@@ -131,7 +132,7 @@ export function HealingView({
                 </Button>
               ) : null}
               <Button
-                icon={RotateCcw}
+                icon="refresh"
                 disabled={busy === event.id || event.status === "reverted"}
                 onClick={() =>
                   decide(
@@ -145,7 +146,7 @@ export function HealingView({
               </Button>
               <Button
                 variant="ghost"
-                icon={ArrowRight}
+                icon="arrowRight"
                 onClick={() => router.push(`/projects/${id}/tests/tc-checkout-expired`)}
               >
                 Review in code

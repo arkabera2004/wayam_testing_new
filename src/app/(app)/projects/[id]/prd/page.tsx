@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Plus, TriangleAlert } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -49,7 +49,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
         description="Upload an SRS, user stories, or Jira export. Parikshan extracts requirements, runs requirement intelligence, and proposes traced test scenarios - before or after the app exists."
         actions={
           <Link href={`/projects/${id}/prd/new`}>
-            <Button variant="primary" icon={Plus}>
+            <Button variant="primary" icon="add">
               Analyse requirements
             </Button>
           </Link>
@@ -88,7 +88,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
                     className="flex items-center gap-2.5"
                   >
                     <span className="bg-raised icon-tertiary grid h-7 w-7 shrink-0 place-items-center rounded-lg">
-                      <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
+                      <AppIcon name="requirements" size="sm" aria-hidden="true" />
                     </span>
                     <span className="min-w-0">
                       <span className="text-label-md text-primary block truncate">{doc.title}</span>
@@ -114,7 +114,7 @@ export default async function PrdListPage({ params }: { params: Promise<{ id: st
                     <Chip>Not analysed</Chip>
                   ) : doc.ambiguities > 0 ? (
                     <Chip tone="warning">
-                      <TriangleAlert size={11} aria-hidden="true" />
+                      <AppIcon name="warning" size="xs" aria-hidden="true" />
                       {doc.ambiguities}
                     </Chip>
                   ) : (

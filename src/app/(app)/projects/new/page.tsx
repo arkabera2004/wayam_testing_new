@@ -1,11 +1,12 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
-import { ArrowRight, X } from "lucide-react";
 
 import {
   ProjectEntryPicker,
@@ -103,7 +104,7 @@ export default function NewProjectPage() {
           aria-label="Close"
           className="icon-tertiary hover:icon-secondary hover:bg-raised grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors duration-[170ms]"
         >
-          <X size={16} aria-hidden="true" />
+          <AppIcon name="close" size="md" aria-hidden="true" />
         </Link>
       </div>
 
@@ -134,7 +135,7 @@ export default function NewProjectPage() {
         </Link>
         <Button
           variant="primary"
-          icon={ArrowRight}
+          icon="arrowRight"
           disabled={creating}
           onClick={() => void createAndContinue()}
         >

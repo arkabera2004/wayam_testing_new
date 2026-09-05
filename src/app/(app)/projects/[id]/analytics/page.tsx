@@ -1,4 +1,4 @@
-import { Check, Sparkles } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { ActionButton } from "@/components/ui/action-button";
@@ -108,7 +108,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         <Card title="Quality gate" subtitle="Branch: main">
           <div className="flex items-center gap-2.5">
             <span className="bg-success-surface text-success grid h-8 w-8 place-items-center rounded-full">
-              <Check size={15} strokeWidth={2} aria-hidden="true" />
+              <AppIcon name="check" size="sm" aria-hidden="true" />
             </span>
             <div>
               <p className="text-heading-sm text-primary">
@@ -129,7 +129,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
               `${gate.awaitingReview} healed locator(s) awaiting review`,
             ].map((rule) => (
               <li key={rule} className="text-body-md text-secondary flex items-start gap-2">
-                <Check size={13} className="text-success mt-1 shrink-0" aria-hidden="true" />
+                <AppIcon name="check" size="xs" className="text-success mt-1 shrink-0" aria-hidden="true" />
                 {rule}
               </li>
             ))}
@@ -160,7 +160,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Sparkles size={14} className="text-warning" aria-hidden="true" />
+            <AppIcon name="sparkle" size="sm" className="text-warning" aria-hidden="true" />
             Failure clusters
           </span>
         }

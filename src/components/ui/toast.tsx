@@ -1,5 +1,8 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+import type { IconName } from "@/lib/icons";
+
 import {
   createContext,
   useCallback,
@@ -8,7 +11,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AlertTriangle, Check, Info, TriangleAlert, X } from "lucide-react";
 
 import { cn } from "./index";
 
@@ -29,11 +31,11 @@ type ToastContextValue = {
 /** Inert default for the same partial-RSC-render reason as the theme context. */
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
 
-const TONES: Record<ToastTone, { icon: typeof Check; chip: string; border: string }> = {
-  success: { icon: Check, chip: "bg-success-surface text-success", border: "border-success-stroke/50" },
-  info: { icon: Info, chip: "bg-info-surface text-info", border: "border-info-stroke/50" },
-  warning: { icon: TriangleAlert, chip: "bg-warning-surface text-warning", border: "border-warning-stroke/50" },
-  error: { icon: AlertTriangle, chip: "bg-error-surface text-error", border: "border-error-stroke/50" },
+const TONES: Record<ToastTone, { icon: IconName; chip: string; border: string }> = {
+  success: { icon: "check", chip: "bg-success-surface text-success", border: "border-success-stroke/50" },
+  info: { icon: "info", chip: "bg-info-surface text-info", border: "border-info-stroke/50" },
+  warning: { icon: "warning", chip: "bg-warning-surface text-warning", border: "border-warning-stroke/50" },
+  error: { icon: "warning", chip: "bg-error-surface text-error", border: "border-error-stroke/50" },
 };
 
 const AUTODISMISS_MS = 4000;
@@ -82,7 +84,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               )}
             >
               <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full", meta.chip)}>
-                <meta.icon size={14} strokeWidth={2} aria-hidden="true" />
+                <AppIcon name={meta.icon} size="sm" />
               </span>
 
               <div className="min-w-0 flex-1">
@@ -104,7 +106,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 aria-label="Dismiss notification"
                 className="icon-quaternary hover:icon-secondary grid h-5 w-5 shrink-0 place-items-center rounded"
               >
-                <X size={13} aria-hidden="true" />
+                <AppIcon name="close" size="xs" aria-hidden="true" />
               </button>
             </div>
           );

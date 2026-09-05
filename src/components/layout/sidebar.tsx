@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut } from "lucide-react";
 import { cn } from "@/components/ui";
 import { AppIcon } from "@/components/ui/app-icon";
 import { useDismissable } from "@/components/ui/menu";
@@ -298,8 +297,8 @@ export function Sidebar({
                     {/* A dot marks the group holding the current page while it
                         is closed, so collapsing never hides where you are. */}
                     {!open && activeInside && <span className="bg-action-primary h-1.5 w-1.5 rounded-full" />}
-                    <ChevronDown
-                      size={14}
+                    <AppIcon name="chevronDown"
+                      size="sm"
                       aria-hidden="true"
                       className={cn(
                         "icon-quaternary shrink-0 transition-transform duration-[170ms]",
@@ -385,8 +384,8 @@ export function Sidebar({
                       {user.email || workspace.name}
                     </span>
                   </span>
-                  <ChevronDown
-                    size={14}
+                  <AppIcon name="chevronDown"
+                    size="sm"
                     aria-hidden="true"
                     className={cn(
                       "icon-quaternary shrink-0 transition-transform duration-[170ms]",
@@ -431,7 +430,7 @@ export function Sidebar({
                   onClick={() => setUserMenuOpen(false)}
                   className="text-body-md text-error hover:bg-error-surface flex items-center gap-2.5 px-3 py-2 transition-colors duration-[170ms]"
                 >
-                  <LogOut size={14} strokeWidth={1.75} aria-hidden="true" />
+                  <AppIcon name="logout" size="sm" aria-hidden="true" />
                   Log out
                 </Link>
                 <p className="text-caption text-quaternary border-muted border-t px-3 py-2">

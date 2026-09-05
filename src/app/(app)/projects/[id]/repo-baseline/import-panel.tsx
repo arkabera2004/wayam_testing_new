@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Github, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button, Card, Chip, ProgressBar } from "@/components/ui";
@@ -168,7 +167,7 @@ export function ImportPanel({
             aria-label="Public repository URL"
             className="border-muted bg-raised text-body-md text-primary h-8 w-64 rounded-lg border px-2.5 focus-visible:outline-none"
           />
-          <Button size="sm" variant="primary" icon={info ? RefreshCw : Github} disabled={busy} onClick={() => void run()}>
+          <Button size="sm" variant="primary" icon={info ? "refresh" : "github"} disabled={busy} onClick={() => void run()}>
             {busy ? "Importing…" : info ? "Re-import" : "Import"}
           </Button>
         </span>

@@ -1,18 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ChevronRight,
-  FileCode2,
-  Filter,
-  Lock,
-  Minus,
-  Network,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
 
 import { Button, Card, Chip, EmptyState, Table, Td, Th, cn } from "@/components/ui";
 import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
@@ -107,7 +98,7 @@ export function MapView({
         </div>
 
         <div className="border-muted bg-container ml-2 flex h-8 items-center gap-2 rounded-lg border px-2.5">
-          <Search size={13} className="icon-quaternary shrink-0" aria-hidden="true" />
+          <AppIcon name="search" size="xs" className="icon-quaternary shrink-0" aria-hidden="true" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -118,7 +109,7 @@ export function MapView({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Filter size={13} className="icon-quaternary" aria-hidden="true" />
+          <AppIcon name="filter" size="xs" className="icon-quaternary" aria-hidden="true" />
           {FILTERS.map((f) => (
             <button key={f} type="button" onClick={() => toggleFilter(f)}>
               <Chip tone={activeFilters.includes(f) ? "solid" : "neutral"}>{f}</Chip>
@@ -134,7 +125,7 @@ export function MapView({
             disabled={zoom === ZOOM_STEPS[0]}
             onClick={() => stepZoom(-1)}
           >
-            <Minus size={14} aria-hidden="true" />
+            <AppIcon name="minus" size="sm" aria-hidden="true" />
           </Button>
           <span className="text-label-sm text-tertiary tabular w-10 text-center">{zoom}%</span>
           <Button
@@ -144,7 +135,7 @@ export function MapView({
             disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]}
             onClick={() => stepZoom(1)}
           >
-            <Plus size={14} aria-hidden="true" />
+            <AppIcon name="add" size="sm" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -153,7 +144,7 @@ export function MapView({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {tab === "graph" && filtered.length === 0 ? (
           <EmptyState
-            icon={Search}
+            icon="search"
             art={<Icon3D name="no-results" size={88} />}
             title="No pages match"
             description="Try a different search term or clear the active filters."
@@ -211,7 +202,7 @@ export function MapView({
                     <p className="text-caption text-quaternary truncate">{p.path}</p>
                   </div>
                   {p.gated ? (
-                    <Lock size={12} className="icon-quaternary mt-0.5 shrink-0" aria-hidden="true" />
+                    <AppIcon name="lock" size="xs" className="icon-quaternary mt-0.5 shrink-0" aria-hidden="true" />
                   ) : null}
                 </div>
 
@@ -270,7 +261,7 @@ export function MapView({
               aria-label="Close inspector"
               className="icon-tertiary hover:icon-secondary hover:bg-raised grid h-7 w-7 shrink-0 place-items-center rounded-lg"
             >
-              <X size={15} aria-hidden="true" />
+              <AppIcon name="close" size="sm" aria-hidden="true" />
             </button>
           </header>
 
@@ -292,7 +283,7 @@ export function MapView({
                   "2 inputs with validation",
                 ].map((el) => (
                   <li key={el} className="text-body-md text-secondary flex items-center gap-2">
-                    <FileCode2 size={13} className="icon-quaternary shrink-0" aria-hidden="true" />
+                    <AppIcon name="fileCode" size="xs" className="icon-quaternary shrink-0" aria-hidden="true" />
                     {el}
                   </li>
                 ))}
@@ -304,7 +295,7 @@ export function MapView({
               <ul className="mt-2 flex flex-col gap-1.5">
                 {endpoints.slice(0, page.apis ?? 0).map((api) => (
                   <li key={`${api.method} ${api.path}`} className="flex items-center gap-2">
-                    <Network size={13} className="icon-quaternary shrink-0" aria-hidden="true" />
+                    <AppIcon name="network" size="xs" className="icon-quaternary shrink-0" aria-hidden="true" />
                     <span className="text-body-sm text-secondary truncate">
                       {api.method} {api.path}
                     </span>
@@ -316,7 +307,7 @@ export function MapView({
 
           <div className="border-muted border-t p-4">
             <Link href={`/projects/${id}/plan`}>
-              <Button variant="primary" icon={ChevronRight} className="w-full">
+              <Button variant="primary" icon="chevronRight" className="w-full">
                 Generate tests for this page
               </Button>
             </Link>

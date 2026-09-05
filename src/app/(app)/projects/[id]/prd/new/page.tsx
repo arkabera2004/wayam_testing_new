@@ -1,15 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Check,
-  ClipboardPaste,
-  FileUp,
-  Link2,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, Chip, PageHeader, ProgressBar, cn } from "@/components/ui";
@@ -18,6 +12,7 @@ import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
 import { useToast } from "@/components/ui/toast";
 import { analysisStages, samplePrd } from "@/lib/prd-data";
 
+import type { IconName } from "@/lib/icons";
 type SourceTab = "paste" | "upload" | "import";
 
 const STAGE_MS = 620;
@@ -93,9 +88,9 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
   }, [analysing, stage, id, router, toast]);
 
   const TABS = [
-    { key: "paste" as const, icon: ClipboardPaste, label: "Paste text" },
-    { key: "upload" as const, icon: FileUp, label: "Upload a file" },
-    { key: "import" as const, icon: Link2, label: "Import" },
+    { key: "paste" as const, icon: "paste" as IconName, label: "Paste text" },
+    { key: "upload" as const, icon: "fileUpload" as IconName, label: "Upload a file" },
+    { key: "import" as const, icon: "link" as IconName, label: "Import" },
   ];
 
   if (analysing) {
@@ -135,11 +130,11 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
                   <span className="mt-0.5 shrink-0">
                     {state === "done" ? (
                       <span className="bg-success-surface text-success grid h-5 w-5 place-items-center rounded-full">
-                        <Check size={11} strokeWidth={3} aria-hidden="true" />
+                        <AppIcon name="check" size="xs" aria-hidden="true" />
                       </span>
                     ) : state === "active" ? (
                       <span className="bg-info-surface text-info grid h-5 w-5 place-items-center rounded-full">
-                        <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+                        <AppIcon name="loading" size="xs" className="animate-spin" aria-hidden="true" />
                       </span>
                     ) : (
                       <span className="bg-raised grid h-5 w-5 place-items-center rounded-full">
@@ -193,7 +188,7 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
                   : "text-tertiary hover:text-secondary border-transparent",
               )}
             >
-              <t.icon size={13} aria-hidden="true" />
+              <AppIcon name={t.icon} size="sm" />
               {t.label}
             </button>
           ))}
@@ -246,7 +241,7 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
                 )}
               >
                 <span className="bg-raised icon-tertiary grid h-10 w-10 place-items-center rounded-full">
-                  <FileUp size={18} strokeWidth={1.75} aria-hidden="true" />
+                  <AppIcon name="fileUpload" size="lg" aria-hidden="true" />
                 </span>
                 <span>
                   <span className="text-heading-sm text-primary block">
@@ -267,7 +262,7 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
               {fileName ? (
                 <div className="flex items-center gap-2">
                   <Chip tone="success">
-                    <Check size={11} aria-hidden="true" />
+                    <AppIcon name="check" size="xs" aria-hidden="true" />
                     Ready
                   </Chip>
                   <span className="text-body-md text-secondary truncate">{fileName}</span>
@@ -324,7 +319,7 @@ export default function NewPrdPage({ params }: { params: Promise<{ id: string }>
         </Button>
         <Button
           variant="primary"
-          icon={Sparkles}
+          icon="sparkle"
           disabled={!canAnalyse}
           onClick={() => {
             setStage(0);

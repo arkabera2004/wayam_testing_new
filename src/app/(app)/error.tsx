@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { RotateCcw } from "lucide-react";
 
 import { Button, Card } from "@/components/ui";
 
@@ -42,7 +41,7 @@ export default function AppError({
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button variant="primary" icon={RotateCcw} onClick={reset}>
+          <Button variant="primary" icon="refresh" onClick={reset}>
             Try again
           </Button>
           <Button variant="secondary" onClick={() => window.location.assign("/projects")}>

@@ -1,7 +1,8 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
-import { Check, ExternalLink, Github, Loader2, RefreshCw, Unlink } from "lucide-react";
 
 import { Button, Card, Chip } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
@@ -102,13 +103,13 @@ export function GithubPanel({
         isConnected ? (
           <>
             <Chip tone="success">
-              <Check size={11} aria-hidden="true" />
+              <AppIcon name="check" size="xs" aria-hidden="true" />
               Connected
             </Chip>
-            <Button size="sm" icon={RefreshCw} onClick={loadRepos} disabled={busy}>
+            <Button size="sm" icon="refresh" onClick={loadRepos} disabled={busy}>
               Load repositories
             </Button>
-            <Button size="sm" variant="secondary" icon={Unlink} onClick={disconnect} disabled={busy}>
+            <Button size="sm" variant="secondary" icon="unlink" onClick={disconnect} disabled={busy}>
               Disconnect
             </Button>
           </>
@@ -128,7 +129,7 @@ export function GithubPanel({
                 rel="noreferrer"
                 className="text-info hover:underline underline-offset-4"
               >
-                {linkedRepo} <ExternalLink size={11} className="inline" aria-hidden="true" />
+                {linkedRepo} <AppIcon name="externalLink" size="xs" className="inline" aria-hidden="true" />
               </a>
             ) : (
               <span className="text-tertiary">none set - add a repository URL in project settings.</span>
@@ -139,7 +140,7 @@ export function GithubPanel({
             <div className="border-muted max-h-72 overflow-auto rounded-lg border">
               {repos.map((r) => (
                 <div key={r.fullName} className="border-muted flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0">
-                  <Github size={13} className="text-tertiary shrink-0" aria-hidden="true" />
+                  <AppIcon name="github" size="xs" className="text-tertiary shrink-0" aria-hidden="true" />
                   <a
                     href={r.htmlUrl}
                     target="_blank"
@@ -173,7 +174,7 @@ export function GithubPanel({
               autoComplete="off"
               className="border-muted bg-raised text-body-md text-primary h-9 min-w-64 flex-1 rounded-lg border px-2.5 focus-visible:outline-none"
             />
-            <Button variant="primary" icon={busy ? Loader2 : Github} onClick={connect} disabled={busy}>
+            <Button variant="primary" icon={busy ? "loading" : "github"} onClick={connect} disabled={busy}>
               {busy ? "Verifying…" : "Connect GitHub"}
             </Button>
           </div>
@@ -183,7 +184,7 @@ export function GithubPanel({
             rel="noreferrer"
             className="text-body-sm text-info hover:underline underline-offset-4"
           >
-            Create a token on GitHub <ExternalLink size={11} className="inline" aria-hidden="true" />
+            Create a token on GitHub <AppIcon name="externalLink" size="xs" className="inline" aria-hidden="true" />
           </a>
         </div>
       )}

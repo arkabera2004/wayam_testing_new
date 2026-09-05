@@ -1,11 +1,13 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
-import { ChevronDown, Github, Globe, Lock } from "lucide-react";
 
 import { Button, Chip, cn } from "@/components/ui";
 import { ActionButton } from "@/components/ui/action-button";
 
+import type { IconName } from "@/lib/icons";
 function Field({
   id,
   label,
@@ -93,13 +95,13 @@ export function ProjectSourcePicker({
           [
             {
               key: "repo" as const,
-              icon: Github,
+              icon: "github" as IconName,
               title: "Import a public repository",
               body: "We read its routes and components to plan deeper tests. No authorisation needed.",
             },
             {
               key: "url" as const,
-              icon: Globe,
+              icon: "globe" as IconName,
               title: "Paste a live URL",
               body: "Fastest path. No repository access required.",
             },
@@ -124,7 +126,7 @@ export function ProjectSourcePicker({
                 source === card.key ? "bg-action-primary icon-on-color" : "bg-raised-2 icon-tertiary",
               )}
             >
-              <card.icon size={15} strokeWidth={1.75} aria-hidden="true" />
+              <AppIcon name={card.icon} size="sm" />
             </span>
             <span className="text-heading-sm text-primary">{card.title}</span>
             <span className="text-body-md text-tertiary">{card.body}</span>
@@ -170,10 +172,10 @@ export function ProjectSourcePicker({
               aria-expanded={authOpen}
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left"
             >
-              <Lock size={14} className="icon-tertiary shrink-0" aria-hidden="true" />
+              <AppIcon name="lock" size="sm" className="icon-tertiary shrink-0" aria-hidden="true" />
               <span className="text-label-md text-primary flex-1">Does this app need login?</span>
-              <ChevronDown
-                size={14}
+              <AppIcon name="chevronDown"
+                size="sm"
                 aria-hidden="true"
                 className={cn("icon-quaternary transition-transform duration-[170ms]", authOpen && "rotate-180")}
               />
@@ -207,8 +209,8 @@ export function ProjectSourcePicker({
             className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
           >
             <span className="text-label-md text-primary flex-1">Advanced options</span>
-            <ChevronDown
-              size={14}
+            <AppIcon name="chevronDown"
+              size="sm"
               aria-hidden="true"
               className={cn(
                 "icon-quaternary transition-transform duration-[170ms]",

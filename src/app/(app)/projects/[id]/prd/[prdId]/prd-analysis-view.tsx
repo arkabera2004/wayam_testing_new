@@ -1,15 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  FileText,
-  Sparkles,
-  TriangleAlert,
-} from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -135,7 +129,7 @@ export function PrdAnalysisView({
               description="Analysed 2 minutes ago from a pasted document. Every proposed case traces back to a numbered requirement."
               actions={
                 <Button
-                  icon={Sparkles}
+                  icon="sparkle"
                   onClick={() => router.push(`/projects/${id}/prd/new`)}
                 >
                   Re-analyse
@@ -165,7 +159,7 @@ export function PrdAnalysisView({
             <Card
               title={
                 <span className="flex items-center gap-2">
-                  <TriangleAlert size={14} className="text-warning" aria-hidden="true" />
+                  <AppIcon name="warning" size="sm" className="text-warning" aria-hidden="true" />
                   What Parikshan could not test as written
                 </span>
               }
@@ -223,8 +217,8 @@ export function PrdAnalysisView({
                         aria-expanded={open}
                         className="flex w-full items-start gap-3 p-4 text-left"
                       >
-                        <ChevronDown
-                          size={14}
+                        <AppIcon name="chevronDown"
+                          size="sm"
                           aria-hidden="true"
                           className={cn(
                             "icon-tertiary mt-1 shrink-0 transition-transform duration-[170ms]",
@@ -241,8 +235,8 @@ export function PrdAnalysisView({
                               {req.coverage === "gap" ? "not testable" : req.coverage}
                             </Chip>
                             {req.ambiguity ? (
-                              <TriangleAlert
-                                size={13}
+                              <AppIcon name="warning"
+                                size="xs"
                                 className="text-warning shrink-0"
                                 aria-label="Has an ambiguity finding"
                               />
@@ -284,8 +278,8 @@ export function PrdAnalysisView({
                                     {c.title}
                                   </span>
                                   {c.approved ? (
-                                    <Check
-                                      size={13}
+                                    <AppIcon name="check"
+                                      size="xs"
                                       className="text-success mt-0.5 shrink-0"
                                       aria-label="Approved"
                                     />
@@ -330,7 +324,7 @@ export function PrdAnalysisView({
                               : "border-default icon-quaternary hover:border-active",
                           )}
                         >
-                          {c.approved ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : null}
+                          {c.approved ? <AppIcon name="check" size="xs" aria-hidden="true" /> : null}
                         </button>
 
                         <div className="min-w-0 flex-1">
@@ -365,8 +359,8 @@ export function PrdAnalysisView({
                             aria-expanded={stepsOpen}
                             className="text-label-sm text-tertiary hover:text-primary mt-3 flex items-center gap-1.5 transition-colors duration-[170ms]"
                           >
-                            <ChevronDown
-                              size={13}
+                            <AppIcon name="chevronDown"
+                              size="xs"
                               aria-hidden="true"
                               className={cn(
                                 "transition-transform duration-[170ms]",
@@ -465,7 +459,7 @@ export function PrdAnalysisView({
               <Card
                 title={
                   <span className="flex items-center gap-2">
-                    <FileText size={14} className="icon-tertiary" aria-hidden="true" />
+                    <AppIcon name="requirements" size="sm" className="icon-tertiary" aria-hidden="true" />
                     Source document
                   </span>
                 }
@@ -499,7 +493,7 @@ export function PrdAnalysisView({
 
           <Button
             variant="primary"
-            icon={ArrowRight}
+            icon="arrowRight"
             disabled={approved === 0}
             onClick={() => {
               toast({

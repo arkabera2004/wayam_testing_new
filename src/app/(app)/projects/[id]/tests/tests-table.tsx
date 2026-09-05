@@ -1,21 +1,11 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+import type { IconName } from "@/lib/icons";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Copy,
-  Filter,
-  MoreHorizontal,
-  Pencil,
-  Play,
-  Power,
-  Search,
-  Tag,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -135,23 +125,23 @@ export function TestsTable({
   const rowMenu = (testId: string, name: string) => [
     {
       label: "Run this test",
-      icon: Play,
+      icon: "play" as IconName,
       onSelect: () => void runTests([testId], name),
     },
-    { label: "Edit code", icon: Pencil, onSelect: () => router.push(`/projects/${id}/tests/${testId}`) },
+    { label: "Edit code", icon: "edit" as IconName, onSelect: () => router.push(`/projects/${id}/tests/${testId}`) },
     {
       label: "Duplicate",
-      icon: Copy,
-      onSelect: () => toast({ tone: "success", title: "Test duplicated", body: `Copy of ${name}` }),
+      icon: "copy" as IconName,
+      onSelect: () => toast({ tone: "success", title: "Test duplicated", body: `"copy" of ${name}` }),
     },
     {
       label: "Disable",
-      icon: Power,
+      icon: "power" as IconName,
       onSelect: () => toast({ tone: "warning", title: "Test disabled", body: name }),
     },
     {
       label: "Delete",
-      icon: Trash2,
+      icon: "delete" as IconName,
       danger: true,
       onSelect: () => toast({ tone: "error", title: "Test deleted", body: name }),
     },
@@ -164,12 +154,12 @@ export function TestsTable({
         description={`${tests.length} Playwright spec${tests.length === 1 ? "" : "s"} generated from your approved plan.`}
         actions={
           <>
-            <Button icon={Upload} disabled={exporting} onClick={() => void exportToRepo()}>
+            <Button icon="upload" disabled={exporting} onClick={() => void exportToRepo()}>
               {exporting ? "Exporting…" : "Export all to repo"}
             </Button>
             <Button
               variant="primary"
-              icon={Play}
+              icon="play"
               disabled={running}
               onClick={() => void runTests()}
             >
@@ -182,7 +172,7 @@ export function TestsTable({
       <Card padded={false}>
         <div className="border-muted flex flex-wrap items-center gap-2 border-b px-4 py-3">
           <div className="border-muted bg-raised focus-within:border-active flex h-8 items-center gap-2 rounded-lg border px-2.5 transition-colors duration-[170ms]">
-            <Search size={13} className="icon-quaternary shrink-0" aria-hidden="true" />
+            <AppIcon name="search" size="xs" className="icon-quaternary shrink-0" aria-hidden="true" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -197,13 +187,13 @@ export function TestsTable({
                 aria-label="Clear search"
                 className="icon-quaternary hover:icon-secondary shrink-0"
               >
-                <X size={12} aria-hidden="true" />
+                <AppIcon name="close" size="xs" aria-hidden="true" />
               </button>
             ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Filter size={13} className="icon-quaternary" aria-hidden="true" />
+            <AppIcon name="filter" size="xs" className="icon-quaternary" aria-hidden="true" />
             {FILTERS.map((f) => (
               <button
                 key={f}
@@ -235,7 +225,7 @@ export function TestsTable({
             <div className="flex flex-wrap gap-1.5">
               <Button
                 size="sm"
-                icon={Play}
+                icon="play"
                 disabled={running}
                 onClick={() =>
                   void runTests(selected, `${selected.length} test${selected.length === 1 ? "" : "s"}`)
@@ -245,21 +235,21 @@ export function TestsTable({
               </Button>
               <Button
                 size="sm"
-                icon={Tag}
+                icon="tag"
                 onClick={() => toast({ tone: "success", title: "Tag applied to selection" })}
               >
                 Tag
               </Button>
               <Button
                 size="sm"
-                icon={Upload}
+                icon="upload"
                 onClick={() => toast({ tone: "success", title: "Selection exported" })}
               >
                 Export
               </Button>
               <Button
                 size="sm"
-                icon={Power}
+                icon="power"
                 onClick={() => toast({ tone: "warning", title: "Selection disabled" })}
               >
                 Disable
@@ -273,7 +263,7 @@ export function TestsTable({
 
         {visible.length === 0 ? (
           <EmptyState
-            icon={Search}
+            icon="search"
             art={<Icon3D name="no-results" size={88} />}
             title="No tests match those filters"
             description="Try a different search term, or clear the active filters to see the whole suite."
@@ -356,7 +346,7 @@ export function TestsTable({
                   <Td>
                     <Menu
                       label={`Actions for ${t.name}`}
-                      trigger={<MoreHorizontal size={15} aria-hidden="true" />}
+                      trigger={<AppIcon name="more" size="sm" aria-hidden="true" />}
                       items={rowMenu(t.id, t.name)}
                     />
                   </Td>

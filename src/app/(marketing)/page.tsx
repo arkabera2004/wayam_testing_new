@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Check, FileText, Github, Globe, Play, X } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
 import { Icon3D, type Icon3DName } from "@/components/ui/icon-3d";
 
+import type { IconName } from "@/lib/icons";
 const HOW_IT_WORKS: Array<{ icon: Icon3DName; title: string; body: string }> = [
   {
     icon: "prd-extract",
@@ -91,7 +92,7 @@ const COMPARISON = [
 const ENTRY_PATHS = [
   {
     href: "/onboarding?path=requirements",
-    icon: FileText,
+    icon: "requirements" as IconName,
     title: "Start from requirements",
     body: "Upload SRS, user stories, or Jira. Analyse ambiguity, generate scenarios, and keep traceability - even before development.",
     cta: "Upload requirements",
@@ -100,7 +101,7 @@ const ENTRY_PATHS = [
   },
   {
     href: "/onboarding?path=application",
-    icon: Globe,
+    icon: "globe" as IconName,
     title: "Start from your application",
     body: "Connect GitHub or paste a live URL. Explore pages and APIs, assess coverage, and generate the tests that are still missing.",
     cta: "Connect your app",
@@ -149,7 +150,7 @@ export default function LandingPage() {
                     path.primary ? "bg-action-primary icon-on-color" : "bg-raised-2 icon-tertiary",
                   )}
                 >
-                  <path.icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                  <AppIcon name={path.icon} size="lg" />
                 </span>
                 <span className="text-caption text-quaternary">{path.pathLabel}</span>
               </div>
@@ -162,8 +163,8 @@ export default function LandingPage() {
                 )}
               >
                 {path.cta}
-                <ArrowRight
-                  size={14}
+                <AppIcon name="arrowRight"
+                  size="sm"
                   className="transition-transform duration-[170ms] group-hover:translate-x-0.5"
                   aria-hidden="true"
                 />
@@ -199,7 +200,7 @@ export default function LandingPage() {
           <div className="grid aspect-video place-items-center">
             <div className="flex flex-col items-center gap-3">
               <span className="bg-action-primary icon-on-color grid h-12 w-12 place-items-center rounded-full">
-                <Play size={20} strokeWidth={2} aria-hidden="true" />
+                <AppIcon name="play" size="xl" aria-hidden="true" />
               </span>
               <p className="text-label-md text-tertiary">Watch the product demo</p>
             </div>
@@ -277,13 +278,13 @@ export default function LandingPage() {
                     </td>
                     <td className="text-body-md text-primary border-muted border-b px-4 py-3">
                       <span className="flex items-center gap-2">
-                        <Check size={14} className="text-success shrink-0" aria-hidden="true" />
+                        <AppIcon name="check" size="sm" className="text-success shrink-0" aria-hidden="true" />
                         {row.ours}
                       </span>
                     </td>
                     <td className="text-body-md text-quaternary border-muted border-b px-4 py-3">
                       <span className="flex items-center gap-2">
-                        <X size={14} className="shrink-0" aria-hidden="true" />
+                        <AppIcon name="close" size="sm" className="shrink-0" aria-hidden="true" />
                         {row.theirs}
                       </span>
                     </td>
@@ -336,12 +337,12 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Link href="/onboarding?path=requirements">
-              <Button variant="primary" icon={ArrowRight} className="h-11 px-5">
+              <Button variant="primary" icon="arrowRight" className="h-11 px-5">
                 Start from requirements
               </Button>
             </Link>
             <Link href="/onboarding?path=application">
-              <Button icon={Github} className="h-11 px-5">
+              <Button icon="github" className="h-11 px-5">
                 Connect your app
               </Button>
             </Link>

@@ -1,10 +1,12 @@
 "use client";
 
+import type { IconName } from "@/lib/icons";
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, TriangleAlert, Wrench } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import { Button, Card, PageHeader, cn } from "@/components/ui";
@@ -12,11 +14,11 @@ import { useToast } from "@/components/ui/toast";
 import type { NotificationView } from "@/db/queries";
 import { relativeTime } from "@/lib/format";
 
-const ICONS: Record<string, { icon: typeof Check; tone: string }> = {
-  failed: { icon: AlertTriangle, tone: "bg-error-surface text-error" },
-  healing: { icon: Wrench, tone: "bg-info-surface text-info" },
-  flaky: { icon: TriangleAlert, tone: "bg-warning-surface text-warning" },
-  passed: { icon: Check, tone: "bg-success-surface text-success" },
+const ICONS: Record<string, { icon: IconName; tone: string }> = {
+  failed: { icon: "warning", tone: "bg-error-surface text-error" },
+  healing: { icon: "maintenance", tone: "bg-info-surface text-info" },
+  flaky: { icon: "warning", tone: "bg-warning-surface text-warning" },
+  passed: { icon: "check", tone: "bg-success-surface text-success" },
 };
 
 /**
@@ -98,7 +100,7 @@ export function NotificationsView({ notifications }: { notifications: Notificati
                               meta.tone,
                             )}
                           >
-                            <meta.icon size={13} strokeWidth={2} aria-hidden="true" />
+                            <AppIcon name={meta.icon} size="sm" />
                           </span>
 
                           <div className="min-w-0 flex-1">

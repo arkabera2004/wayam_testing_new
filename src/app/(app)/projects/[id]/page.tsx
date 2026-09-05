@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AppIcon } from "@/components/ui/app-icon";
 
 import { currentUserId } from "@/lib/auth";
 import {
@@ -11,7 +12,6 @@ import {
   resolveProject,
 } from "@/db/queries";
 import { relativeTime, toUiStatus } from "@/lib/format";
-import { ArrowRight, Globe } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -59,11 +59,11 @@ export default async function ProjectOverviewPage({
         actions={
           <>
             <Chip tone="neutral">
-              <Globe size={12} aria-hidden="true" />
+              <AppIcon name="globe" size="xs" aria-hidden="true" />
               {dbProject.githubDefaultBranch ?? "main"}
             </Chip>
             <Link href={latestRun ? `${base}/runs/${latestRun.id}` : `${base}/runs`}>
-              <Button variant="primary" icon={ArrowRight}>
+              <Button variant="primary" icon="arrowRight">
                 View latest run
               </Button>
             </Link>

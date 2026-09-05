@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Download } from "lucide-react";
 
 import {
   Button,
@@ -97,7 +96,7 @@ export function TestDetail({ id, test }: { id: string; test: TestCaseDetail }) {
                   {test.filePathHint ?? "spec not yet exported"}
                 </span>
                 <div className="ml-auto flex gap-1.5">
-                  <Button size="sm" icon={copied ? Check : Copy} onClick={copy}>
+                  <Button size="sm" icon={copied ? "check" : "copy"} onClick={copy}>
                     {copied ? "Copied" : "Copy"}
                   </Button>
                   <ActionButton size="sm" icon="download" title="Spec downloaded">

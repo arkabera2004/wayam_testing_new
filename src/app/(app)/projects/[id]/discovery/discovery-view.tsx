@@ -1,8 +1,9 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, RotateCcw, X } from "lucide-react";
 
 import { Button, Card, Chip, cn } from "@/components/ui";
 import type { ApiEndpoint, DiscoveredPage } from "@/db/schema";
@@ -160,7 +161,7 @@ export function DiscoveryView({
         <div className="flex min-w-0 items-center gap-2.5">
           {done ? (
             <Chip tone="success">
-              <Check size={12} aria-hidden="true" />
+              <AppIcon name="check" size="xs" aria-hidden="true" />
               Complete
             </Chip>
           ) : (
@@ -181,7 +182,7 @@ export function DiscoveryView({
           <Button
             variant="ghost"
             size="sm"
-            icon={RotateCcw}
+            icon="refresh"
             onClick={() => setTick(0)}
             aria-label="Replay discovery"
           >
@@ -296,7 +297,7 @@ export function DiscoveryView({
                     aria-label="Dismiss summary"
                     className="icon-tertiary hover:icon-secondary hover:bg-action-tertiary-hover -mt-1 -mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors duration-[170ms]"
                   >
-                    <X size={14} aria-hidden="true" />
+                    <AppIcon name="close" size="sm" aria-hidden="true" />
                   </button>
                 </div>
                 <p className="text-body-md text-tertiary mt-1">
@@ -309,7 +310,7 @@ export function DiscoveryView({
                     <Button className="w-full">View application map</Button>
                   </Link>
                   <Link href={`/projects/${id}/plan`} className="flex-1">
-                    <Button variant="primary" icon={ArrowRight} className="w-full">
+                    <Button variant="primary" icon="arrowRight" className="w-full">
                       Generate test plan
                     </Button>
                   </Link>

@@ -138,7 +138,7 @@ export function Topbar() {
           <RunSuiteButton projectSlug={slugInUrl} />
         ) : (
           <Link href="/projects">
-            <Button variant="primary" icon={icons.play}>
+            <Button variant="primary" icon="play">
               Run suite
             </Button>
           </Link>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { IconName } from "@/lib/icons";
 
 import { cn } from "./index";
 
+import { AppIcon } from "@/components/ui/app-icon";
 /** Closes a floating element on outside click or Escape. */
 export function useDismissable<T extends HTMLElement>(open: boolean, onClose: () => void) {
   const ref = useRef<T>(null);
@@ -34,7 +35,7 @@ export function useDismissable<T extends HTMLElement>(open: boolean, onClose: ()
 
 export type MenuItem = {
   label: string;
-  icon?: LucideIcon;
+  icon?: IconName;
   danger?: boolean;
   onSelect?: () => void;
 };
@@ -95,7 +96,7 @@ export function Menu({
                   : "text-secondary hover:bg-raised-2 hover:text-primary",
               )}
             >
-              {item.icon ? <item.icon size={13} className="shrink-0" aria-hidden="true" /> : null}
+              {item.icon ? <AppIcon name={item.icon} size="sm" className="shrink-0" /> : null}
               {item.label}
             </button>
           ))}

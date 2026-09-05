@@ -1,7 +1,8 @@
 "use client";
 
+import { AppIcon } from "@/components/ui/app-icon";
+
 import { useState } from "react";
-import { Check, Copy, GitPullRequest } from "lucide-react";
 
 import { PageBody } from "@/components/layout/app-shell";
 import {
@@ -59,7 +60,7 @@ export function IntegrationsClient({
         actions={
           <>
             <Chip>Template</Chip>
-            <Button size="sm" icon={copied ? Check : Copy} onClick={copy}>
+            <Button size="sm" icon={copied ? "check" : "copy"} onClick={copy}>
               {copied ? "Copied" : "Copy"}
             </Button>
           </>
@@ -120,7 +121,7 @@ export function IntegrationsClient({
           <div className="p-5">
             <div className="flex items-center gap-2.5">
               <Chip tone="success">
-                <GitPullRequest size={11} aria-hidden="true" />
+                <AppIcon name="pullRequest" size="xs" aria-hidden="true" />
                 Open
               </Chip>
               <span className="text-heading-sm text-primary">
@@ -143,7 +144,7 @@ export function IntegrationsClient({
                   className="border-muted flex items-center gap-2.5 border-b px-3.5 py-2.5 last:border-b-0"
                 >
                   <span className="bg-success-surface text-success grid h-5 w-5 shrink-0 place-items-center rounded-full">
-                    <Check size={11} strokeWidth={3} aria-hidden="true" />
+                    <AppIcon name="check" size="xs" aria-hidden="true" />
                   </span>
                   <span className="text-body-md text-primary">{check.name}</span>
                   <span className="text-body-sm text-tertiary min-w-0 flex-1 truncate">
