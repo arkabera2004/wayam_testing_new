@@ -17,7 +17,7 @@ function relativeLabel(value: Date | null): string {
 
 import { changeSignalsForPaths, shopstackPathForRoute } from "@/lib/code-change";
 import { rankTests, routesFromSpec } from "@/lib/risk-ranker";
-import { extractRequirements } from "@/lib/prd-extract";
+import { extractRequirements, extractScenarios } from "@/lib/prd-extract";
 import { getDb, schema } from "./index";
 
 /**
@@ -1286,6 +1286,58 @@ export async function listDocTests(userId: string, projectId: string) {
     .where(eq(schema.docScenarios.docId, doc.id));
 
   return { document: doc, scenarios };
+}
+
+/**
+ * Stores an uploaded specification and the scenarios it describes.
+ *
+ * Parsing runs inline for the same reason the PRD path does: it is text
+ * processing over the bytes that just arrived, not a call to anything, so a
+ * document that reaches the database has already been read. A document that
+ * describes no scenarios is still stored, with none attached - that is a real
+ * answer about the document, and inventing scenarios to fill the screen would
+ * be the one thing this feature must not do.
+ */
+export async function createDocSource(
+  userId: string,
+  projectId: string,
+  input: { name: string; body: string },
+) {
+  const db = getDb();
+
+  const [owned] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))
+    .limit(1);
+  if (!owned) return null;
+
+  const scenarios = extractScenarios(input.body);
+
+  const [doc] = await db
+    .insert(schema.docSources)
+    .values({
+      projectId,
+      name: input.name,
+      sizeBytes: Buffer.byteLength(input.body, "utf8"),
+      sections: input.body.split(/^#{1,6}\s/m).length - 1,
+    })
+    .returning();
+
+  if (scenarios.length > 0) {
+    await db.insert(schema.docScenarios).values(
+      scenarios.map((s) => ({
+        docId: doc.id,
+        title: s.title,
+        expectation: s.expectation,
+        source: s.source,
+        tag: s.tag,
+        selected: true,
+      })),
+    );
+  }
+
+  return { document: doc, scenarioCount: scenarios.length };
 }
 
 export async function setDocScenarioSelected(userId: string, scenarioId: string, selected: boolean) {

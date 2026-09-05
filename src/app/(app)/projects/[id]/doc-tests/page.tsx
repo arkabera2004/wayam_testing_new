@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { PageBody } from "@/components/layout/app-shell";
-import { Card, PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { currentUserId } from "@/lib/auth";
 import { relativeTime } from "@/lib/format";
 import { listDocTests, resolveProject } from "@/db/queries";
 
 import { DocTestsView, type DocScenarioRow } from "./doc-tests-view";
+import { UploadDoc } from "./upload-doc";
 
 function humanSize(bytes: number | null) {
   if (!bytes) return "unknown size";
@@ -31,12 +32,7 @@ export default async function DocTestsPage({ params }: { params: Promise<{ id: s
           title="Tests from documents"
           description="Upload a spec and Parikshan proposes the scenarios it describes."
         />
-        <Card title="No document yet">
-          <p className="text-body-md text-tertiary">
-            Nothing has been parsed for this project. Scenarios appear here once a specification has
-            been uploaded and analysed.
-          </p>
-        </Card>
+        <UploadDoc projectId={project.id} />
       </PageBody>
     );
   }
@@ -51,7 +47,11 @@ export default async function DocTestsPage({ params }: { params: Promise<{ id: s
   }));
 
   return (
-    <DocTestsView
+    <>
+      <PageBody>
+        <UploadDoc projectId={project.id} />
+      </PageBody>
+      <DocTestsView
       document={{
         name: document.name,
         size: humanSize(document.sizeBytes),
@@ -59,7 +59,8 @@ export default async function DocTestsPage({ params }: { params: Promise<{ id: s
         // Formatted server-side so hydration does not mismatch on a clock read.
         parsedAtLabel: document.parsedAt ? relativeTime(document.parsedAt) : "recently",
       }}
-      initialScenarios={rows}
-    />
+        initialScenarios={rows}
+      />
+    </>
   );
 }

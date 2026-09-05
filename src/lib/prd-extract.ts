@@ -124,6 +124,67 @@ function clauses(document: string): string[] {
  * summary, a page of prose - rather than promoting arbitrary sentences to
  * requirements so the screen has something on it.
  */
+export type ExtractedScenario = {
+  title: string;
+  expectation: string;
+  /** Which part of the document this came from, e.g. "Checkout, line 12". */
+  source: string;
+  tag: "happy-path" | "edge-case" | "negative";
+};
+
+/** A clause that describes something being refused, rejected or prevented. */
+const NEGATIVE = /\b(not|never|reject\w*|invalid|deny|denied|refuse\w*|block\w*|forbid\w*|prevent\w*|cannot|fail\w*|error\w*|unauthoris\w*|unauthoriz\w*)\b/i;
+
+/** A clause about a boundary rather than the ordinary path through a feature. */
+const EDGE = /\b(empty|zero|none|max\w*|min\w*|limit\w*|boundary|expired?|duplicate\w*|concurrent\w*|timeout\w*|exceed\w*|overflow|too (?:many|few|large|long)|first|last|only)\b/i;
+
+/**
+ * Turns a document into the scenarios it describes.
+ *
+ * Same clause splitting as the requirements above - a document says what it
+ * says once, and reading it two different ways would let the two screens
+ * disagree about the same sentence. What differs is the shape: a requirement
+ * is an obligation to satisfy, a scenario is a case to exercise, and the tag
+ * says which kind of case it is so a suite can be balanced rather than ten
+ * variations of the happy path.
+ *
+ * The section heading a clause sits under is carried through as its source,
+ * so a proposed scenario can be traced back to the paragraph that asked for
+ * it. A clause outside any heading reports its line instead.
+ */
+export function extractScenarios(document: string): ExtractedScenario[] {
+  const lines = document.split(/\r?\n/);
+  const seen = new Set<string>();
+  const out: ExtractedScenario[] = [];
+  let heading = "";
+
+  lines.forEach((raw, i) => {
+    const line = raw.trim();
+    if (/^#{1,6}\s/.test(line)) {
+      heading = line.replace(/^#{1,6}\s*/, "").trim();
+      return;
+    }
+    if (!line || line.length < 12) return;
+
+    const body = line.replace(MARKER, "").trim();
+    if (!OBLIGATION.test(body)) return;
+
+    const key = body.toLowerCase().replace(/\W+/g, " ").trim();
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    out.push({
+      title: titleOf(body),
+      expectation: body,
+      source: heading ? `${heading}, line ${i + 1}` : `line ${i + 1}`,
+      // Negative beats edge: "must reject an expired card" is a refusal first.
+      tag: NEGATIVE.test(body) ? "negative" : EDGE.test(body) ? "edge-case" : "happy-path",
+    });
+  });
+
+  return out;
+}
+
 export function extractRequirements(document: string): ExtractedRequirement[] {
   const seen = new Set<string>();
   const found: ExtractedRequirement[] = [];
