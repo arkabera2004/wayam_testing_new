@@ -159,6 +159,17 @@ export function analyseRepo(files: ImportedFile[]): {
   // "/Event/Create".
   const hasControllers = files.some((f) => /(?:^|\/)\w+Controller\.cs$/i.test(f.path));
 
+  // The same argument applies wherever routing is written down. A React Router
+  // app declares its paths in one place, and those declarations are the truth:
+  // catchmail routes "/about" to a component that lives at pages/About.jsx, so
+  // deriving from the filename as well produced "/About" beside the real
+  // "/about" - a route that 404s, from a file that is not a route at all.
+  //
+  // Only page routes are suppressed. An Express server in the same repository
+  // still contributes its endpoints, which is how a frontend and a backend
+  // living together are both read correctly.
+  const declaresPageRoutes = files.some((f) => routesFromSource(f).pages.length > 0);
+
   for (const file of files) {
     // API route handlers: "app/api/users/route.ts" -> the methods it exports.
     if (/(?:^|\/)app\/(?:.*\/)?route\.(tsx?|jsx?)$/.test(file.path)) {
@@ -189,6 +200,7 @@ export function analyseRepo(files: ImportedFile[]): {
 
     const isTemplate = /\.(cshtml|razor|erb)$/i.test(file.path);
     if (isTemplate && hasControllers) continue;
+    if (declaresPageRoutes) continue;
 
     const route = routeFromAppPath(file.path) ?? routeFromPagesPath(file.path) ?? routeFromTemplate(file.path);
     if (!route) continue;

@@ -17,6 +17,9 @@ const MAX_STORED = 400;
 const MAX_FILE_BYTES = 96_000;
 
 const SOURCE = /\.(tsx?|jsx?|mjs|cjs|vue|svelte|py|rb|go|java|kt|php|cs|cshtml|razor|rs|html?|erb|blade\.php)$/i;
+/** Not source, but how a JavaScript project names its stack. */
+const MANIFEST = /(?:^|\/)package\.json$/i;
+
 const IGNORED =
   /(^|\/)(node_modules|\.git|\.next|dist|build|out|vendor|coverage|__pycache__|\.venv)\//i;
 
@@ -64,11 +67,47 @@ export type RepoImport = {
   framework: string | null;
 };
 
-/** Names the stack from the files present, rather than guessing from one marker. */
-function detectFramework(paths: string[]): string | null {
+/**
+ * Names the stack from the files present, rather than guessing from one marker.
+ *
+ * The Next.js branches require a Next.js marker as well as the directory
+ * shape. A `pages/` folder full of components is an ordinary way to organise a
+ * React app and says nothing about the router: catchmail keeps its screens in
+ * `frontend/src/pages/` and was reported as "Next.js (Pages Router)" when it
+ * is Vite and React Router. A directory name is not a framework.
+ */
+function detectFramework(paths: string[], files?: ImportedFile[]): string | null {
   const has = (re: RegExp) => paths.some((p) => re.test(p));
-  if (has(/(?:^|\/)app\/.*\/(page|route)\.(tsx?|jsx?)$/)) return "Next.js (App Router)";
-  if (has(/(?:^|\/)pages\/.*\.(tsx?|jsx?)$/)) return "Next.js (Pages Router)";
+
+  /** Dependencies declared by any package.json in the tree. */
+  const deps = new Set<string>();
+  for (const f of files ?? []) {
+    if (!/(?:^|\/)package\.json$/.test(f.path) || !f.content) continue;
+    try {
+      const pkg = JSON.parse(f.content) as {
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      };
+      for (const d of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) deps.add(d);
+    } catch {
+      // A package.json that will not parse tells us nothing. The path checks
+      // below still apply.
+    }
+  }
+
+  const isNext = deps.has("next") || has(/(?:^|\/)next\.config\.[mc]?[jt]s$/);
+
+  if (isNext && has(/(?:^|\/)app\/.*\/(page|route)\.(tsx?|jsx?)$/)) return "Next.js (App Router)";
+  if (isNext && has(/(?:^|\/)pages\/.*\.(tsx?|jsx?)$/)) return "Next.js (Pages Router)";
+
+  // The router matters more than the bundler: what a test needs to know is how
+  // the application decides which screen to show.
+  if (deps.has("react-router-dom") || deps.has("react-router")) {
+    return has(/(?:^|\/)vite\.config\.[mc]?[jt]s$/) || deps.has("vite")
+      ? "React (Vite + React Router)"
+      : "React (React Router)";
+  }
+  if (has(/(?:^|\/)vite\.config\.[mc]?[jt]s$/) || deps.has("vite")) return "Vite";
   if (has(/^src\/routes\/.*\+page\.svelte$/)) return "SvelteKit";
   if (has(/^(src\/)?app\/.*\.vue$/) || has(/^nuxt\.config\./)) return "Nuxt";
   if (has(/^angular\.json$/)) return "Angular";
@@ -105,9 +144,15 @@ export async function importPublicRepo(
     .filter((n) => n.type === "blob" && !IGNORED.test(`/${n.path}`))
     .slice(0, MAX_FILES);
 
-  // Contents are only worth keeping for source files small enough to read.
+  // Contents are only worth keeping for source files small enough to read -
+  // plus every package.json, which is not source but is how the stack names
+  // itself. Without it the framework had to be guessed from directory names,
+  // and a `pages/` folder was read as Next.js in an app that never used it.
   const wanted = blobs
-    .filter((n) => SOURCE.test(n.path) && (n.size ?? 0) <= MAX_FILE_BYTES)
+    .filter(
+      (n) =>
+        (SOURCE.test(n.path) || MANIFEST.test(n.path)) && (n.size ?? 0) <= MAX_FILE_BYTES,
+    )
     .slice(0, MAX_STORED);
   const wantedPaths = new Set(wanted.map((n) => n.path));
 
@@ -136,6 +181,13 @@ export async function importPublicRepo(
 
   onProgress?.("analysing", "Deriving routes and endpoints");
 
+  const files: ImportedFile[] = blobs.map((n) => ({
+    path: n.path,
+    sizeBytes: n.size ?? 0,
+    sha: n.sha,
+    content: wantedPaths.has(n.path) ? (contents.get(n.path) ?? null) : null,
+  }));
+
   return {
     owner,
     repo,
@@ -143,12 +195,10 @@ export async function importPublicRepo(
     commitSha: tree.sha,
     fileCount: blobs.length,
     truncated: Boolean(tree.truncated) || blobs.length >= MAX_FILES,
-    framework: detectFramework(blobs.map((b) => b.path)),
-    files: blobs.map((n) => ({
-      path: n.path,
-      sizeBytes: n.size ?? 0,
-      sha: n.sha,
-      content: wantedPaths.has(n.path) ? (contents.get(n.path) ?? null) : null,
-    })),
+    framework: detectFramework(
+      blobs.map((b) => b.path),
+      files,
+    ),
+    files,
   };
 }
