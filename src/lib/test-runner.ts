@@ -391,17 +391,25 @@ async function reclassifyRecent(
   caseIds: string[],
   caseUpdatedAt: Map<string, Date | null>,
 ) {
+  // What history needs is the outcome of each past result, not the evidence
+  // behind it. This query used to select network_events and logs as well, so
+  // every reclassification pulled the entire recorded payload for these cases -
+  // megabytes that grew with every run - and once the history was long enough
+  // it began failing outright rather than merely being slow.
+  //
+  // Deliberately not bounded by a LIMIT. The classifier reports how many of a
+  // spec's failures were environment outages, counted over the whole history,
+  // and every outage on record here is older than the last sixty runs - so a
+  // window large enough to be worth having would still have silently dropped
+  // that figure. Bounding the payload fixes the failure; bounding the history
+  // would change the answer.
   const rows = await db
     .select({
       id: schema.testRunResults.id,
       runId: schema.testRunResults.runId,
       testCaseId: schema.testRunResults.testCaseId,
       status: schema.testRunResults.status,
-      errorMessage: schema.testRunResults.errorMessage,
-      durationMs: schema.testRunResults.durationMs,
       classification: schema.testRunResults.classification,
-      networkEvents: schema.testRunResults.networkEvents,
-      logs: schema.testRunResults.logs,
       at: schema.testRuns.startedAt,
     })
     .from(schema.testRunResults)
@@ -410,6 +418,21 @@ async function reclassifyRecent(
     .orderBy(desc(schema.testRuns.startedAt));
 
   const runsNewestFirst = [...new Set(rows.map((r) => r.runId))].slice(0, RECLASSIFY_RUNS);
+  if (runsNewestFirst.length === 0) return;
+
+  // The error text and the captured layers are only needed for the handful of
+  // runs actually being judged, so they are fetched for those runs alone.
+  const detail = await db
+    .select({
+      id: schema.testRunResults.id,
+      errorMessage: schema.testRunResults.errorMessage,
+      durationMs: schema.testRunResults.durationMs,
+      networkEvents: schema.testRunResults.networkEvents,
+      logs: schema.testRunResults.logs,
+    })
+    .from(schema.testRunResults)
+    .where(inArray(schema.testRunResults.runId, runsNewestFirst));
+  const detailById = new Map(detail.map((d) => [d.id, d]));
 
   for (const runId of runsNewestFirst) {
     const inRun = rows.filter((r) => r.runId === runId);
@@ -430,8 +453,8 @@ async function reclassifyRecent(
         id: r.id,
         testCaseId: r.testCaseId,
         status: r.status,
-        errorMessage: r.errorMessage,
-        durationMs: r.durationMs,
+        errorMessage: detailById.get(r.id)?.errorMessage ?? null,
+        durationMs: detailById.get(r.id)?.durationMs ?? null,
       })),
       history,
       caseUpdatedAt,
@@ -439,7 +462,7 @@ async function reclassifyRecent(
 
     const withLayers = new Map<string, Verdict>();
     for (const [id, verdict] of fresh) {
-      const row = inRun.find((r) => r.id === id);
+      const row = detailById.get(id);
       withLayers.set(id, correlate(verdict, row?.networkEvents ?? null, row?.logs ?? null));
     }
     await store(db, withLayers);
