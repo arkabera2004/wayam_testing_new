@@ -35,6 +35,64 @@ export type FixProposal = {
 
 export type FixRefusal = { refused: true; reason: string };
 
+/**
+ * A URL assertion states its expectation as a pattern more often than a string,
+ * and a pattern is not a value: /^\/cart\/\d+$/ describes many paths and names
+ * none of them. Only patterns that are a literal wearing regex syntax - escapes
+ * and anchors and nothing else - can be turned back into the one path they
+ * accept. Anything with a quantifier, a class, a group or an alternation
+ * describes a set, and picking a member of that set would be a guess.
+ */
+function literalFromPattern(pattern: string): string | null {
+  const body = pattern.replace(/^\/(.*)\/[gimsuy]*$/, "$1");
+  if (body === pattern && !pattern.startsWith("/")) return null;
+
+  const stripped = body.replace(/^\^/, "").replace(/\$$/, "");
+  // Any metacharacter that survives means this describes more than one path.
+  if (/(?<!\\)[.*+?()\[\]{}|]/.test(stripped)) return null;
+
+  const literal = stripped.replace(/\\(.)/g, "$1");
+  return literal.startsWith("/") ? literal : null;
+}
+
+/** Pulls the two paths a failed URL assertion reports. */
+export function parseUrlMismatch(error: string): { expectedPath: string; receivedPath: string } | null {
+  if (!/toHaveURL/.test(error)) return null;
+
+  const receivedRaw = error.match(/Received string:\s*"([^"]*)"/)?.[1];
+  if (!receivedRaw) return null;
+  let receivedPath: string;
+  try {
+    receivedPath = new URL(receivedRaw).pathname;
+  } catch {
+    return null;
+  }
+
+  const expectedString = error.match(/Expected string:\s*"([^"]*)"/)?.[1];
+  const expectedPattern = error.match(/Expected pattern:\s*(\S+)/)?.[1];
+
+  let expectedPath: string | null = null;
+  if (expectedString) {
+    try {
+      expectedPath = new URL(expectedString).pathname;
+    } catch {
+      expectedPath = expectedString.startsWith("/") ? expectedString : null;
+    }
+  } else if (expectedPattern) {
+    expectedPath = literalFromPattern(expectedPattern);
+  }
+
+  if (!expectedPath || expectedPath === receivedPath) return null;
+  return { expectedPath, receivedPath };
+}
+
+/**
+ * Where a page decides to send the browser. These take a literal often enough
+ * to be worth searching for, and when they do the wrong destination is a string
+ * sitting in the source exactly like a wrong message is.
+ */
+const NAVIGATION_CALL = /\b(?:router\s*\.\s*(?:push|replace)|redirect|permanentRedirect)\s*\(\s*["'`]([^"'`]+)["'`]/g;
+
 /** Anything that looks like a test is off limits, whatever else is true. */
 function isTestPath(file: string): boolean {
   return /(^|\/)(tests?|__tests__|e2e|spec)(\/|$)|\.(spec|test)\.[cm]?[jt]sx?$/i.test(file);
@@ -66,6 +124,22 @@ export async function proposeFix(input: {
     };
   }
 
+  const searchable = input.candidateFiles.filter((f) => !isTestPath(f));
+  const skippedTests = input.candidateFiles.length - searchable.length;
+
+  // A URL assertion is the same shape as a message assertion - a wrong literal
+  // in the source - but the literal is a destination rather than a sentence,
+  // and it is reached through a navigation call rather than rendered.
+  const urlMismatch = parseUrlMismatch(input.errorMessage ?? "");
+  if (urlMismatch) {
+    const navigation = await proposeNavigationFix(input.sourceRoot, searchable, urlMismatch, skippedTests);
+    if (navigation) return navigation;
+    return {
+      refused: true,
+      reason: `The page went to ${urlMismatch.receivedPath} instead of ${urlMismatch.expectedPath}, but no navigation call with that destination as a literal was found in non-test source. The destination may be computed, or the redirect may come from configuration rather than code.`,
+    };
+  }
+
   const parsed = parseValueMismatch(input.errorMessage ?? "");
   if (!parsed) {
     return {
@@ -76,9 +150,6 @@ export async function proposeFix(input: {
   }
 
   const { expected, received } = parsed;
-
-  const searchable = input.candidateFiles.filter((f) => !isTestPath(f));
-  const skippedTests = input.candidateFiles.length - searchable.length;
 
   for (const rel of searchable) {
     let content: string;
@@ -115,4 +186,67 @@ export async function proposeFix(input: {
     refused: true,
     reason: `The value the application produced ("${received.slice(0, 60)}") was not found as a literal in any non-test source file, so there is nothing to point at. It may be assembled at run time, which is beyond what this fixer reads.`,
   };
+}
+
+/**
+ * Finds the navigation call that sent the browser to the wrong place.
+ *
+ * The received path carries the application's base path and the literal in the
+ * source does not, so the two are matched on suffix rather than equality. That
+ * is looser than comparing whole paths, and it is why the match must be on a
+ * navigation call rather than on any occurrence of the string - "/cart" appears
+ * in plenty of places that do not decide where the browser goes.
+ */
+async function proposeNavigationFix(
+  sourceRoot: string,
+  files: string[],
+  mismatch: { expectedPath: string; receivedPath: string },
+  skippedTests: number,
+): Promise<FixProposal | null> {
+  const { expectedPath, receivedPath } = mismatch;
+
+  for (const rel of files) {
+    let content: string;
+    try {
+      content = await readFile(path.join(sourceRoot, rel), "utf8");
+    } catch {
+      continue;
+    }
+
+    const lines = content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      NAVIGATION_CALL.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = NAVIGATION_CALL.exec(lines[i])) !== null) {
+        const destination = m[1];
+        if (!destination.startsWith("/")) continue;
+        // The running app prefixes a base path the source literal omits.
+        if (!receivedPath.endsWith(destination)) continue;
+
+        // Keep whatever prefix the source uses, replacing only the part that
+        // corresponds to the destination that was actually taken.
+        const replacement = expectedPath.endsWith(destination)
+          ? destination
+          : expectedPath.slice(expectedPath.length - destination.length) === destination
+            ? destination
+            : expectedPath.replace(new RegExp(`^${receivedPath.slice(0, receivedPath.length - destination.length)}`), "");
+
+        const after = lines[i].replace(destination, replacement || expectedPath);
+        if (after === lines[i]) continue;
+
+        return {
+          file: rel,
+          line: i + 1,
+          before: lines[i],
+          after,
+          expected: expectedPath,
+          received: receivedPath,
+          rationale: `The spec expects the browser to end up at ${expectedPath}; it went to ${receivedPath}. The navigation that sent it there is at ${rel}:${i + 1}, where the destination is the literal "${destination}"${skippedTests > 0 ? `. ${skippedTests} test ${skippedTests === 1 ? "file was" : "files were"} excluded from the search, since changing a test is not a fix` : ""}.`,
+          caveat: `This changes where the page sends the browser so the assertion is satisfied. Whether that destination is the right one for this condition is a product decision, not something the failure states.`,
+        };
+      }
+    }
+  }
+
+  return null;
 }

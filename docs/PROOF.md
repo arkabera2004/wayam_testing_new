@@ -248,6 +248,42 @@ Every step was checked afterwards rather than taken on trust:
 propose, branch, apply, rebuild, restart, re-run, verdict, restore - with no
 step performed by hand.
 
+### A second rule, proven the same way
+
+The first rule handles a wrong message. This one handles a wrong destination:
+the checkout page was made to send an empty cart to `/search` instead of
+`/cart`, rebuilt so it genuinely did, and run until the failure classified
+`real-bug` at 70.
+
+```
+Expected pattern: /\/cart$/
+Received string:  "http://localhost:4000/demo/shopstack/search"
+
+apps/shopstack/src/app/checkout/page.tsx:23
+  -  if (hydrated && lines.length === 0 && !orderNumber) router.replace("/search");
+  +  if (hydrated && lines.length === 0 && !orderNumber) router.replace("/cart");
+
+HARNESS: ACCEPTED   spec passes: true   regressed: false
+  suite: 1 failing -> 0 failing
+```
+
+Same four checks afterwards: the defect is back on disk, the fix exists only on
+its branch, `HEAD` is unmoved, and re-running the suite gives 9 of 10 again.
+
+Two things this rule has to refuse, and does. A URL assertion usually states a
+pattern, and a pattern is not a value - `/^\/cart\/\d+$/` describes many paths
+and names none of them, so only a pattern that is a literal wearing regex
+syntax is converted back. And the destination has to be a literal at a
+navigation call: matching any occurrence of `/cart` in the file would find text
+that has nothing to do with where the browser goes.
+
+The rule was chosen because it is the same shape as the first - an expected
+value stated in the error and a wrong literal in the source - not because it
+was the most valuable. It had zero recorded real-bug occurrences before this
+run; the defect above was planted to exercise it. What two rules of one shape
+show is that the loop generalises across rules, not that rule-writing is
+keeping up with the bugs a real codebase produces.
+
 ---
 
 ## What this does not show
