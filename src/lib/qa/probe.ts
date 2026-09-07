@@ -22,15 +22,24 @@ import type { ApplicationModel, Observation } from "./explore";
  * decision to make.
  */
 
-/** Inputs chosen to sit on the edges rather than to attack. */
-const BOUNDARY_INPUTS = [
+/**
+ * Inputs chosen to sit on the edges rather than to attack.
+ *
+ * `marker` names an element the payload would create if it were parsed as
+ * markup. It is inert - a custom tag with no behaviour - because the question
+ * is whether the application escapes input, and answering it does not require
+ * running anything. An entry with no marker is a boundary value, not a
+ * reflection probe.
+ */
+const BOUNDARY_INPUTS: Array<{ label: string; value: string; marker?: string }> = [
   { label: "empty", value: "" },
   { label: "whitespace", value: "   " },
   { label: "very long", value: "a".repeat(2000) },
   { label: "special characters", value: "'\"<>&;%{}[]" },
   { label: "unicode", value: "日本語 · emoji 🙂 · ÅÄÖ" },
   { label: "sql-ish", value: "' OR '1'='1" },
-  { label: "script-ish", value: "<script>alert(1)</script>" },
+  { label: "html injection", value: "<pk-probe-el></pk-probe-el>", marker: "pk-probe-el" },
+  { label: "attribute injection", value: '"><pk-probe-attr></pk-probe-attr>', marker: "pk-probe-attr" },
 ];
 
 /** Paths that should not resolve, to see how absence is reported. */
@@ -130,16 +139,30 @@ export async function probeApplication(
           await submit.click({ timeout: 4000 }).catch(() => {});
           await page.waitForTimeout(500);
 
-          const text = String(await page.evaluate(`(document.body.innerText || "").slice(0, 600)`));
-          // The value coming back out of the page unescaped is worth recording;
-          // whether it is exploitable depends on where it is rendered.
-          if (probe.value.length > 6 && text.includes(probe.value) && /script|OR '1'/.test(probe.value)) {
-            found.push({
-              kind: "unhandled-input",
-              route: state.route,
-              detail: `input "${probe.label}" is echoed back into the page`,
-              evidence: { url: state.url, probe: probe.label, value: probe.value.slice(0, 60) },
-            });
+          // Reflection on its own is not a defect. A search page printing the
+          // query back is the feature, and reporting it taught the reader to
+          // skim the report. What separates the two is whether the value
+          // arrived as text or as markup: the payload carries a marker element,
+          // and if the browser parsed it into a real node then the input was
+          // interpolated into HTML rather than escaped.
+          if (probe.marker) {
+            const parsed = await page.evaluate(
+              `Boolean(document.querySelector(${JSON.stringify(probe.marker)}))`,
+            );
+            if (parsed) {
+              found.push({
+                kind: "unhandled-input",
+                route: state.route,
+                detail: `input "${probe.label}" was parsed into the DOM as markup, not escaped as text`,
+                evidence: {
+                  url: state.url,
+                  probe: probe.label,
+                  value: probe.value.slice(0, 60),
+                  marker: probe.marker,
+                  proof: `document.querySelector("${probe.marker}") returned an element`,
+                },
+              });
+            }
           }
         } catch {
           /* A probe that cannot be typed is not a finding. */

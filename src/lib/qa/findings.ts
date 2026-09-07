@@ -113,14 +113,21 @@ export function deriveFindings(model: ApplicationModel, probed: Observation[]): 
   for (const o of all.filter((x) => x.kind === "unhandled-input")) {
     findings.push({
       id: id("SEC"),
-      title: "Submitted input is echoed back into the page",
+      title: "Submitted input is interpolated into the page as markup",
       classification: "SECURITY_DEFECT",
-      severity: "medium",
-      confidence: 55,
-      expected: "Input is escaped or not reflected. Reflection is only exploitable if it reaches the DOM unescaped, which this does not prove.",
+      severity: "high",
+      // The browser parsing the payload into a node is the proof. Reflection
+      // as text is normal and no longer reported at all.
+      confidence: 90,
+      expected: "Input is escaped before it reaches the page, so a value containing markup renders as text rather than becoming an element.",
       actual: o.detail,
       route: o.route,
-      reproduction: [`Open ${o.route}`, `Enter the probe value from the evidence`, "Submit", "Search the rendered page for the value"],
+      reproduction: [
+        `Open ${o.route}`,
+        "Enter the probe value from the evidence into the first field",
+        "Submit",
+        `Run document.querySelector("${(o.evidence as { marker?: string }).marker ?? "the marker in the evidence"}") in the console`,
+      ],
       rootCauseHint: null,
       evidence: o.evidence,
     });
