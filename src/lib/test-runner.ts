@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 
+import { childEnv } from "@/lib/child-env";
 import { getDb, schema } from "@/db";
 import { classifyRun, type HistoryEntry, type ResultInput, type Verdict } from "./failure-classifier";
 import { correlate } from "./cross-layer";
@@ -195,12 +196,16 @@ async function executeSuite(
         ],
         {
           cwd: process.cwd(),
-          env: {
-            ...process.env,
+          // Scrubbed rather than inherited. These specs are generated, and a
+          // generated spec is still code running in a browser against an
+          // application that came from somewhere else - it does not need
+          // Parikshan's database password to click a button. childEnv keeps
+          // HOME, which is where Playwright finds its browsers.
+          env: childEnv({
             PLAYWRIGHT_JSON_OUTPUT_NAME: reportPath,
             // What the generated specs navigate against.
             BASE_URL: opts?.baseUrl ?? project?.baseUrl ?? process.env.BASE_URL ?? "http://localhost:3000",
-          },
+          }),
         },
       );
       const kill = setTimeout(() => child.kill("SIGKILL"), RUN_TIMEOUT_MS);

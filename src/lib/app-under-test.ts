@@ -3,6 +3,8 @@ import "server-only";
 import { spawn } from "node:child_process";
 import path from "node:path";
 
+import { childEnv } from "@/lib/child-env";
+
 /**
  * Builds and restarts the application being tested.
  *
@@ -39,15 +41,23 @@ const READY_TIMEOUT_MS = 60_000;
 /**
  * Environment for the build and the server it starts.
  *
- * `NODE_ENV` is forced rather than inherited. Parikshan runs under `next dev`
- * during development, which sets `NODE_ENV=development` on its own process, and
- * a spawned child inherits it - so `next build` ran in development mode and
- * failed on the storefront's error page with "<Html> should not be imported
- * outside of pages/_document". Whether the harness can build the application it
- * is judging must not depend on how the harness itself was started.
+ * Scrubbed, not inherited. This is the application under test: source that
+ * came from somewhere else, running a build that executes whatever its own
+ * package.json says to. It has no business seeing Parikshan's database
+ * password or token-encryption key, and until now it saw both, along with
+ * every other variable in the environment. childEnv gives it what a process
+ * needs to run and nothing about what Parikshan is connected to.
+ *
+ * `NODE_ENV` is forced rather than inherited for a separate reason. Parikshan
+ * runs under `next dev` during development, which sets NODE_ENV=development on
+ * its own process, and a spawned child inherited it - so `next build` ran in
+ * development mode and failed on the storefront's error page with "<Html>
+ * should not be imported outside of pages/_document". Whether the harness can
+ * build the application it is judging must not depend on how the harness was
+ * started.
  */
 function buildEnv(): NodeJS.ProcessEnv {
-  return { ...process.env, NODE_ENV: "production" };
+  return childEnv({ NODE_ENV: "production" });
 }
 
 function run(command: string, args: string[], cwd: string, timeoutMs: number): Promise<{ ok: boolean; output: string }> {
