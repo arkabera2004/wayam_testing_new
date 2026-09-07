@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 
 import { childEnv } from "@/lib/child-env";
+import { containerProcess } from "@/lib/drivers/container";
 
 /**
  * Builds and restarts the application being tested.
@@ -42,7 +43,7 @@ export type AppUnderTest = {
   driver?: DriverName;
 };
 
-export type DriverName = "local";
+export type DriverName = "local" | "container";
 
 /** The only application this may drive. */
 export const SHOPSTACK: AppUnderTest = {
@@ -180,6 +181,7 @@ const localProcess: AppDriver = {
 
 const DRIVERS: Record<DriverName, AppDriver> = {
   local: localProcess,
+  container: containerProcess,
 };
 
 /** The driver an application is configured to use. */
