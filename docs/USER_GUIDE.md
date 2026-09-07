@@ -1,6 +1,6 @@
 # Parikshan - user guide
 
-Last verified against the running application on 5 September 2026.
+Last verified against the running application on 7 September 2026.
 
 This guide describes what the application does **today**. Where something is
 partial or not built, it says so rather than describing the intended version.
@@ -187,6 +187,35 @@ in the healing table has a replacement.
 
 ---
 
+## Tests from a document
+
+`/projects/{id}/doc-tests`. Drop a specification on the page, choose a file, or
+paste it. Markdown or plain text - `.md`, `.txt`, `.rst`, `.adoc`, up to 2MB.
+The file is read in the browser and sent as text, because the parser needs
+characters; nothing here reads a PDF or a `.docx`, so the picker does not offer
+to take one.
+
+What comes back are the scenarios the document describes, each tagged
+`happy-path`, `edge-case` or `negative` so a suite can be balanced rather than
+ten variations of the same path, and each carrying the heading and line it came
+from:
+
+```
+[negative ] Sending must be rejected when the recipient address is invalid
+              from Compose, line 9
+[edge-case] An empty inbox should show a placeholder rather than a blank panel
+              from Inbox, line 5
+```
+
+It reads clauses carrying an obligation - must, shall, should, cannot - and
+nothing else. A document that states none extracts nothing and says so, rather
+than promoting arbitrary sentences so the screen has something on it.
+
+The same parser produces requirements on the PRD screen, so the two cannot
+disagree about the same sentence.
+
+---
+
 ## The fixer
 
 The fixer proposes a source change for a failure classified `real-bug`. It
@@ -317,6 +346,39 @@ stranded.
 
 ---
 
+## How the application under test is run
+
+Two drivers, chosen per application.
+
+**Local** spawns the build and server as children of Parikshan. No isolation:
+the build runs with this machine's filesystem and network, as you. Its
+environment is scrubbed - a child sees nine variables, none of them Parikshan's
+database password, token-encryption key or API keys - but it can still write to
+disk and reach the network. Right for an application shipped in this
+repository. `apps/shopstack` uses it.
+
+**Container** builds and runs the application in Docker. Verified properties,
+on containers the driver created:
+
+| | |
+|---|---|
+| Parikshan source, `.env.local`, host disk | not present in the image |
+| root filesystem | read-only |
+| egress by hostname | refused (`EAI_AGAIN`) |
+| egress by IP address | refused (`ENETUNREACH`) |
+| limits | 2 CPUs, 2GB, 512 pids, all capabilities dropped |
+
+The application sits alone on an internal network with no route off the
+machine; a small proxy on both networks carries its port to the host. That
+shape is not decorative - Docker silently ignores `--publish` on an internal
+network, and a bridge with masquerade disabled does not block egress at all on
+Docker Desktop. Both were tried before this one worked.
+
+Use the container driver for anything imported. Requires a running Docker
+daemon; the local driver does not.
+
+---
+
 ## Known limitations
 
 Stated plainly. None of these are bugs to be reported; they are the current
@@ -330,13 +392,19 @@ shape of the build.
   naming both values, where the received value is a literal in source.
   Everything else is refused. This is not a coverage figure to be improved
   casually - see PROOF.md's "What this does not show".
-- **Coverage is not measured.** The Analytics page says `Coverage: Not measured`
-  rather than printing a number nothing computed. The coverage heatmap shades
-  whatever snapshot rows exist; nothing currently produces them.
-- **PRD requirement extraction is not wired.** A document uploads and stores,
-  but no requirements are extracted and no scenarios are generated. The status
-  stays `analyzing` indefinitely, which reads as a hang - it is not; it is
-  unimplemented. The code says so at the insert.
+- **"Routes reached" is not assertion coverage.** The Analytics figure counts
+  routes a spec navigates to, over routes the crawl found, derived from the
+  spec sources on every load. A page a spec merely passes through counts, so it
+  reads higher than what the suite actually checks. The label says "routes
+  reached" rather than "coverage" for exactly that reason.
+- **Requirement and scenario extraction is a parser, not a model.** It finds
+  clauses carrying an obligation - must, shall, should, cannot - and classifies
+  them by keyword. It under-reads a discursive document rather than inventing
+  structure, and a document stating no obligations extracts nothing and says
+  so. The classification is a starting point for a human to correct.
+- **Documents must be text.** The upload accepts `.md`, `.txt`, `.rst`,
+  `.adoc`. Nothing in this build reads a PDF or a `.docx`, so the picker does
+  not offer to take one.
 - **Slack and Jira integration cards are inert.** They are labelled
   "Not implemented - these controls are inert" in the UI.
 - **Inline spec editing does not exist.** The button says so.
@@ -345,8 +413,16 @@ shape of the build.
 - **Server-side logs are not captured.** Classification reads what the browser
   saw - API responses, transport failures, console and page errors - not the
   application's own logs.
-- **The rebuild is wired to one application**, `apps/shopstack`, with a fixed
-  build command. A second application under test needs adding deliberately.
+- **A containerised application needs a declared spec.** The container driver
+  installs what `ContainerSpec` names for that directory, not what the
+  application's own manifest asks for. A monorepo application often declares
+  nothing and resolves from the workspace root, and that root is what must not
+  enter the image - so a new application under test needs its dependency
+  surface written down deliberately.
+- **Docker isolation, not a hypervisor.** The container driver stops an
+  imported repository reading your secrets, writing your disk or reaching the
+  network. It is not the boundary you would want to run strangers' code as a
+  service; that needs gVisor or Firecracker-class isolation.
 - **A missing project answers HTTP 200.** The page correctly renders "This page
   could not be found", but the status line says 200 in both dev and production.
   Cosmetic in a browser; wrong for monitoring and API clients. Root cause not

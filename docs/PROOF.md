@@ -282,6 +282,44 @@ hand.
 
 ---
 
+## 4. The application under test can be contained
+
+Verified on 7 September 2026 by calling the driver, not by running docker
+commands by hand. `containerProcess.rebuildAndRestart` built a clean context
+and brought the storefront up in 73 seconds, and the harness's own Playwright
+suite then passed 10 of 10 against it.
+
+Read off the containers that call created:
+
+```
+Parikshan source in the image     not present
+.env.local in the image           not present
+host disk (/Users)                not present
+root filesystem                   read-only
+egress by hostname                BLOCKED  EAI_AGAIN
+egress by IP address              BLOCKED  ENETUNREACH
+limits                            2 cpus, 2GB, 512 pids, CapDrop=[ALL]
+```
+
+**Two designs failed first, and the failures are the useful part.** Docker
+accepts `--publish` on an `--internal` network and ignores it: the container
+came up healthy, serving nothing the host could reach. A bridge with
+`enable_ip_masquerade=false` publishes correctly and blocks nothing - the
+container reached both GitHub and Neon - because on Docker Desktop the NAT
+happens in the virtual machine's gateway rather than the bridge driver. Setting
+`--dns 0.0.0.0` refuses a hostname but not an address: a fetch to a literal IP
+still completed its TLS handshake. Only the last of the four arrangements does
+what it says.
+
+**What this is not.** Docker-grade isolation. It stops an imported repository
+reading credentials, writing the host disk, or reaching the network. It is not
+the boundary for running strangers' code as a service, which needs
+gVisor or Firecracker-class separation. And the storefront this document is
+otherwise about still runs on the local driver, because it is known-safe and a
+container would add a minute to every rebuild for isolation it does not need.
+
+---
+
 ## What this does not show
 
 Stated so the evidence above is read for what it is.
@@ -308,9 +346,11 @@ Stated so the evidence above is read for what it is.
   browser saw: API responses, transport failures, console and page errors. Now
   that the application is a separate process its output could be collected, but
   that is not built.
-- **The rebuild is wired to one known application.** `apps/shopstack` with a
-  fixed build command, not an arbitrary command taken from a request. A second
-  application under test would need adding deliberately.
+- **The rebuild is wired to known applications, not arbitrary ones.** Both
+  drivers take a fixed build command for a configured directory, never a
+  command from a request, and the container driver additionally installs only
+  what a written-down spec names. A second application under test needs adding
+  deliberately, which is the point rather than a gap.
 - **Two calls to the harness at once will collide, and one of them fails.**
   `rebuildAndRestart` writes `apps/shopstack/.next` in place with no lock, so a
   second call that arrives mid-build reads a half-written directory. Reproduced
