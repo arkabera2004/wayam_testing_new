@@ -166,7 +166,7 @@ export function deriveFindings(model: ApplicationModel, probed: Observation[]): 
     });
   }
 
-  /* ---- Console errors: grouped, because one fault produces many lines ---- */
+  /* ---- Uncaught script errors: grouped, because one fault produces many lines ---- */
   const consoleByRoute = new Map<string, Observation[]>();
   for (const o of all.filter((x) => x.kind === "console-error")) {
     consoleByRoute.set(o.route, [...(consoleByRoute.get(o.route) ?? []), o]);
@@ -174,14 +174,17 @@ export function deriveFindings(model: ApplicationModel, probed: Observation[]): 
   for (const [route, group] of consoleByRoute) {
     findings.push({
       id: id("DEF"),
-      title: `Console errors on ${route}`,
+      title: `Uncaught script error on ${route}`,
       classification: "PRODUCT_BUG",
-      severity: "low",
-      confidence: 60,
-      expected: "A page loads without writing errors to the console.",
+      severity: "medium",
+      // What reaches here is a script fault - an exception, a framework error,
+      // a rejected promise nothing handled. Failed resource loads are filtered
+      // upstream, because those are an HTTP status being narrated twice.
+      confidence: 85,
+      expected: "A page loads without an uncaught exception reaching the console.",
       actual: `${group.length} console error(s). First: ${group[0].detail}`,
       route,
-      reproduction: [`Open ${route}`, "Read the browser console"],
+      reproduction: [`Open ${route}`, "Open the browser console", "Reload and read the first error"],
       rootCauseHint: null,
       evidence: { count: group.length, samples: group.slice(0, 3).map((g) => g.detail) },
     });

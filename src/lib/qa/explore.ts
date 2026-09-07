@@ -208,18 +208,49 @@ export async function exploreApplication(baseUrl: string, seedRoutes: string[] =
   let actions = 0;
 
   let currentRoute = "/";
-  let currentOk = true;
 
   page.on("console", (m) => {
     if (m.type() !== "error") return;
-    // A 404 page logging a failed resource is the failure being reported, not
-    // a second defect on top of it.
-    if (!currentOk) return;
+    const text = m.text();
+
+    // "Failed to load resource" is the browser narrating an HTTP response.
+    // That response is already recorded as a status observation if it matters,
+    // and reporting it again turns one fact into two findings - including for
+    // requests this crawler caused itself by submitting a form, which is not
+    // the application misbehaving.
+    if (/Failed to load resource/i.test(text)) return;
+
+    // The URL is read at the moment the event fires. Reading a mutable
+    // "current route" attributed one page's errors to the next one, because
+    // console events arrive during navigation and the variable is only
+    // updated once goto resolves.
+    const at = routeOf(page.url(), baseUrl);
+
     observations.push({
       kind: "console-error",
-      route: currentRoute,
-      detail: m.text().slice(0, 200),
-      evidence: { route: currentRoute, text: m.text().slice(0, 400) },
+      route: at,
+      detail: text.slice(0, 200),
+      evidence: { route: at, text: text.slice(0, 400), source: "console" },
+    });
+  });
+
+  // Uncaught exceptions do not arrive as console messages. Playwright raises
+  // them on "pageerror", and listening only to the console meant this saw the
+  // browser narrating failed downloads and never saw a script actually
+  // throwing - so once that narration was filtered out the check could not
+  // fire at all. This is the event that carries the fault.
+  page.on("pageerror", (err) => {
+    const at = routeOf(page.url(), baseUrl);
+    observations.push({
+      kind: "console-error",
+      route: at,
+      detail: `${err.name}: ${err.message}`.slice(0, 200),
+      evidence: {
+        route: at,
+        text: `${err.name}: ${err.message}`,
+        stack: (err.stack ?? "").split("\n").slice(0, 3).join(" | ").slice(0, 300),
+        source: "pageerror",
+      },
     });
   });
 
@@ -279,7 +310,6 @@ export async function exploreApplication(baseUrl: string, seedRoutes: string[] =
       actions++;
       const elapsed = Date.now() - started;
       currentRoute = routeOf(page.url(), baseUrl);
-      currentOk = !status || status < 400;
 
       if (elapsed > SLOW_MS) {
         observations.push({
