@@ -18,6 +18,14 @@ import { childEnv } from "@/lib/child-env";
  * Deliberately narrow: it drives one configured directory with one configured
  * command. It does not accept a command from a request, because "rebuild the
  * app" would otherwise be a way to run anything at all.
+ *
+ * How that build is contained is a separate question from what the harness
+ * needs, so the two are separated here. `AppDriver` is the whole contract the
+ * harness depends on - build from disk, bring it back up, take it down - and
+ * `localProcess` is the implementation that spawns it as a child of this
+ * server. A driver that runs the same three steps inside a container satisfies
+ * the same interface, and none of the three API routes that call this need to
+ * know which one they got.
  */
 
 export type AppUnderTest = {
@@ -26,14 +34,40 @@ export type AppUnderTest = {
   /** Where it serves once started. */
   baseUrl: string;
   port: number;
+  /**
+   * How to run it. Absent means "local", so an application added without
+   * thinking about isolation keeps today's behaviour rather than silently
+   * acquiring a container that is not there.
+   */
+  driver?: DriverName;
 };
+
+export type DriverName = "local";
 
 /** The only application this may drive. */
 export const SHOPSTACK: AppUnderTest = {
   dir: "apps/shopstack",
   baseUrl: "http://localhost:4000/demo/shopstack",
   port: 4000,
+  driver: "local",
 };
+
+export type RebuildResult = { ok: boolean; stage: "build" | "start" | "done"; output: string };
+
+/**
+ * What the harness needs from whatever is running the application.
+ *
+ * Three operations, because three is what a verdict requires: build what is on
+ * disk now, have it serving, and be able to stop it. Anything a driver needs
+ * beyond that - a container id, a port mapping, a workspace copy - is its own
+ * business and does not appear here.
+ */
+export interface AppDriver {
+  readonly name: DriverName;
+  rebuildAndRestart(app: AppUnderTest, repoRoot: string): Promise<RebuildResult>;
+  ensureRunning(app: AppUnderTest, repoRoot: string): Promise<boolean>;
+  stop(app: AppUnderTest): Promise<void>;
+}
 
 const BUILD_TIMEOUT_MS = 180_000;
 const READY_TIMEOUT_MS = 60_000;
@@ -44,7 +78,7 @@ const READY_TIMEOUT_MS = 60_000;
  * Scrubbed, not inherited. This is the application under test: source that
  * came from somewhere else, running a build that executes whatever its own
  * package.json says to. It has no business seeing Parikshan's database
- * password or token-encryption key, and until now it saw both, along with
+ * password or token-encryption key, and until recently it saw both, along with
  * every other variable in the environment. childEnv gives it what a process
  * needs to run and nothing about what Parikshan is connected to.
  *
@@ -96,13 +130,7 @@ async function waitUntil(predicate: () => Promise<boolean>, timeoutMs: number): 
   return false;
 }
 
-async function stop(app: AppUnderTest): Promise<void> {
-  // Matched on the port so only the intended server is taken down.
-  await run("bash", ["-lc", `lsof -ti:${app.port} | xargs kill -9 2>/dev/null || true`], process.cwd(), 15_000);
-  await waitUntil(async () => !(await isUp(app.baseUrl)), 15_000);
-}
-
-async function start(app: AppUnderTest, repoRoot: string): Promise<boolean> {
+async function startLocal(app: AppUnderTest, repoRoot: string): Promise<boolean> {
   const cwd = path.join(repoRoot, app.dir);
   // Detached, because it must outlive the request that started it.
   const child = spawn("npx", ["next", "start", "-p", String(app.port)], {
@@ -115,25 +143,63 @@ async function start(app: AppUnderTest, repoRoot: string): Promise<boolean> {
   return waitUntil(() => isUp(app.baseUrl), READY_TIMEOUT_MS);
 }
 
-export type RebuildResult = { ok: boolean; stage: "build" | "start" | "done"; output: string };
-
 /**
- * Rebuilds the application from whatever is currently on disk and brings it
- * back up. The caller is responsible for what is on disk; this only guarantees
- * that what is running afterwards was built from it.
+ * Runs the application as a child process of this server.
+ *
+ * No isolation: the build executes with this machine's filesystem and network,
+ * as this user. The environment is scrubbed, so it cannot read Parikshan's
+ * credentials, but it can still write to the disk and reach the network. That
+ * is the trade this driver makes, and it is the right one for an application
+ * shipped in this repository and known to be safe.
  */
-export async function rebuildAndRestart(app: AppUnderTest, repoRoot: string): Promise<RebuildResult> {
-  const build = await run("npx", ["next", "build"], path.join(repoRoot, app.dir), BUILD_TIMEOUT_MS);
-  if (!build.ok) return { ok: false, stage: "build", output: build.output };
+const localProcess: AppDriver = {
+  name: "local",
 
-  await stop(app);
-  const started = await start(app, repoRoot);
-  if (!started) return { ok: false, stage: "start", output: "The application did not come back up after rebuilding." };
+  async rebuildAndRestart(app, repoRoot) {
+    const build = await run("npx", ["next", "build"], path.join(repoRoot, app.dir), BUILD_TIMEOUT_MS);
+    if (!build.ok) return { ok: false, stage: "build", output: build.output };
 
-  return { ok: true, stage: "done", output: build.output.slice(-500) };
+    await this.stop(app);
+    const started = await startLocal(app, repoRoot);
+    if (!started) return { ok: false, stage: "start", output: "The application did not come back up after rebuilding." };
+
+    return { ok: true, stage: "done", output: build.output.slice(-500) };
+  },
+
+  async ensureRunning(app, repoRoot) {
+    if (await isUp(app.baseUrl)) return true;
+    return startLocal(app, repoRoot);
+  },
+
+  async stop(app) {
+    // Matched on the port so only the intended server is taken down.
+    await run("bash", ["-lc", `lsof -ti:${app.port} | xargs kill -9 2>/dev/null || true`], process.cwd(), 15_000);
+    await waitUntil(async () => !(await isUp(app.baseUrl)), 15_000);
+  },
+};
+
+const DRIVERS: Record<DriverName, AppDriver> = {
+  local: localProcess,
+};
+
+/** The driver an application is configured to use. */
+export function driverFor(app: AppUnderTest): AppDriver {
+  return DRIVERS[app.driver ?? "local"];
 }
 
-export async function ensureRunning(app: AppUnderTest, repoRoot: string): Promise<boolean> {
-  if (await isUp(app.baseUrl)) return true;
-  return start(app, repoRoot);
+/*
+ * The harness calls these, not a driver directly, so adding a driver is a
+ * change to this file rather than to every route that rebuilds something.
+ */
+
+export function rebuildAndRestart(app: AppUnderTest, repoRoot: string): Promise<RebuildResult> {
+  return driverFor(app).rebuildAndRestart(app, repoRoot);
+}
+
+export function ensureRunning(app: AppUnderTest, repoRoot: string): Promise<boolean> {
+  return driverFor(app).ensureRunning(app, repoRoot);
+}
+
+export function stopApp(app: AppUnderTest): Promise<void> {
+  return driverFor(app).stop(app);
 }
